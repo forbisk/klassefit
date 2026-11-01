@@ -105,7 +105,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearGates(); lsDel(LS); lsDel(LSC); S.sess = null; S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = "";
+    clearGates(); lsDel(LS); lsDel(LSC); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = "";
     renderLogin(msg || "");
   }
   function logout() {
@@ -198,6 +198,7 @@
   }
   function render() {
     if (!S.sess) return renderLogin("");
+    tabFromHash();
     var bid = briefingId();
     if (bid) return S.sess.rolle === "lehrer" ? showBriefing(bid) : briefingDenied();
     deckStop();
@@ -236,7 +237,8 @@
     deckStop(); app.className = "";
     app.replaceChildren(h("div", { class: "glass empty", style: "margin-top:20vh" }, h("p", { text: "Kein Zugriff." }), h("div", { style: "margin-top:12px" }, h("button", { class: "btn small", text: "Zum Portal", onclick: function () { try { history.pushState(null, "", location.pathname + location.search); } catch (e) { location.hash = ""; } render(); } }))));
   }
-  window.addEventListener("hashchange", function () { if (S.sess) render(); });
+  function tabFromHash() { if (location.hash === "#/briefings" && S.sess && S.sess.rolle === "lehrer" && S.tab !== "briefings") { S.tab = "briefings"; loadBriefings(); } }
+  window.addEventListener("hashchange", function () { tabFromHash(); if (S.sess) render(); });
   function loadBriefings() {
     if (!S.sess || S.brLoading) return;
     S.brLoading = true; S.brErr = ""; if (S.tab === "briefings" && !briefingId()) render();
@@ -252,7 +254,9 @@
     m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.periodKey);
     return (b.typ === "afternoon" ? "Nachmittagsbriefing · " : "Tagesbriefing · ") + (m ? new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }) : b.periodKey);
   }
-  function teacherBriefings() {
+  function aufgabenView() { return window.PortalAufgaben ? window.PortalAufgaben.view(h, { api: api, token: function () { return S.sess.token; }, render: function () { if (S.tab === "briefings" && !briefingId()) render(); }, relogin: function () { dropSession("Bitte melde dich neu an."); } }) : null; }
+  function teacherBriefings() { return h("div", {}, aufgabenView(), teacherBriefingsList()); }
+  function teacherBriefingsList() {
     if (!S.br) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: S.brErr || "Lade …" }), S.brErr ? h("div", { style: "margin-top:12px" }, h("button", { class: "btn small", text: "Erneut versuchen", onclick: loadBriefings })) : null);
     var list = S.br.briefings || [], now = Date.now();
     return h("div", {},
@@ -271,7 +275,7 @@
   function teacherTabs() {
     var tabs = [["menue", "Seiten"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["briefings", "Briefings"], ["meldungen", "Meldungen"]];
     var bar = h("div", { class: "tabs glass", role: "tablist" }, tabs.map(function (t) {
-      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "briefings") loadBriefings(); render(); } });
+      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
     }));
     var body = h("div", {});
     if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
