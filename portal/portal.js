@@ -152,7 +152,7 @@
         else { btn.disabled = false; err.textContent = r.error || "Anmeldung fehlgeschlagen."; code.value = ""; code.focus(); }
       });
     } },
-      h("div", { class: "logo", text: "🎓" }), h("h1", { text: "Unterricht" }),
+      h("div", { class: "logo kf" }, h("img", { src: "../fp/brand/klassefit-icon.svg", alt: "", width: "76", height: "76" })), h("h1", { class: "kf-wm" }, h("img", { src: "../fp/brand/klassefit-wordmark.svg", alt: "KlasseFit", width: "220", height: "41" })),
       h("p", { class: "sub muted", text: "Melde dich einmal an. Danach bleibst du auf diesem Gerät angemeldet." }),
       h("label", { class: "field" }, h("span", { text: "Benutzername" }), user),
       h("label", { class: "field" }, h("span", { text: "Code" }), code),

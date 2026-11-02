@@ -136,3 +136,7 @@ main.deckmode{max-width:none;padding:0}
 .au-det{margin:8px 0 0 34px}.au-det textarea,.au-msg textarea{width:100%;box-sizing:border-box;margin:6px 0;font:inherit;border-radius:10px;padding:8px}
 .au-msg{padding:12px;margin-top:14px;border-radius:14px}.au-s{font-size:.8rem;margin-left:34px}
 .au-kat{margin:8px 0}.au-kat>summary{cursor:pointer;font-weight:600;padding:8px 4px;font-size:1.02rem}
+
+/* KlasseFit-Branding */
+.logo.kf{background:none;box-shadow:0 8px 20px rgba(31,163,74,.35);overflow:hidden}.logo.kf img{width:76px;height:76px;display:block}
+.kf-wm{line-height:0;margin:2px 0 0}.kf-wm img{width:220px;max-width:80%;height:auto;display:inline-block}
