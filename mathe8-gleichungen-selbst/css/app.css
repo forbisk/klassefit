@@ -49,3 +49,4 @@ button{border:0;border-radius:12px;color:#fff;cursor:pointer;font-size:1rem;padd
 .rp-flag{margin-left:auto;background:#fff;color:#94a3b8;border:1px solid #e2e8f0;border-radius:99px;padding:.1rem .55rem;font-size:.95rem}.rp-flag.on{color:var(--bad);border-color:#fecaca}
 #toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:var(--tx);color:#fff;border-radius:14px;padding:.6rem 1rem;opacity:0;transition:.25s;z-index:40;pointer-events:none;max-width:90vw;text-align:center}#toast.show{opacity:1;transform:translateX(-50%)}
 @media(max-width:700px){html{font-size:16px}.ap-chips{grid-template-columns:1fr}.themen{grid-template-columns:1fr}.ap-badges{grid-template-columns:repeat(2,1fr)}.ap-hero{flex-direction:column-reverse;align-items:flex-start}.ap-hero .hero-r{align-self:center}.fld input{width:7rem}h1{font-size:1.4rem}}
+.chip .pbar{flex:none;margin-top:.2rem}
