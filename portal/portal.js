@@ -351,6 +351,18 @@
       if (S.tab === "dash") render();
     });
   }
+  /* portal-7: Detail je Schüler (Verlauf, Meldungen) – lädt nach; ältere Backends antworten ohne Daten -> Abschnitt bleibt still weg */
+  function loadDetail(id, frisch) {
+    S.dd = S.dd || {}; if (!S.sess || (!frisch && S.dd[id])) return;
+    S.dd[id] = { loading: true };
+    api({ action: "admin_schueler", token: S.sess.token, benutzer: id, frisch: !!frisch }).then(function (r) {
+      if (r && r.relogin) return dropSession("Bitte melde dich neu an.");
+      S.dd[id] = r && r.ok && r.verlauf ? r : { none: true }; if (S.dashDetail === id) render();
+    });
+  }
+  function openDetail(id) { S.dashDetail = id; loadDetail(id); render(); }
+  function meldOf(id) { var m = S.dash && S.dash.meldungen; return m ? (m[id] || { gesamt: 0, offen: 0 }) : null; }
+  var MST = { "new": "neu", confirmed: "bestätigt", rejected: "abgelehnt", fixed: "behoben" };
   function ago(ms) {
     if (!ms) return "–"; var m = (Date.now() - ms) / 60000;
     if (m < 2) return "gerade eben"; if (m < 60) return "vor " + Math.round(m) + " Min."; var hh = m / 60; if (hh < 24) return "vor " + Math.round(hh) + " Std.";
@@ -372,7 +384,7 @@
     if (!c) return "nicht begonnen";
     if (c.zwischenstand) return "Test begonnen, noch nicht abgegeben (Zwischenstand)";
     var s = [];
-    if (c.skala === "pct") { if (c.wert != null && c.max) s.push(r1(c.wert) + " von " + r1(c.max) + " P."); if (c.pct != null) s.push(r1(c.pct) + " %"); if (c.note) s.push((c.endnote ? "Endnote " : "Note ") + c.note); if (c.endnote && (c.autoNote || c.autoP != null)) s.push("(automatisch: " + (c.autoP != null ? r1(c.autoP) + " von " + r1(c.autoMx) + " P." : "") + (c.autoNote ? ", Note " + c.autoNote : "") + ")"); if (c.versuche > 1) s.push(c.versuche + " Abgaben (letzte gezählt)"); }
+    if (c.skala === "pct") { if (c.wert != null && c.max) s.push(r1(c.wert) + " von " + r1(c.max) + " P."); if (c.pct != null) s.push(r1(c.pct) + " %"); if (c.note) s.push((c.endnote ? "Endnote " : "Note ") + c.note); if (c.endnote && (c.autoNote || c.autoP != null)) s.push("(automatisch: " + (c.autoP != null ? r1(c.autoP) + " von " + r1(c.autoMx) + " P." : "") + (c.autoNote ? ", Note " + c.autoNote : "") + ")"); if (c.gruppe) s.push("Version " + c.gruppe); if (c.versuche > 1) s.push(c.versuche + " Abgaben (letzte gezählt)"); }
     else if (c.max === 100) s.push(r1(c.wert) + " %"); else if (c.max) s.push(c.wert + " von " + c.max + (c.pct != null ? " (" + r1(c.pct) + " %)" : "")); else if (c.wert != null) s.push(String(c.wert));
     s.push(c.status === "fertig" && c.skala !== "pct" ? "fertig" : c.status === "begonnen" && c.skala !== "pct" ? "begonnen" : "");
     return s.filter(Boolean).join(" · ");
@@ -404,6 +416,23 @@
     });
     return { klassen: klassen, pages: pages, th: th, sch: sch, byKey: byKey };
   }
+  /* portal-7: Übersicht je Klasse (Karten) – klick = Klasse filtern */
+  function classCards(d, v) {
+    var g = {}, now = Date.now(), pv = function (z, key) { var gg = z[key + "|gesamt"] || z[key + "|ergebnis"];   // Seitenwert wie in dashView
+        if (gg) return gg.status === "fertig" && gg.pct == null ? 100 : gg.pct; var ps = []; d.themen.forEach(function (t) { var c = z[key + "|" + t.thema]; if (t.seite === key && c && c.pct != null) ps.push(c.pct); });
+        return ps.length ? ps.reduce(function (x, y) { return x + y; }, 0) / ps.length : null; };
+    var used = {}; v.sch.forEach(function (s) { var z = d.zellen[s.id] || {}; Object.keys(z).forEach(function (k) { used[s.klasse + "|" + k.split("|")[0]] = 1; }); });
+    v.sch.forEach(function (s) { var k = g[s.klasse] = g[s.klasse] || { n: 0, sum: 0, act: 0, any: 0, m: 0, low: 0 }, z = d.zellen[s.id] || {}, ps = d.seiten.filter(function (p) { return used[s.klasse + "|" + p.key] && p.art !== "test"; }), sm = 0;
+      ps.forEach(function (p) { sm += pv(z, p.key) || 0; });
+      k.n++; k.sum += ps.length ? sm / ps.length : 0; if (s._last && now - s._last < 7 * 86400e3) k.act++; if (s._any) k.any++; else k.low++; var m = meldOf(s.id); if (m) k.m += m.offen; });
+    var FACH = { "6a": "Informatik", "6b": "Informatik", "7a": "Mathe", "8b": "Mathe", "10a": "Mathe", "9g": "Mathe (Gym)" };
+    return h("div", { class: "klcards" }, v.klassen.map(function (kl) { var k = g[kl]; if (!k) return null; var avg = k.n ? k.sum / k.n : 0;
+      return h("button", { class: "klc glass", type: "button", onclick: function () { S.dashKlasse = kl; render(); } },
+        h("div", { class: "kt" }, h("b", { text: kl }), h("span", { class: "muted", text: FACH[kl] || "" })),
+        h("div", { class: "ring", title: "Ø Fortschritt auf den genutzten Lernseiten (ohne Tests)", style: "--p:" + Math.round(avg) }, h("span", { text: Math.round(avg) + " %" })),
+        h("div", { class: "ks" }, h("span", { text: k.n + " Schüler" }), h("span", { text: k.act + " aktiv (7 T.)" }), h("span", { text: k.any + " mit Fortschritt" }), d.meldungen ? h("span", { class: k.m ? "hot" : "", text: "⚑ " + k.m + " offen" }) : null));
+    }));
+  }
   function chipRow(list, cur, onpick, scroll) {
     return h("div", { class: "chips" + (scroll ? " scroll" : "") }, list.map(function (k) { return h("button", { "aria-pressed": cur === k[0] ? "true" : "false", text: k[1], onclick: function () { onpick(k[0]); } }); }));
   }
@@ -428,9 +457,31 @@
         INFO.forEach(function (k) { if (i[k[0]] != null && i[k[0]] !== "") kv.push([k[1], String(i[k[0]])]); });
         if (kv.length) box.appendChild(h("div", { class: "kv" }, kv.map(function (x) { return h("span", {}, h("em", { text: x[0] }), " " + x[1]); })));
       }
+      rows.forEach(function (t) { var c = z[p.key + "|" + t.thema]; if (c && c.abgaben && c.abgaben.length) box.appendChild(h("div", { class: "abg" }, h("em", { text: "Abgaben" }),
+        c.abgaben.slice().reverse().map(function (a) { return h("span", { class: "ab" }, fdt(a.z) + " · " + (a.gruppe ? "Version " + a.gruppe + " · " : "") + (a.p != null ? r1(a.p) + "/" + r1(a.mx) + " P." : "") + (a.pc != null ? " (" + r1(a.pc) + " %)" : "") + (a.note ? " · Note " + a.note : "")); }))); });
       body.push(box);
     });
     if (!body.length) body.push(h("p", { class: "muted", text: "Keine Daten vorhanden." }));
+    var dd = (S.dd || {})[st.id], mo = meldOf(st.id), ak = d.aktivitaet ? d.aktivitaet[st.id] : null;
+    var sc = 0, n = 0; v.sch.forEach(function (x) { if (x.id === st.id) { sc = x._score; n = 1; } });
+    var top = h("div", { class: "tiles dt" }, [[n ? Math.round(sc) + " %" : "–", "Ø Fortschritt"], [ak ? String(ak.tage7 || 0) : "–", "aktive Tage (7)"], [ak ? String(ak.n7 || 0) : "–", "Aktionen (7 Tage)"], mo ? [String(mo.offen) + (mo.gesamt > mo.offen ? " / " + mo.gesamt : ""), "⚑ Meldungen offen"] : null].filter(Boolean).map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: t[0] }), h("span", { text: t[1] })); }));
+    body.unshift(top);
+    if (dd && dd.loading) body.push(h("p", { class: "muted", text: "Verlauf wird geladen …" }));
+    else if (dd && dd.verlauf) {
+      var ml = dd.meldungen || [];
+      if (ml.length) body.push(h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: "⚑ Fehler gemeldet (" + ml.length + ")" })), ml.map(function (m) {
+        return h("div", { class: "mrow2" }, h("div", {}, h("b", { text: m.grund || "Meldung" }), h("span", { class: "tag" + (m.status === "new" ? " hot" : ""), text: MST[m.status] || m.status || "neu" }), h("span", { class: "muted", text: " · " + fdt(m.z) + " · " + (m.seite || "") + (m.aufgabe ? " · " + m.aufgabe : "") })),
+          m.kommentar ? h("div", { class: "mcom", text: "„" + m.kommentar + "“" }) : null); })));
+      var byDay = {}, days = []; dd.verlauf.forEach(function (e) { var k = new Date(e.z).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }); if (!byDay[k]) { byDay[k] = []; days.push(k); } byDay[k].push(e); });
+      var tt = {}; d.themen.forEach(function (t) { tt[t.seite + "|" + t.thema] = t.label; });
+      var ttl = {}; d.seiten.forEach(function (p) { ttl[p.key] = p.titel; });
+      body.push(h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: "Verlauf (Portal-Seiten)" }), h("span", { class: "tag", text: dd.verlaufGesamt + " Einträge" })),
+        days.length ? days.slice(0, 14).map(function (k) { return h("div", { class: "tlday" }, h("em", { text: k }), byDay[k].slice(0, 12).map(function (e) {
+          return h("div", { class: "tl" }, h("span", { class: "tm", text: new Date(e.z).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) }),
+            h("span", { text: (ttl[e.seite] || e.seite) + " · " + (tt[e.seite + "|" + e.thema] || e.thema || "") + (e.item ? " · " + e.item : "") }),
+            h("span", { class: "tv", text: e.typ === "fertig" ? "✓ fertig" : e.wert != null ? (e.max ? e.wert + "/" + e.max : String(e.wert)) : e.typ })); }), byDay[k].length > 12 ? h("div", { class: "muted", text: "… " + (byDay[k].length - 12) + " weitere" }) : null); })
+        : h("p", { class: "muted", text: "Noch keine Einträge auf den neuen Portal-Seiten (Altdaten siehe oben)." })));
+    }
     function close() { S.dashDetail = ""; render(); }
     return h("div", { class: "sheet-bg", onclick: function (e) { if (e.target === e.currentTarget) close(); } },
       h("div", { class: "sheet glass", role: "dialog", "aria-modal": "true", "aria-label": "Details " + st.anzeige },
@@ -453,12 +504,15 @@
     var head1 = [h("th", { class: "l", rowspan: "2", text: "Schüler" })], head2 = [];
     v.pages.forEach(function (p) { var n = v.th.filter(function (t) { return t.seite === p.key; }).length; if (n) head1.push(h("th", { class: "pg", colspan: String(n), text: p.titel, title: p.key })); });
     v.th.forEach(function (t) { head2.push(h("th", { text: t.label, title: (v.byKey[t.seite] ? v.byKey[t.seite].titel + " · " : "") + t.label })); });
+    var hasM = !!d.meldungen; head1.push(h("th", { rowspan: "2", text: "Ø", title: "Durchschnitt der sichtbaren Seiten" })); if (hasM) head1.push(h("th", { rowspan: "2", text: "⚑", title: "Fehler-Meldungen offen" }));
     head1.push(h("th", { rowspan: "2", text: "Zuletzt" }));
     var tbl = h("table", {}, h("thead", {}, h("tr", {}, head1), h("tr", {}, head2)),
       h("tbody", {}, v.sch.map(function (s) {
         var z = d.zellen[s.id] || {};
-        return h("tr", { class: "rw", onclick: function () { S.dashDetail = s.id; render(); } }, h("th", { class: "l" }, h("button", { class: "nm", type: "button", text: s.anzeige, title: "Klasse " + s.klasse + " – Details" }), !S.dashKlasse && h("small", { text: " " + s.klasse })),
+        return h("tr", { class: "rw", onclick: function () { openDetail(s.id); } }, h("th", { class: "l" }, h("button", { class: "nm", type: "button", text: s.anzeige, title: "Klasse " + s.klasse + " – Details" }), !S.dashKlasse && h("small", { text: " " + s.klasse })),
           v.th.map(function (t) { var c = z[t.seite + "|" + t.thema]; return h("td", { class: cls(c), text: ctext(c), title: t.label + ": " + cdesc(c) + (c && c.zuletzt ? " · " + fdt(c.zuletzt) : "") }); }),
+          h("td", { class: "avg " + (s._any ? cls({ pct: s._score, skala: "pct" }) : "c0"), text: s._any ? String(Math.round(s._score)) : "–", title: "Ø " + r1(s._score) + " %" }),
+          hasM ? (function () { var m = meldOf(s.id); return h("td", { class: m.offen ? "mh" : "c0", text: m.gesamt ? String(m.offen) : "", title: m.gesamt ? m.offen + " offen von " + m.gesamt : "keine Meldungen" }); })() : null,
           h("td", { class: "lt", text: ago(s._last), title: s._last ? fdt(s._last) : "keine Aktivität" }));
       })));
     return h("div", {},
@@ -467,6 +521,7 @@
       chipRow([["", "Alle Klassen"]].concat(v.klassen.map(function (k) { return [k, k]; })), S.dashKlasse, function (k) { S.dashKlasse = k; if (S.dashSeite && v.byKey[S.dashSeite] && k && (v.byKey[S.dashSeite].klassen || []).indexOf(k) < 0) S.dashSeite = ""; render(); }),
       chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
       chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"]], S.dashSort, function (k) { S.dashSort = k; render(); }),
+      !S.dashKlasse && !S.dashSeite ? classCards(d, v) : null,
       h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),
       v.sch.length && v.th.length ? h("div", { class: "heat glass" }, tbl) : h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für diese Auswahl gibt es keine Schüler oder Spalten." })),
       h("div", { class: "legend" }, [["c0", "nicht begonnen"], ["c1", "< 33 %"], ["c2", "33–66 %"], ["c3", "> 66 %"], ["c4", "fertig / Test ≥ 85 %"], ["cz", "Test nur begonnen"], ["cn", "Anzahl (ohne Prozent)"]].map(function (l) { return h("span", {}, h("i", { class: l[0] }), l[1]); })),

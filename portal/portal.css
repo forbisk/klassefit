@@ -140,3 +140,21 @@ main.deckmode{max-width:none;padding:0}
 /* KlasseFit-Branding */
 .logo.kf{background:none;box-shadow:0 8px 20px rgba(31,163,74,.35);overflow:hidden}.logo.kf img{width:76px;height:76px;display:block}
 .kf-wm{line-height:0;margin:2px 0 0}.kf-wm img{width:220px;max-width:80%;height:auto;display:inline-block}
+/* portal-7: Klassen-Karten, Ø/⚑-Spalten, Detail (Verlauf, Meldungen, Abgaben) */
+.klcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin:10px 0}
+.klc{font:inherit;color:var(--ink);text-align:left;padding:12px 14px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;border-radius:20px}
+.klc:hover{border-color:var(--acc)}
+.klc .kt b{font-size:20px;display:block}.klc .kt span{font-size:12px}
+.klc .ring{--p:0;width:54px;height:54px;border-radius:50%;background:conic-gradient(var(--acc) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center}
+.klc .ring span{width:42px;height:42px;border-radius:50%;background:var(--glass-b);display:grid;place-items:center;font-size:12px;font-weight:700}
+.klc .ks{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--ink2)}
+.klc .ks .hot,.tag.hot{color:var(--bad);font-weight:700}
+.heat td.avg{font-weight:700}.heat td.mh{background:rgba(255,69,58,.18);color:var(--bad);font-weight:700}
+.tiles.dt{margin:0 0 10px}
+.abg{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:12px;margin:4px 0 0}.abg em{font-style:normal;color:var(--ink2);font-weight:600}
+.abg .ab{background:var(--line);border-radius:8px;padding:2px 7px}
+.tlday{margin:6px 0 8px}.tlday>em{font-style:normal;font-size:12px;font-weight:700;color:var(--ink2);display:block;margin:4px 0}
+.tl{display:grid;grid-template-columns:44px 1fr auto;gap:8px;font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)}
+.tl .tm{color:var(--ink2)}.tl .tv{font-weight:600}
+.mrow2{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.mrow2 .tag{margin-left:6px}.mrow2 .mcom{font-style:italic;margin-top:2px}
+@media (max-width:520px){.klcards{grid-template-columns:1fr 1fr}.tl{grid-template-columns:40px 1fr}.tl .tv{grid-column:2}}
