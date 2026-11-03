@@ -276,12 +276,12 @@
 
   /* ---------- Lehrer ---------- */
   function teacherTabs() {
-    var tabs = [["menue", "Seiten"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"]];
+    var tabs = [["menue", "Seiten"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
     var bar = h("div", { class: "tabs glass", role: "tablist" }, tabs.map(function (t) {
-      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
+      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
     }));
     var body = h("div", {});
-    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
+    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
     return h("div", {}, bar, body);
   }
   function classChips(cur, onpick, all) {

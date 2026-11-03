@@ -12,8 +12,8 @@ html{background:var(--kf-bg)}
 body{font-family:"Nunito",system-ui,sans-serif!important;color:var(--kf-tx);background:radial-gradient(900px 520px at 0% -10%,var(--kf-bg2),var(--kf-bg)) fixed!important}
 h1,h2,h3,.btn,button{font-family:"Fredoka","Nunito",sans-serif}
 /* Kopfbereich als Verlaufsleiste wie Prüfungsfit */
-body>header,body>.top,#app>.top,body>header.top{background:linear-gradient(135deg,var(--kf-pri),var(--kf-pk))!important;color:#fff;border-radius:0 0 22px 22px;box-shadow:0 6px 20px #6d4aff40;border:0}
-body>header a,body>.top a,#app>.top a{color:#fff}
+body>header,#app>header,body>.top,#app>.top,body>header.top{background:linear-gradient(135deg,var(--kf-pri),var(--kf-pk))!important;color:#fff;border-radius:0 0 22px 22px;box-shadow:0 6px 20px #6d4aff40;border:0}
+body>header a,#app>header a,body>.top a,#app>.top a{color:#fff}
 /* Karten, Knöpfe, Fortschritt */
 .card,section.card,.mission,.topic,.box{border-radius:20px;border-color:var(--kf-cb);box-shadow:var(--kf-sh)}
 .btn,button{border-radius:14px}
@@ -21,4 +21,4 @@ body>header a,body>.top a,#app>.top a{color:#fff}
 .bar,.pbar,progress{border-radius:99px}
 .bar>i,.bar>div,.pbar>i{background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:99px}
 h1{color:var(--kf-tx)}
-body>header h1,body>header h2,body>.top h1,#app>.top h1,body>header p{color:#fff}
+#app>header h1,#app>header h2,#app>header span,body>header h1,body>header h2,body>.top h1,#app>.top h1,body>header p{color:#fff}

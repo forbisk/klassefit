@@ -1,0 +1,33 @@
+{
+ "id": "/unterricht/mathe10-luecken/",
+ "name": "Mathematik Klasse 10 – Meine Lücken",
+ "short_name": "Meine Lücken",
+ "lang": "de",
+ "dir": "ltr",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "any",
+ "theme_color": "#6d4aff",
+ "background_color": "#0f172a",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
