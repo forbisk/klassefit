@@ -24,3 +24,10 @@ main h1:not(.hero h1){color:var(--kf-tx)}
 .hero h1,.hero h2,.hero p{color:#fff}
 body>header .brand,body>header .brand small{color:#fff}
 #app>header h1,#app>header h2,#app>header span,body>header h1,body>header h2,body>.top h1,#app>.top h1,body>header p{color:#fff}
+/* „weg heute“ nicht schwebend: am Seitenende (vor der Fußleiste), überdeckt keinen Text */
+html body #awayBadge{position:static;display:table;margin:1rem auto 1.2rem;font-family:"Nunito",system-ui,sans-serif;border-color:var(--kf-cb);color:var(--kf-mut)}
+/* „🎯 Meine Vorbereitung“: kompakt + Platz unten, damit nichts verdeckt wird */
+body:has(#thBtn){padding-bottom:72px}
+#thBtn{font-family:"Fredoka","Nunito",sans-serif!important;font-size:14px!important;padding:.5rem .9rem!important;background:linear-gradient(135deg,var(--kf-pri),var(--kf-pk))!important;box-shadow:0 4px 14px #6d4aff55!important}
+@media(max-width:700px){#thBtn{font-size:0!important;width:52px;height:52px;padding:0!important;right:10px!important;bottom:10px!important}#thBtn::before{content:"🎯";font-size:24px}body:has(#thBtn){padding-bottom:68px}}
+body:has(#slBadge) #thBtn{bottom:58px!important}body:has(#slBadge):has(#thBtn){padding-bottom:124px}

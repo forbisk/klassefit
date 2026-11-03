@@ -9,3 +9,6 @@
 .rp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;padding:10px 16px;border-radius:14px;background:#333;color:#fff;pointer-events:none}
 @keyframes rpin{from{opacity:0;transform:translateY(-6px)}to{opacity:1}}
 .rph .rp-flag{margin:0 6px 0 0;width:28px;height:24px;font-size:.8rem}
+.rp-host{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.rp-host>.rp-flag{flex:none}
+.hd.rp-host{flex-wrap:nowrap}.hd>.rp-flag{margin-left:0;color:#fff;border-color:#ffffffaa}.hd>.rp-flag.on{border-color:#fff}
+@media print{.rp-flag,.rp-panel,.rp-toast{display:none!important}}
