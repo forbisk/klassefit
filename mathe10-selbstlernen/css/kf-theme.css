@@ -1,0 +1,23 @@
+/* KlasseFit-Einheitslook (wie pruefungsfit-mathe, helles Thema) für Lernseiten mit eigener Engine.
+   Gemeinsame Quelle: _lib/kf-theme.css (Kopien per sync.py). Als LETZTES Stylesheet einbinden. Nur Optik – keine Logik, keine IDs/Klassen der Seite verändert.
+   Schriften kommen aus ../pruefungsfit-mathe/fonts/ (lokal, SIL OFL). */
+@font-face{font-family:"Nunito";font-weight:400;font-display:swap;src:url(../../pruefungsfit-mathe/fonts/nunito-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito";font-weight:700;font-display:swap;src:url(../../pruefungsfit-mathe/fonts/nunito-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito";font-weight:800;font-display:swap;src:url(../../pruefungsfit-mathe/fonts/nunito-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito";font-weight:900;font-display:swap;src:url(../../pruefungsfit-mathe/fonts/nunito-latin-900-normal.woff2) format("woff2")}
+@font-face{font-family:"Fredoka";font-weight:600;font-display:swap;src:url(../../pruefungsfit-mathe/fonts/fredoka-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Fredoka";font-weight:700;font-display:swap;src:url(../../pruefungsfit-mathe/fonts/fredoka-latin-700-normal.woff2) format("woff2")}
+:root{--kf-bg:#fff8f0;--kf-bg2:#ece6ff;--kf-tx:#1d1a3a;--kf-mut:#5a5680;--kf-pri:#6d4aff;--kf-pk:#e8459f;--kf-cb:#6d4aff26;--kf-sh:0 6px 24px #3b2a9914}
+html{background:var(--kf-bg)}
+body{font-family:"Nunito",system-ui,sans-serif!important;color:var(--kf-tx);background:radial-gradient(900px 520px at 0% -10%,var(--kf-bg2),var(--kf-bg)) fixed!important}
+h1,h2,h3,.btn,button{font-family:"Fredoka","Nunito",sans-serif}
+/* Kopfbereich als Verlaufsleiste wie Prüfungsfit */
+body>header,body>.top,#app>.top,body>header.top{background:linear-gradient(135deg,var(--kf-pri),var(--kf-pk))!important;color:#fff;border-radius:0 0 22px 22px;box-shadow:0 6px 20px #6d4aff40;border:0}
+body>header a,body>.top a,#app>.top a{color:#fff}
+/* Karten, Knöpfe, Fortschritt */
+.card,section.card,.mission,.topic,.box{border-radius:20px;border-color:var(--kf-cb);box-shadow:var(--kf-sh)}
+.btn,button{border-radius:14px}
+.btn.pri,button.pri,.btn:not(.ghost):not(.small)[class="btn"]{background:linear-gradient(135deg,var(--kf-pri),var(--kf-pk));border-color:transparent;color:#fff}
+.bar,.pbar,progress{border-radius:99px}
+.bar>i,.bar>div,.pbar>i{background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:99px}
+h1{color:var(--kf-tx)}

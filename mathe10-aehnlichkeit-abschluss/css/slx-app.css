@@ -56,3 +56,4 @@ body>header.site-header,body>footer.site-footer,.site-footer{display:none!import
 #awayBadge{bottom:76px!important;left:50%!important;transform:translateX(-50%);font-family:Nunito,sans-serif!important;border-radius:99px!important}
 @media(min-width:900px){#awayBadge{left:12px!important;transform:none;bottom:14px!important}}
 @media(max-width:700px){.top{gap:.4rem .8rem;padding:.5rem .8rem}.top .ov span{font-size:.8rem}.top .tr button{padding:.35rem .8rem;font-size:.9rem}.minbar{font-size:.8rem}.ap-hero{padding:14px}.ap-hero h1{font-size:1.45rem}}
+html body #awayBadge{bottom:86px;left:12px;font-family:"Nunito",system-ui,sans-serif;border-color:var(--cb);color:var(--mut)}
