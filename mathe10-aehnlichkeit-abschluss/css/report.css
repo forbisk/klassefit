@@ -1,0 +1,11 @@
+/* PFReport ⚑ – Fehler melden (siehe README-report.html) */
+.rp-flag{margin-left:auto;border:1px solid var(--cb,#8884);background:transparent;color:var(--mut,#888);border-radius:99px;width:32px;height:28px;font-size:.95rem;cursor:pointer;line-height:1}
+.rp-flag.on{background:#e8590c;color:#fff;border-color:#e8590c}
+.rp-panel{margin:6px 0 10px;padding:10px 12px;border-radius:14px;border:1px solid #e8590c88;background:rgba(232,89,12,.08);animation:rpin .25s}
+.rp-panel[hidden]{display:none}.rp-rs{display:flex;flex-wrap:wrap;gap:4px 12px;margin:6px 0}.rp-rs label{font-size:.9rem;cursor:pointer}
+.rp-panel textarea{width:100%;box-sizing:border-box;border-radius:10px;padding:6px 8px;font:inherit;font-size:.9rem;background:transparent;color:inherit;border:1px solid var(--cb,#8886)}
+.rp-row{display:flex;align-items:center;gap:8px;margin-top:6px}.rp-row .rp-m{flex:1;color:#e8590c;font-size:.85rem;font-weight:600}
+.rp-row button{border:0;border-radius:10px;padding:6px 12px;font-weight:600;cursor:pointer}.rp-s{background:#e8590c;color:#fff}.rp-x{background:transparent;color:inherit}
+.rp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;padding:10px 16px;border-radius:14px;background:#333;color:#fff;pointer-events:none}
+@keyframes rpin{from{opacity:0;transform:translateY(-6px)}to{opacity:1}}
+.rph .rp-flag{margin:0 6px 0 0;width:28px;height:24px;font-size:.8rem}
