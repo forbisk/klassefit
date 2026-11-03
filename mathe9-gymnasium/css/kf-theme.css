@@ -20,5 +20,7 @@ body>header a,#app>header a,body>.top a,#app>.top a{color:#fff}
 .btn.pri,button.pri,.btn:not(.ghost):not(.small)[class="btn"]{background:linear-gradient(135deg,var(--kf-pri),var(--kf-pk));border-color:transparent;color:#fff}
 .bar,.pbar,progress{border-radius:99px}
 .bar>i,.bar>div,.pbar>i{background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:99px}
-h1{color:var(--kf-tx)}
+main h1:not(.hero h1){color:var(--kf-tx)}
+.hero h1,.hero h2,.hero p{color:#fff}
+body>header .brand,body>header .brand small{color:#fff}
 #app>header h1,#app>header h2,#app>header span,body>header h1,body>header h2,body>.top h1,#app>.top h1,body>header p{color:#fff}
