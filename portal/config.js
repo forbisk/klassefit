@@ -10,3 +10,6 @@ window.PORTAL_KOPPLUNG = {
     testId: 'mathe10a-testberichtigung-aehnlichkeit'
   }
 };
+
+/* Geteilte Geräte: Seiten-Sitzungen beim Abmelden/Kontowechsel beenden (siehe geraet.js). Synchron, vor portal.js. */
+document.write('<script src="geraet.js"><\/script>');
