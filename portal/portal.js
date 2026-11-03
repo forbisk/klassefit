@@ -105,7 +105,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearGates(); lsDel(LS); lsDel(LSC); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = "";
+    clearGates(); lsDel(LS); lsDel(LSC); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = "";
     renderLogin(msg || "");
   }
   function logout() {
@@ -208,7 +208,7 @@
     app.className = (S.sess.rolle === "lehrer" && S.tab === "dash") ? "wide" : "";
     var kids = [header()];
     if (S.offline) kids.push(h("div", { class: "banner", text: "Offline – Anzeige vom letzten Mal. Zum Öffnen der Seiten brauchst du Internet." }));
-    if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else kids.push(groups(S.seiten.filter(kopSichtbar)));
+    if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(groups(S.seiten.filter(kopSichtbar))); }
     app.replaceChildren.apply(app, kids);
   }
 

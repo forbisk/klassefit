@@ -13,3 +13,6 @@ window.PORTAL_KOPPLUNG = {
 
 /* Geteilte Geräte: Seiten-Sitzungen beim Abmelden/Kontowechsel beenden (siehe geraet.js). Synchron, vor portal.js. */
 document.write('<script src="geraet.js"><\/script>');
+
+/* Selbstlern-Backend Mathe 10a (Fragen/Antworten zu Aufgaben): Hinweis „Neue Antwort von Herrn Kurlavičius“ (antworten.js). Keine Geheimnisse hier. */
+window.PORTAL_SL_API = 'https://script.google.com/macros/s/AKfycbw9iDp8f4R9eOdrTF2CfHNlv3Xn_u7IjPZUO904wGawIZZGin3M7jXTDHjktZTU3tYTDQ/exec';
