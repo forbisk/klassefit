@@ -226,7 +226,8 @@
       var sc = document.createElement("script"); sc.src = "briefing.js"; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
     });
   }
-  function leaveBriefing() { deckStop(); try { history.pushState(null, "", location.pathname + location.search); } catch (e) { location.hash = ""; } S.tab = "briefings"; loadBriefings(); render(); }
+  function leaveBriefingCore() { deckStop(); try { history.pushState(null, "", location.pathname + location.search); } catch (e) { location.hash = ""; } S.tab = "briefings"; loadBriefings(); render(); }
+  function leaveBriefing() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } leaveBriefingCore(); }
   function showBriefing(id) {
     if (S.deckId === id) return;   // schon geöffnet oder wird gerade geladen (z. B. Sitzungs-Auffrischung): nicht neu laden/öffnen
     deckStop(); S.deckId = id; app.className = "deckmode";
@@ -234,6 +235,7 @@
     loadBriefingLib().then(function () {
       if (S.deckId !== id || !S.sess) return;
       S.deckCtl = window.PortalBriefing.mount(app, { id: id, token: S.sess.token, api: api, onExit: leaveBriefing, onRelogin: function () { dropSession("Bitte melde dich neu an."); } });
+      if (window.KFZurueck) window.KFZurueck.push(leaveBriefingCore);
     }, function () { if (S.deckId === id) { app.replaceChildren(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Die Folien-Ansicht konnte nicht geladen werden (keine Verbindung?)." }), h("div", { style: "margin-top:12px" }, h("button", { class: "btn small", text: "Zurück", onclick: leaveBriefing })))); } });
   }
   function briefingDenied() {
@@ -363,7 +365,8 @@
       S.dd[id] = r && r.ok && r.verlauf ? r : { none: true }; if (S.dashDetail === id) render();
     });
   }
-  function openDetail(id) { S.dashDetail = id; loadDetail(id); render(); }
+  function openDetail(id) { S.dashDetail = id; loadDetail(id); render();
+    if (window.KFZurueck) window.KFZurueck.push(function () { S.dashDetail = ""; render(); }); }
   function meldOf(id) { var m = S.dash && S.dash.meldungen; return m ? (m[id] || { gesamt: 0, offen: 0 }) : null; }
   var MST = { "new": "neu", confirmed: "bestätigt", rejected: "abgelehnt", fixed: "behoben" };
   function ago(ms) {
@@ -428,7 +431,7 @@
     v.sch.forEach(function (s) { var k = g[s.klasse] = g[s.klasse] || { n: 0, sum: 0, act: 0, any: 0, m: 0, low: 0 }, z = d.zellen[s.id] || {}, ps = d.seiten.filter(function (p) { return used[s.klasse + "|" + p.key] && p.art !== "test"; }), sm = 0;
       ps.forEach(function (p) { sm += pv(z, p.key) || 0; });
       k.n++; k.sum += ps.length ? sm / ps.length : 0; if (s._last && now - s._last < 7 * 86400e3) k.act++; if (s._any) k.any++; else k.low++; var m = meldOf(s.id); if (m) k.m += m.offen; });
-    var FACH = { "6a": "Informatik", "6b": "Informatik", "7a": "Mathe", "8b": "Mathe", "10a": "Mathe", "9g": "Mathe (Gym)" };
+    var FACH = { "5": "Mathe", "6a": "Informatik", "6b": "Informatik", "7a": "Mathe", "8b": "Mathe", "10a": "Mathe", "9g": "Mathe (Gym)" };
     return h("div", { class: "klcards" }, v.klassen.map(function (kl) { var k = g[kl]; if (!k) return null; var avg = k.n ? k.sum / k.n : 0;
       return h("button", { class: "klc glass", type: "button", onclick: function () { S.dashKlasse = kl; render(); } },
         h("div", { class: "kt" }, h("b", { text: kl }), h("span", { class: "muted", text: FACH[kl] || "" })),
@@ -485,7 +488,7 @@
             h("span", { class: "tv", text: e.typ === "fertig" ? "✓ fertig" : e.wert != null ? (e.max ? e.wert + "/" + e.max : String(e.wert)) : e.typ })); }), byDay[k].length > 12 ? h("div", { class: "muted", text: "… " + (byDay[k].length - 12) + " weitere" }) : null); })
         : h("p", { class: "muted", text: "Noch keine Einträge auf den neuen Portal-Seiten (Altdaten siehe oben)." })));
     }
-    function close() { S.dashDetail = ""; render(); }
+    function close() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.dashDetail = ""; render(); }
     return h("div", { class: "sheet-bg", onclick: function (e) { if (e.target === e.currentTarget) close(); } },
       h("div", { class: "sheet glass", role: "dialog", "aria-modal": "true", "aria-label": "Details " + st.anzeige },
         h("div", { class: "sh-top" }, h("div", {}, h("h3", { text: st.anzeige }), h("div", { class: "s muted", text: "Klasse " + st.klasse + " · zuletzt aktiv: " + (st.zuletzt ? fdt(st.zuletzt) + " (" + ago(st.zuletzt) + ")" : "noch nie") })),
