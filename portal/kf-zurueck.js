@@ -7,7 +7,11 @@
    Verhalten: Stack → history.back() (wenn sinnvoll) → Portal-Start.
    Keine Passwörter/Logins/localStorage-Schlüssel der Seiten. */
 (function () {
-  if (window.KFZurueck && window.KFZurueck._v === 1) return;
+  /* Nach StatiCrypt-Entschlüsselung wird das DOM ersetzt – Knopf neu einhängen. */
+  if (window.KFZurueck && window.KFZurueck._v === 1) {
+    try { window.KFZurueck.remount && window.KFZurueck.remount(); } catch (e) {}
+    return;
+  }
   var PORTAL = (function () {
     try {
       var p = location.pathname || "";
@@ -71,7 +75,8 @@
     btn.setAttribute("aria-label", stack.length ? "Zurück (in der Seite)" : "Zurück");
   }
   function ensure() {
-    if (btn) return;
+    if (btn && document.body && document.body.contains(btn)) { update(); return; }
+    btn = null; spacer = null;
     var st = document.createElement("style");
     st.setAttribute("data-kf-zurueck", "1");
     st.textContent =
@@ -105,6 +110,14 @@
     window.addEventListener("popstate", function () { setTimeout(update, 0); });
   }
 
+  function remount() {
+    btn = document.getElementById("kfZurueck");
+    spacer = document.getElementById("kfZurueckPad");
+    if (!document.getElementById("kfZurueck") || (btn && !document.body.contains(btn))) {
+      btn = null; spacer = null;
+    }
+    ensure();
+  }
   window.KFZurueck = {
     _v: 1,
     push: function (fn) { if (typeof fn === "function") { stack.push(fn); update(); } },
@@ -112,7 +125,20 @@
     clear: function () { stack.length = 0; update(); },
     setGuard: function (fn) { guard = typeof fn === "function" ? fn : null; },
     back: back,
+    remount: remount,
     portalUrl: function () { return PORTAL; }
   };
   ensure();
+  document.addEventListener("staticrypt-decrypted", remount);
+  window.addEventListener("pageshow", function () { setTimeout(remount, 0); });
+  /* StatiCrypt ersetzt oft body ohne Event – kurz nachladen prüfen */
+  setTimeout(remount, 50);
+  setTimeout(remount, 400);
+  setTimeout(remount, 1200);
+  try {
+    var mo = new MutationObserver(function () {
+      if (!document.getElementById("kfZurueck") || (btn && document.body && !document.body.contains(btn))) remount();
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {}
 })();
