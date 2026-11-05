@@ -127,13 +127,13 @@
     return /\/portal\/?$/.test(p) && !(location.hash || "").replace(/^#\/?$/, "");
   }
   function canHistoryBack() {
+    /* Nur bei gleichem Origin-Referrer: sonst landet history.back() in App/Puppeteer auf about:blank. */
     try {
-      if (history.length <= 1) return false;
       var ref = document.referrer || "";
-      if (!ref) return history.length > 1; // App/PWA: oft kein referrer, trotzdem zurück versuchen
+      if (!ref) return false;
       var a = document.createElement("a"); a.href = ref;
       return a.origin === location.origin;
-    } catch (e) { return history.length > 1; }
+    } catch (e) { return false; }
   }
   function confirmLeave() {
     if (!guard) return true;
