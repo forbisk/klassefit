@@ -1,20 +1,64 @@
 /* Portal-Tab „Meldungen“ (⚑ Fehler melden aus Prüfungsfit u. a.). Daten: Selbstlern-Backend, Blatt „Meldungen“ (Aktionen listReports/setReportStatus).
-   Lehrer-Passwort des Selbstlern-Backends wird nur im Speicher dieses Tabs gehalten (nicht in localStorage). Kommentare nur als Text (textContent). */
+   Lehrkraft mit Portal-Sitzung: Token (ptoken) reicht – kein zweites Passwort (SSO). Passwort-Formular nur noch als Fallback ohne Portal-Sitzung.
+   Kommentare nur als Text (textContent). */
 (function () {
   var URL = "https://script.google.com/macros/s/AKfycbw9iDp8f4R9eOdrTF2CfHNlv3Xn_u7IjPZUO904wGawIZZGin3M7jXTDHjktZTU3tYTDQ/exec";
   if (window.PF_REPORT_API) URL = window.PF_REPORT_API;
-  var M = { pw: "", list: null, err: "", busy: false, open: "" };
+  if (window.PORTAL_SL_API) URL = window.PORTAL_SL_API;
+  var M = { mode: "", ptoken: "", pw: "", list: null, err: "", busy: false, open: "", auto: false };
   var ST = { "new": "neu", confirmed: "bestätigt", rejected: "abgelehnt", fixed: "behoben" };
   function api(o) { return fetch(URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(o), redirect: "follow" }).then(function (r) { return r.json(); }).catch(function () { return { ok: false, error: "Keine Verbindung." }; }); }
-  function load(rr) { M.busy = true; M.err = ""; rr(); api({ action: "listReports", pw: M.pw }).then(function (r) { M.busy = false; if (r.ok) M.list = r.reports || []; else { M.err = r.error || "Fehler"; if (/berechtigt/.test(M.err)) M.pw = ""; } rr(); }); }
-  function setSt(ids, st, rr) { api({ action: "setReportStatus", pw: M.pw, ids: ids, status: st }).then(function (r) { if (!r.ok) { M.err = r.error || "Fehler"; return rr(); } M.list.forEach(function (x) { if (ids.indexOf(x.report_id) >= 0) x.status = st; }); rr(); }); }
+  function auth(extra) {
+    var o = {}; Object.keys(extra || {}).forEach(function (k) { o[k] = extra[k]; });
+    if (M.mode === "ptoken" && M.ptoken) o.ptoken = M.ptoken;
+    else if (M.pw) o.pw = M.pw;
+    return o;
+  }
+  function load(rr) {
+    M.busy = true; M.err = ""; rr();
+    api(auth({ action: "listReports" })).then(function (r) {
+      M.busy = false;
+      if (r.ok) M.list = r.reports || [];
+      else {
+        M.err = r.error || "Fehler";
+        if (M.mode === "pw" && /berechtigt/.test(M.err)) { M.pw = ""; M.list = null; }
+        if (M.mode === "ptoken" && /berechtigt|unbekannte/.test(M.err)) {
+          M.err = "Noch nicht freigeschaltet: bitte einmal die neue Selbstlern-Backend-Version bereitstellen (Portal-Sitzung für Meldungen).";
+        }
+      }
+      rr();
+    });
+  }
+  function setSt(ids, st, rr) {
+    api(auth({ action: "setReportStatus", ids: ids, status: st })).then(function (r) {
+      if (!r.ok) { M.err = r.error || "Fehler"; return rr(); }
+      M.list.forEach(function (x) { if (ids.indexOf(x.report_id) >= 0) x.status = st; });
+      rr();
+    });
+  }
   function taskUrl(r) { var t = String(r.task_id).replace(/^pf:/, ""); return "../pruefungsfit-mathe/#/rv/" + encodeURIComponent(t) + "/" + encodeURIComponent(r.seed) + (/^test/.test(r.task_variant) ? "/t" : ""); }
-  window.PortalMeldungen = { state: M, view: function (h, rr) {
-    if (!M.pw) {
+  function reset() { M.mode = ""; M.ptoken = ""; M.pw = ""; M.list = null; M.err = ""; M.busy = false; M.open = ""; M.auto = false; }
+  window.PortalMeldungen = { state: M, reset: reset, view: function (h, rr, ctx) {
+    ctx = ctx || {};
+    var sess = ctx.sess ? ctx.sess() : null;
+    var tok = ctx.token ? ctx.token() : "";
+    var portalLehrer = !!(sess && sess.rolle === "lehrer" && tok);
+
+    if (portalLehrer) {
+      if (M.mode !== "ptoken" || M.ptoken !== tok) {
+        M.mode = "ptoken"; M.ptoken = tok; M.pw = ""; M.list = null; M.err = ""; M.auto = false;
+      }
+      if (!M.list && !M.busy && !M.auto) { M.auto = true; load(rr); }
+    } else if (!M.pw) {
+      M.mode = "pw";
       var inp = h("input", { type: "password", placeholder: "Lehrer-Passwort Selbstlernen", autocomplete: "off" });
-      return h("form", { class: "glass", style: "padding:16px", onsubmit: function (e) { e.preventDefault(); M.pw = inp.value; load(rr); } },
-        h("p", { text: "Meldungen kommen aus dem Selbstlern-Backend. Bitte einmal das Lehrer-Passwort eingeben (wird nicht gespeichert)." }), inp, h("button", { class: "btn small", type: "submit", text: "Laden" }), M.err ? h("p", { class: "muted", text: M.err }) : null);
+      return h("form", { class: "glass", style: "padding:16px", onsubmit: function (e) { e.preventDefault(); M.pw = inp.value; M.mode = "pw"; M.list = null; M.auto = false; load(rr); } },
+        h("p", { text: "Meldungen kommen aus dem Selbstlern-Backend. Ohne Portal-Anmeldung bitte einmal das Lehrer-Passwort eingeben (wird nicht gespeichert)." }), inp, h("button", { class: "btn small", type: "submit", text: "Laden" }), M.err ? h("p", { class: "muted", text: M.err }) : null);
+    } else {
+      M.mode = "pw";
+      if (!M.list && !M.busy && !M.auto) { M.auto = true; load(rr); }
     }
+
     if (!M.list) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: M.busy ? "Lädt …" : (M.err || "Keine Daten.") }));
     var g = {}; M.list.forEach(function (r) { (g[r.task_id] = g[r.task_id] || []).push(r); });
     var keys = Object.keys(g).sort(function (a, b) { return g[b].length - g[a].length || (a < b ? -1 : 1); });

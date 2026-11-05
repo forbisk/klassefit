@@ -103,9 +103,21 @@
     lsSet(LS, S.sess);
     lsSet(LSC, { seiten: S.seiten.map(function (s) { var c = {}; Object.keys(s).forEach(function (k) { if (k !== "gate") c[k] = s[k]; }); return c; }) });
   }
+  /* Identität/Sitzungen räumen – Lernfortschritt (sl10a-*, kg5-*, lk10a-*, Missionen-Antworten o. ä.) bleibt erhalten. */
+  function clearIdentity() {
+    clearGates(); lsDel(LS); lsDel(LSC); lsDel(LSG);
+    ["sl10a_sess", "inf6_missionen_sitzung", "kf_antw_sess", "m9g_sess", "m9g_portal"].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    try {
+      Object.keys(localStorage).forEach(function (k) {
+        if (/^tfgs_sc(_exp)?_/.test(k) || /^tfgs_ok_/.test(k)) localStorage.removeItem(k);
+      });
+    } catch (e) {}
+    try { sessionStorage.removeItem("sl10a_fresh"); sessionStorage.removeItem("slx_skip"); } catch (e) {}
+  }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearGates(); lsDel(LS); lsDel(LSC); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = "";
+    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = "";
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     renderLogin(msg || "");
   }
   function logout() {
@@ -137,6 +149,13 @@
     });
   }
   document.addEventListener("visibilitychange", function () { if (!document.hidden && S.sess && Date.now() - (S.last || 0) > 300000) { S.last = Date.now(); refresh(); } });
+  /* Zurück-Taste / bfcache: ohne gültige Portal-Sitzung im Speicher nicht als alter Nutzer weiterlaufen. */
+  window.addEventListener("pageshow", function (ev) {
+    var stored = null; try { stored = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
+    if (!stored || !stored.token) { if (S.sess) dropSession(""); return; }
+    if (S.sess && stored.benutzer && S.sess.benutzer && stored.benutzer !== S.sess.benutzer) location.reload();
+    if (ev.persisted && S.sess && stored.token !== S.sess.token) location.reload();
+  });
 
   /* ---------- Ansichten ---------- */
   function renderLogin(msg) {
@@ -280,10 +299,10 @@
   function teacherTabs() {
     var tabs = [["menue", "Seiten"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
     var bar = h("div", { class: "tabs glass", role: "tablist" }, tabs.map(function (t) {
-      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
+      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "meldungen" && window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
     }));
     var body = h("div", {});
-    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
+    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
     return h("div", {}, bar, body);
   }
   function classChips(cur, onpick, all) {
