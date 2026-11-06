@@ -65,6 +65,15 @@
 
   /* ---------- Klassenpasswort-Schlüssel der Seiten (StatiCrypt "Angemeldet bleiben") ---------- */
   function gateKeyName(o) { return "tfgs_sc_" + o; }
+  /* Befristete Konten (z. B. Vertretung): Gate nur bis Freigaben-Bis; tfgs_sc_exp_<ordner>. */
+  var GATE_BIS = { vertretung: Date.parse("2026-11-13T07:00:00+01:00") };
+  function gateBisFor(profil) {
+    if (!profil) return 0;
+    var u = String(profil.benutzer || "").toLowerCase();
+    if (GATE_BIS[u]) return GATE_BIS[u];
+    var g = +profil.gateBis || 0;
+    return g > 0 ? g : 0;
+  }
   /* Spalte "Gate-Key" im Blatt: entweder nur der Schlüssel der eigenen Seite, oder "schluessel;ordner=schluessel;…" (zusätzliche Ordner,
      die von dieser Seite aus verlinkt sind bzw. dasselbe Klassenpasswort haben). Nur 64 Hex-Zeichen und gültige Ordnernamen werden übernommen. */
   function parseGate(own, g) {
@@ -80,26 +89,44 @@
     seiten.forEach(function (s) { if (!s.gate || !okFolder(s.ordner)) return; var m = parseGate(s.ordner, s.gate); Object.keys(m).forEach(function (f) { if (!all[f] || f === s.ordner) all[f] = m[f]; }); });
     return all;
   }
-  function applyGates(all) {
+  function applyGates(all, bis) {
     var old = lsGet(LSG) || {}, now = {};
-    Object.keys(all).forEach(function (o) { try { localStorage.setItem(gateKeyName(o), all[o]); now[o] = all[o]; } catch (e) {} });
+    bis = +bis || 0;
+    Object.keys(all).forEach(function (o) {
+      try {
+        localStorage.setItem(gateKeyName(o), all[o]); now[o] = all[o];
+        if (bis) localStorage.setItem("tfgs_sc_exp_" + o, String(bis));
+        else localStorage.removeItem("tfgs_sc_exp_" + o);
+      } catch (e) {}
+    });
     Object.keys(old).forEach(function (o) {   // nicht mehr sichtbare Seiten: nur entfernen, wenn der Schlüssel vom Portal stammt
-      if (!now[o] && okFolder(o)) { try { if (localStorage.getItem(gateKeyName(o)) === old[o]) localStorage.removeItem(gateKeyName(o)); } catch (e) {} }
+      if (!now[o] && okFolder(o)) {
+        try {
+          if (localStorage.getItem(gateKeyName(o)) === old[o]) localStorage.removeItem(gateKeyName(o));
+          localStorage.removeItem("tfgs_sc_exp_" + o);
+        } catch (e) {}
+      }
     });
     lsSet(LSG, now);
   }
   function clearGates() {
     var old = lsGet(LSG) || {};
-    Object.keys(old).forEach(function (o) { if (!okFolder(o)) return; try { if (localStorage.getItem(gateKeyName(o)) === old[o]) localStorage.removeItem(gateKeyName(o)); } catch (e) {} });
+    Object.keys(old).forEach(function (o) {
+      if (!okFolder(o)) return;
+      try {
+        if (localStorage.getItem(gateKeyName(o)) === old[o]) localStorage.removeItem(gateKeyName(o));
+        localStorage.removeItem("tfgs_sc_exp_" + o);
+      } catch (e) {}
+    });
     lsDel(LSG);
   }
 
   /* ---------- Sitzung ---------- */
   function takePayload(p) {
-    S.sess = { token: (p.token || (S.sess && S.sess.token)), benutzer: p.profil.benutzer, name: p.profil.name, klasse: p.profil.klasse, rolle: p.profil.rolle, wuensche: (p.wuensche && typeof p.wuensche === "object") ? p.wuensche : null };
+    S.sess = { token: (p.token || (S.sess && S.sess.token)), benutzer: p.profil.benutzer, name: p.profil.name, klasse: p.profil.klasse, rolle: p.profil.rolle, wuensche: (p.wuensche && typeof p.wuensche === "object") ? p.wuensche : null, gateBis: gateBisFor(p.profil) || undefined };
     S.seiten = p.seiten || []; S.offline = false;
     S.gates = gatesOf(S.seiten);
-    applyGates(S.gates);
+    applyGates(S.gates, gateBisFor(p.profil));
     lsSet(LS, S.sess);
     lsSet(LSC, { seiten: S.seiten.map(function (s) { var c = {}; Object.keys(s).forEach(function (k) { if (k !== "gate") c[k] = s[k]; }); return c; }) });
   }
@@ -184,7 +211,15 @@
   function card(s) {
     var f = fachKey(s.fach), isTest = s.art === "test", a = ART[s.art] || ART.material;
     var vor = !!(S.sess && S.sess.rolle === "lehrer" && VORSCHAU_ART[s.art] && okFolder(s.ordner));
-    var setGate = function () { if (S.gates && S.gates[s.ordner]) { try { localStorage.setItem(gateKeyName(s.ordner), S.gates[s.ordner]); } catch (e) {} } };
+    var setGate = function () {
+      if (!(S.gates && S.gates[s.ordner])) return;
+      try {
+        localStorage.setItem(gateKeyName(s.ordner), S.gates[s.ordner]);
+        var bis = (S.sess && S.sess.gateBis) || 0;
+        if (bis) localStorage.setItem("tfgs_sc_exp_" + s.ordner, String(bis));
+        else localStorage.removeItem("tfgs_sc_exp_" + s.ordner);
+      } catch (e) {}
+    };
     var normal = vor && h("span", { class: "tag lg", role: "link", tabindex: "0", style: "cursor:pointer", text: "normal öffnen",
       onclick: function (e) { e.preventDefault(); e.stopPropagation(); setGate(); location.href = "../" + s.ordner + "/"; } });
     var tags = h("div", { class: "tags" }, h("span", { class: "tag" + (isTest ? " test" : ""), text: a[0] }), s.eigenerLogin && h("span", { class: "tag lg", text: "eigener Login" }), vor && h("span", { class: "tag", text: "👁 Vorschau" }), normal,
