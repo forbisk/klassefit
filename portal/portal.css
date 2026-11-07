@@ -196,3 +196,9 @@ main.deckmode{max-width:none;padding:0}
 .kfa-act .btn,.kfa-h .btn{width:auto;padding:9px 14px;font-size:15px}
 /* Lehrkraft: Bereichswahl Gymnasium / Sekundarschule */
 .sfwahl h2{margin-top:18px}.sfwahl .card .t{font-size:1.25rem}.sfsw{margin-top:10px}
+/* Schüler-Menü nach Themen (07.11.2026) */
+.hauptcard{border:2px solid rgba(15,118,110,.35)}
+.hauptcard.off{opacity:.62;cursor:default}
+.ico.haupt-luecken{background:linear-gradient(145deg,#ff9f43,#ee5253)}.ico.haupt-pruefungsfit{background:linear-gradient(145deg,#10b981,#0f766e)}
+.thema-kopf{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+.thema-kopf .thema-titel{margin:0;font-size:18px;text-transform:none;letter-spacing:0;color:inherit}

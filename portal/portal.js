@@ -10,7 +10,7 @@
   var FACH = { mathe: "Mathe", informatik: "Informatik", klasse: "Klasse", privat: "Sonstiges" };
   var ART = { material: ["Material", "📘"], mission: ["Missionen", "🚀"], selbstlernen: ["Selbstlernen", "🧠"], karten: ["Karteikarten", "🗂️"], tool: ["Werkzeug", "🧮"], folien: ["Folien", "🎞️"], test: ["Test", "📝"] };
   var app = document.getElementById("app");
-  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "" };
+  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "", thema: "" };
   /* Lehrkraft: Bereich Gymnasium / Sekundarschule (07.11.2026). Gymnasium = Klassen mit Endung "g" (8g, 9g). Wahl gilt nur in diesem Tab (sessionStorage),
      nach jeder neuen Anmeldung wird neu gefragt. Schüler-Logins sind davon nicht betroffen. */
   var SF_KEY = "kf_lehrer_schulform";
@@ -151,7 +151,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; sfSet("");
+    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet("");
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     renderLogin(msg || "");
   }
@@ -252,6 +252,90 @@
     if (!list.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für dich sind gerade keine Seiten freigeschaltet." })));
     return box;
   }
+  /* ---------- Schüler-Menü nach Themen (07.11.2026) ----------
+     Oben fest: „Meine Lücken“ und „Prüfungsfit“ (immer sichtbar; fehlt die Seite für die Klasse → ausgegraut mit Hinweis).
+     Darunter Themen-Kacheln je Fach; ein Thema öffnet alle passenden Seiten gebündelt (Theorie/Folien → Üben/Selbstarbeit → Weiteres).
+     Sichtbarkeit kommt unverändert vom Server (Blatt „Seiten“: Klasse, Aktiv, Standard sichtbar, Freigaben) – hier wird nur gruppiert.
+     Zuordnung über Titel/Untertitel (keine Ordnernamen im öffentlichen Code); unbekannte Seiten: „Folien X“/„Selbstarbeit X“ → Thema „X“. */
+  var HAUPT = [
+    { id: "luecken", re: /meine\s+l(ü|ue)cken/i, titel: "Meine Lücken", sub: "Deine wichtigsten Themen – gezielt üben", ico: "🎯" },
+    { id: "pruefungsfit", re: /pr(ü|ue)fungsfit/i, titel: "Prüfungsfit", sub: "Training für die Prüfung", ico: "🏁" }];
+  var THEMEN = [
+    ["aehnlichkeit", "Ähnlichkeit", "📐", /ähnlichkeit/i],
+    ["pythagoras", "Satz des Pythagoras", "📏", /pythagoras/i],
+    ["trigonometrie", "Trigonometrie", "🔺", /trigonometrie|sinus|kosinus|tangens/i],
+    ["pruefungswissen", "Prüfungswissen", "🗂️", /merkkarten|realschulabschluss|diagnosetest/i],
+    ["terme", "Terme & binomische Formeln", "🧩", /terme|binomisch/i],
+    ["quadratisch", "Quadratische Gleichungen", "📈", /quadratisch/i],
+    ["gleichungen", "Gleichungen lösen", "⚖️", /gleichungen/i],
+    ["rationale", "Rationale Zahlen", "➗", /rationale\s+zahlen|multiplizieren\s+und\s+dividieren/i],
+    ["kommutativ", "Kommutativgesetz", "🔁", /kommutativ/i],
+    ["ordner", "Ordner und Dateien", "🗂️", /ordner\s+und\s+dateien|missionen/i],
+    ["medien", "Informationen und Medien", "📰", /informationen\s+und\s+medien/i],
+    ["klasse", "Klasse & Lernen", "🤝", /klassenregeln|warum\s+lernen|\bki\b/i],
+    ["werkzeuge", "Werkzeuge", "🧮", /taschenrechner/i]];
+  var ROLLE = { material: [0, "Theorie & Folien"], folien: [0, "Theorie & Folien"], selbstlernen: [1, "Üben & Selbstarbeit"], mission: [1, "Üben & Selbstarbeit"], karten: [1, "Üben & Selbstarbeit"], tool: [2, "Weiteres"] };
+  function hauptOf(s) { var t = s.titel || ""; for (var i = 0; i < HAUPT.length; i++) if (HAUPT[i].re.test(t)) return HAUPT[i].id; return ""; }
+  function themaOf(s) {
+    var txt = (s.titel || "") + " · " + (s.untertitel || "");
+    for (var i = 0; i < THEMEN.length; i++) if (THEMEN[i][3].test(s.titel || "")) return THEMEN[i];
+    for (var j = 0; j < THEMEN.length; j++) if (THEMEN[j][3].test(txt)) return THEMEN[j];
+    var base = String(s.titel || "Weitere Seiten").replace(/^(folien|selbstarbeit|selbstlernen|wiederholung|übungen|uebungen)\s+/i, "").replace(/\s*\(.*?\)\s*$/, "").trim() || "Weitere Seiten";
+    return ["t-" + base.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-"), base, "📘", null];
+  }
+  function themenListe(list) {   // [{id,titel,ico,fach,sort,seiten:[]}] in Sortierreihenfolge
+    var by = {}, out = [];
+    list.forEach(function (s) { var t = themaOf(s), f = fachKey(s.fach), k = f + "|" + t[0];
+      if (!by[k]) { by[k] = { id: k, titel: t[1], ico: t[2], fach: f, sort: 1e9, seiten: [] }; out.push(by[k]); }
+      by[k].seiten.push(s); by[k].sort = Math.min(by[k].sort, +s.sort || 0); });
+    out.forEach(function (t) { t.seiten.sort(function (a, b) { return ((ROLLE[a.art] || [3])[0] - (ROLLE[b.art] || [3])[0]) || ((+a.sort || 0) - (+b.sort || 0)); }); });
+    var spaet = function (t) { return /\|werkzeuge$/.test(t.id) ? 1 : 0; };   // Werkzeuge (Taschenrechner) ans Ende
+    out.sort(function (a, b) { return (spaet(a) - spaet(b)) || (a.sort - b.sort); });
+    return out;
+  }
+  function hauptKarten(all) {
+    return h("div", { class: "list haupt" }, HAUPT.map(function (m) {
+      var s = all.filter(function (x) { return hauptOf(x) === m.id && x.art !== "test"; })[0];
+      if (s) { var c = card(s); c.classList.add("hauptcard"); c.setAttribute("data-haupt", m.id); var ic = c.querySelector(".ico"); if (ic) { ic.textContent = m.ico; ic.className = "ico haupt-" + m.id; } return c; }
+      return h("div", { class: "card glass hauptcard off", "data-haupt": m.id, "aria-disabled": "true" },
+        h("div", { class: "ico haupt-" + m.id, text: m.ico, "aria-hidden": "true" }),
+        h("div", {}, h("div", { class: "t", text: m.titel }), h("div", { class: "s", text: "Für deine Klasse noch nicht freigeschaltet – kommt, sobald es passende Aufgaben gibt." })));
+    }));
+  }
+  function themaKarte(t) {
+    var arten = {}; t.seiten.forEach(function (s) { arten[(ROLLE[s.art] || [3, "Weiteres"])[1]] = 1; });
+    return h("a", { class: "card glass themacard", href: "#", "data-thema": t.id, onclick: function (e) { e.preventDefault(); oeffneThema(t.id); } },
+      h("div", { class: "ico " + t.fach, text: t.ico, "aria-hidden": "true" }),
+      h("div", {}, h("div", { class: "t", text: t.titel }), h("div", { class: "s", text: t.seiten.length + (t.seiten.length === 1 ? " Seite" : " Seiten") + " · " + Object.keys(arten).join(" · ") })),
+      h("div", { class: "chev", text: "›", "aria-hidden": "true" }));
+  }
+  function oeffneThema(id) {
+    S.thema = id; render(); try { window.scrollTo(0, 0); } catch (e) {}
+    if (window.KFZurueck) window.KFZurueck.push(function () { S.thema = ""; render(); });
+  }
+  function schliesseThema() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.thema = ""; render(); }
+  function studentMenu(all) {
+    var box = h("div", { class: "smenu" });
+    var rest = all.filter(function (s) { return s.art !== "test" && !hauptOf(s); });
+    var tests = all.filter(function (s) { return s.art === "test"; });
+    var themen = themenListe(rest);
+    var offen = S.thema && themen.filter(function (t) { return t.id === S.thema; })[0];
+    if (S.thema && !offen) S.thema = "";
+    if (offen) {
+      box.appendChild(h("div", { class: "thema-kopf" }, h("button", { class: "btn ghost small", text: "‹ Alle Themen", onclick: schliesseThema }), h("h2", { class: "thema-titel", text: offen.ico + " " + offen.titel })));
+      var grp = {}, ord = [];
+      offen.seiten.forEach(function (s) { var r = (ROLLE[s.art] || [3, "Weiteres"])[1]; if (!grp[r]) { grp[r] = []; ord.push(r); } grp[r].push(s); });
+      ord.forEach(function (r) { box.appendChild(h("h2", { text: r })); box.appendChild(h("div", { class: "list" }, grp[r].map(card))); });
+      box.appendChild(h("h2", { text: "Immer dabei" })); box.appendChild(hauptKarten(all));
+      return box;
+    }
+    box.appendChild(h("h2", { text: "Schnellzugriff" })); box.appendChild(hauptKarten(all));
+    var fo = [], byF = {}; themen.forEach(function (t) { if (!byF[t.fach]) { byF[t.fach] = []; fo.push(t.fach); } byF[t.fach].push(t); });
+    fo.forEach(function (f) { box.appendChild(h("h2", { text: "Themen · " + FACH[f] })); box.appendChild(h("div", { class: "list" }, byF[f].map(themaKarte))); });
+    if (tests.length) { box.appendChild(h("h2", { text: "Tests – vom Lehrer freigegeben" })); box.appendChild(h("div", { class: "list" }, tests.map(card))); }
+    if (!all.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für dich sind gerade keine Seiten freigeschaltet." })));
+    return box;
+  }
   function header() {
     var s = S.sess, lehrer = s.rolle === "lehrer";
     return h("div", { class: "top" },
@@ -270,7 +354,7 @@
     app.className = (S.sess.rolle === "lehrer" && S.tab === "dash") ? "wide" : "";
     var kids = [header()];
     if (S.offline) kids.push(h("div", { class: "banner", text: "Offline – Anzeige vom letzten Mal. Zum Öffnen der Seiten brauchst du Internet." }));
-    if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(groups(S.seiten.filter(kopSichtbar))); }
+    if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(studentMenu(S.seiten.filter(kopSichtbar))); }
     app.replaceChildren.apply(app, kids);
   }
 
