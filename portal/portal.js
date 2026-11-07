@@ -10,7 +10,15 @@
   var FACH = { mathe: "Mathe", informatik: "Informatik", klasse: "Klasse", privat: "Sonstiges" };
   var ART = { material: ["Material", "📘"], mission: ["Missionen", "🚀"], selbstlernen: ["Selbstlernen", "🧠"], karten: ["Karteikarten", "🗂️"], tool: ["Werkzeug", "🧮"], folien: ["Folien", "🎞️"], test: ["Test", "📝"] };
   var app = document.getElementById("app");
-  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false };
+  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "" };
+  /* Lehrkraft: Bereich Gymnasium / Sekundarschule (07.11.2026). Gymnasium = Klassen mit Endung "g" (8g, 9g). Wahl gilt nur in diesem Tab (sessionStorage),
+     nach jeder neuen Anmeldung wird neu gefragt. Schüler-Logins sind davon nicht betroffen. */
+  var SF_KEY = "kf_lehrer_schulform";
+  function isGymKl(k) { return /^\d+g$/i.test(String(k || "")); }
+  function formOfPage(s) { var kl = (s.klassen || []).filter(function (k) { return k && k !== "*"; }); return kl.length && kl.every(isGymKl) ? "gym" : "sek"; }
+  function sfGet() { try { var v = sessionStorage.getItem(SF_KEY); return v === "gym" || v === "sek" ? v : ""; } catch (e) { return ""; } }
+  function sfSet(v) { S.schulform = v; try { if (v) sessionStorage.setItem(SF_KEY, v); else sessionStorage.removeItem(SF_KEY); } catch (e) {} }
+  S.schulform = sfGet();
 
   /* ---------- Hilfen ---------- */
   function h(tag, attrs) {
@@ -143,7 +151,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = "";
+    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; sfSet("");
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     renderLogin(msg || "");
   }
@@ -194,7 +202,7 @@
       e.preventDefault(); if (!user.value.trim() || !code.value.trim()) return;
       btn.disabled = true; err.textContent = "";
       api({ action: "login", user: user.value.trim(), code: code.value, geraet: (navigator.userAgent || "").replace(/\(.*?\)/g, "").slice(0, 50) }).then(function (r) {
-        if (r.ok) { takePayload(r); S.tab = "menue"; if (gehWeiter()) return; render(); kopPruefen(); }
+        if (r.ok) { sfSet(""); takePayload(r); S.tab = "menue"; if (gehWeiter()) return; render(); kopPruefen(); }
         else { btn.disabled = false; err.textContent = r.error || "Anmeldung fehlgeschlagen."; code.value = ""; code.focus(); }
       });
     } },
@@ -247,7 +255,7 @@
   function header() {
     var s = S.sess, lehrer = s.rolle === "lehrer";
     return h("div", { class: "top" },
-      h("div", {}, h("div", { class: "hello" }, "Hallo" + (s.name ? ", " + s.name.split(" ")[0] : ""), !lehrer && s.klasse && h("span", { class: "chip", text: s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })), h("h1", { text: lehrer ? "Alle Klassen" : "Meine Seiten" })),
+      h("div", {}, h("div", { class: "hello" }, "Hallo" + (s.name ? ", " + s.name.split(" ")[0] : ""), !lehrer && s.klasse && h("span", { class: "chip", text: s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })), h("h1", { text: lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
       h("div", { class: "acts" }, wunschButton(), h("button", { class: "btn ghost", onclick: logout, "aria-label": "Abmelden", text: "Abmelden" })));
   }
   function wunschCtx() { return { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; }, info: function () { return S.sess && S.sess.wuensche; }, seiten: function () { return S.seiten.filter(kopSichtbar); }, render: function () { if (S.tab === "wuensche") render(); }, relogin: function () { dropSession("Bitte melde dich neu an."); } }; }
@@ -262,7 +270,7 @@
     app.className = (S.sess.rolle === "lehrer" && S.tab === "dash") ? "wide" : "";
     var kids = [header()];
     if (S.offline) kids.push(h("div", { class: "banner", text: "Offline – Anzeige vom letzten Mal. Zum Öffnen der Seiten brauchst du Internet." }));
-    if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(groups(S.seiten.filter(kopSichtbar))); }
+    if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(groups(S.seiten.filter(kopSichtbar))); }
     app.replaceChildren.apply(app, kids);
   }
 
@@ -343,12 +351,25 @@
   function classChips(cur, onpick, all) {
     var ks = (S.admin && Object.keys(S.admin.klassen)) || []; var seen = {}; ks.forEach(function (k) { seen[k] = 1; });
     S.seiten.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k !== "*") seen[k] = 1; }); });
-    var names = Object.keys(seen).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
+    var names = Object.keys(seen).filter(function (k) { return !S.schulform || (isGymKl(k) ? "gym" : "sek") === S.schulform; }).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
     return h("div", { class: "chips" }, [""].concat(names).map(function (k) { return h("button", { "aria-pressed": cur === k ? "true" : "false", text: k || all, onclick: function () { onpick(k); } }); }));
   }
+  function schulformWahl() {
+    var n = { gym: 0, sek: 0 }, kl = { gym: {}, sek: {} };
+    S.seiten.forEach(function (s) { var f = formOfPage(s); n[f]++; (s.klassen || []).forEach(function (k) { if (k && k !== "*" && (isGymKl(k) ? "gym" : "sek") === f) kl[f][k] = 1; }); });
+    var srt = function (o) { return Object.keys(o).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }).join(", "); };
+    var opt = function (f, ico, t) { return h("a", { class: "card glass sfw", href: "#", "data-sf": f, onclick: function (e) { e.preventDefault(); sfSet(f); S.tab = "menue"; S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); kopPruefen(); } },
+      h("div", { class: "ico " + (f === "gym" ? "mathe" : "informatik"), text: ico, "aria-hidden": "true" }),
+      h("div", {}, h("div", { class: "t", text: t }), h("div", { class: "s", text: (srt(kl[f]) ? "Klassen " + srt(kl[f]) + " · " : "") + n[f] + " Seiten" })),
+      h("div", { class: "chev", text: "›", "aria-hidden": "true" })); };
+    return h("div", { class: "sfwahl" }, h("h2", { text: "Welcher Bereich?" }), h("div", { class: "list" }, opt("gym", "🎓", "Gymnasium"), opt("sek", "🏫", "Sekundarschule")),
+      h("p", { class: "note", text: "Die Auswahl gilt, bis du dich abmeldest oder den Tab schließt. Wechseln geht jederzeit oben über „Bereich wechseln“." }));
+  }
+  function sfSwitch() { return h("div", { class: "chips sfsw" }, h("button", { "aria-pressed": "true", text: (S.schulform === "gym" ? "🎓 Gymnasium" : "🏫 Sekundarschule") }), h("button", { "aria-pressed": "false", text: "⇄ Bereich wechseln", onclick: function () { sfSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); } })); }
+  function inForm(s) { return !S.schulform || formOfPage(s) === S.schulform; }
   function teacherMenu() {
-    var list = S.seiten.filter(function (s) { return !S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0; });
-    return h("div", {}, classChips(S.klasse, function (k) { S.klasse = k; render(); }, "Alle Klassen"), groupsTeacher(list));
+    var list = S.seiten.filter(function (s) { return inForm(s) && (!S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0); });
+    return h("div", {}, sfSwitch(), classChips(S.klasse, function (k) { S.klasse = k; render(); }, "Alle Klassen"), groupsTeacher(list));
   }
   function groupsTeacher(list) {   // Lehrer sehen Tests immer, gekennzeichnet
     var box = groups(list.filter(function (s) { return s.art !== "test"; })), tests = list.filter(function (s) { return s.art === "test"; });
@@ -360,7 +381,7 @@
     if (!S.admin) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Lade …" }));
     var dauer = h("select", { id: "dauer", "aria-label": "Dauer der Freigabe" }, h("option", { value: "0", text: "bis ich ausschalte" }), h("option", { value: "day", text: "nur heute" }), h("option", { value: "hour", text: "1 Stunde" }));
     var box = h("div", {}, h("div", { class: "row glass", style: "margin-top:12px;border-radius:18px" }, h("div", { class: "grow" }, h("div", { class: "t", text: "Dauer beim Einschalten" }), h("div", { class: "s", text: "Tests sind für Schüler standardmäßig unsichtbar." })), dauer));
-    var tests = S.admin.seiten.filter(function (s) { return s.art === "test"; });
+    var tests = S.admin.seiten.filter(function (s) { return s.art === "test" && inForm(s); });
     var fr = {}; S.admin.freigaben.forEach(function (f) { fr[f.seite + "|" + f.klasse.toLowerCase()] = f; });
     tests.forEach(function (s) {
       var g = h("div", { class: "group glass" }, h("div", { class: "hd", text: s.titel }));
@@ -382,7 +403,7 @@
   function teacherKonten() {
     if (!S.admin) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Lade …" }));
     var box = h("div", {}, h("p", { class: "note", text: "Widerrufen beendet alle angemeldeten Geräte einer Person (verlorenes Handy). Mit dem Code kann sie sich danach wieder anmelden." }));
-    var by = {}; S.admin.konten.forEach(function (k) { if (k.rolle === "lehrer") return; (by[k.klasse] = by[k.klasse] || []).push(k); });
+    var by = {}; S.admin.konten.forEach(function (k) { if (k.rolle === "lehrer") return; if (S.schulform && (isGymKl(k.klasse) ? "gym" : "sek") !== S.schulform) return; (by[k.klasse] = by[k.klasse] || []).push(k); });
     Object.keys(by).sort().forEach(function (kl) {
       var g = h("div", { class: "group glass" }, h("div", { class: "hd", text: "Klasse " + kl + " · " + by[kl].length + " Konten" }));
       by[kl].forEach(function (k) {
@@ -452,12 +473,14 @@
   /* sichtbare Seiten/Spalten/Schüler nach den Filtern */
   function dashView() {
     var d = S.dash, sites = d.seiten || [], byKey = {}; sites.forEach(function (s) { byKey[s.key] = s; });
-    var klassen = []; d.schueler.forEach(function (s) { if (s.klasse && klassen.indexOf(s.klasse) < 0) klassen.push(s.klasse); });
+    var klassen = []; d.schueler.forEach(function (s) { if (s.klasse && klassen.indexOf(s.klasse) < 0 && (!S.schulform || (isGymKl(s.klasse) ? "gym" : "sek") === S.schulform)) klassen.push(s.klasse); });
+    sites = sites.filter(inForm);
     klassen.sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
     var pages = sites.filter(function (s) { return S.dashSeite ? s.key === S.dashSeite : (!S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0); });
     var keep = {}; pages.forEach(function (s) { keep[s.key] = 1; });
     var th = d.themen.filter(function (t) { return keep[t.seite]; });
     var sch = d.schueler.filter(function (s) {
+      if (S.schulform && (isGymKl(s.klasse) ? "gym" : "sek") !== S.schulform) return false;
       if (S.dashKlasse) return s.klasse === S.dashKlasse;
       if (S.dashSeite && byKey[S.dashSeite]) return (byKey[S.dashSeite].klassen || []).indexOf(s.klasse) >= 0;
       return true;
@@ -485,7 +508,7 @@
     v.sch.forEach(function (s) { var k = g[s.klasse] = g[s.klasse] || { n: 0, sum: 0, act: 0, any: 0, m: 0, low: 0 }, z = d.zellen[s.id] || {}, ps = d.seiten.filter(function (p) { return used[s.klasse + "|" + p.key] && p.art !== "test"; }), sm = 0;
       ps.forEach(function (p) { sm += pv(z, p.key) || 0; });
       k.n++; k.sum += ps.length ? sm / ps.length : 0; if (s._last && now - s._last < 7 * 86400e3) k.act++; if (s._any) k.any++; else k.low++; var m = meldOf(s.id); if (m) k.m += m.offen; });
-    var FACH = { "5": "Mathe", "6a": "Informatik", "6b": "Informatik", "7a": "Mathe", "8b": "Mathe", "10a": "Mathe", "9g": "Mathe (Gym)" };
+    var FACH = { "5": "Mathe", "6a": "Informatik", "6b": "Informatik", "7a": "Mathe", "8b": "Mathe", "10a": "Mathe", "9g": "Mathe (Gym)", "8g": "Mathe (Gym)" };
     return h("div", { class: "klcards" }, v.klassen.map(function (kl) { var k = g[kl]; if (!k) return null; var avg = k.n ? k.sum / k.n : 0;
       return h("button", { class: "klc glass", type: "button", onclick: function () { S.dashKlasse = kl; render(); } },
         h("div", { class: "kt" }, h("b", { text: kl }), h("span", { class: "muted", text: FACH[kl] || "" })),
@@ -575,11 +598,11 @@
           hasM ? (function () { var m = meldOf(s.id); return h("td", { class: m.offen ? "mh" : "c0", text: m.gesamt ? String(m.offen) : "", title: m.gesamt ? m.offen + " offen von " + m.gesamt : "keine Meldungen" }); })() : null,
           h("td", { class: "lt", text: ago(s._last), title: s._last ? fdt(s._last) : "keine Aktivität" }));
       })));
-    return h("div", {},
+    return h("div", {}, sfSwitch(),
       bad.length > 0 && h("div", { class: "banner", text: "Nicht lesbar: " + bad.map(function (q) { return q.titel; }).join(", ") + ". Die übrigen Daten sind trotzdem aktuell. (Zugriff/Freigabe prüfen, dann „Aktualisieren“.)" }),
       srcLine,
       chipRow([["", "Alle Klassen"]].concat(v.klassen.map(function (k) { return [k, k]; })), S.dashKlasse, function (k) { S.dashKlasse = k; if (S.dashSeite && v.byKey[S.dashSeite] && k && (v.byKey[S.dashSeite].klassen || []).indexOf(k) < 0) S.dashSeite = ""; render(); }),
-      chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
+      chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
       chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"]], S.dashSort, function (k) { S.dashSort = k; render(); }),
       !S.dashKlasse && !S.dashSeite ? classCards(d, v) : null,
       h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),

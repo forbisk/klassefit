@@ -194,3 +194,5 @@ main.deckmode{max-width:none;padding:0}
 .kfa-act{display:flex;gap:.5rem;flex-wrap:wrap}
 .kfa-act a.btn{text-decoration:none}
 .kfa-act .btn,.kfa-h .btn{width:auto;padding:9px 14px;font-size:15px}
+/* Lehrkraft: Bereichswahl Gymnasium / Sekundarschule */
+.sfwahl h2{margin-top:18px}.sfwahl .card .t{font-size:1.25rem}.sfsw{margin-top:10px}
