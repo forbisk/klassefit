@@ -1,0 +1,33 @@
+{
+ "id": "/unterricht/mathe8-gleichungen-ha/",
+ "name": "Mathematik 8b – Hausaufgabe Gleichungen (Textaufgaben)",
+ "short_name": "HA Gleichungen 8b",
+ "lang": "de",
+ "dir": "ltr",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "any",
+ "theme_color": "#6d4aff",
+ "background_color": "#0f172a",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
