@@ -415,10 +415,55 @@
     if (!all.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für dich sind gerade keine Seiten freigeschaltet." })));
     return box;
   }
+  /* Portal-Kopf: Start immer, Zurück eine Ebene (PWA ohne Browser-Chrom). history.back() hier nie – sonst about:blank. */
+  function canPortalBack() {
+    if (!S.sess) return false;
+    if (briefingId()) return true;
+    if (S.sess.rolle === "lehrer") {
+      if (S.lthema) return true;
+      if (S.tab !== "menue") return true;
+      if (!S.schulform) return false;
+      var n = Object.keys(faecherForm()).length;
+      if (S.fach && n > 1) return true;
+      if (S.fach) return true;           // nur ein Fach → direkt zur Bereichswahl
+      return true;                       // Fachwahl → Bereichswahl
+    }
+    return !!S.thema;                    // Schüler: Thema oder Hausaufgaben (__ha)
+  }
+  function goPortalStart() {
+    if (!S.sess) return;
+    if (briefingId()) {
+      deckStop();
+      try { history.pushState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (e2) {} }
+    }
+    if (window.KFZurueck) { try { window.KFZurueck.clear(); } catch (e) {} }
+    S.thema = ""; S.lthema = "";
+    if (S.sess.rolle === "lehrer") S.tab = "menue";
+    render();
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  function goPortalBack() {
+    if (!S.sess || !canPortalBack()) return;
+    if (briefingId()) { leaveBriefing(); return; }
+    if (S.sess.rolle === "lehrer") {
+      if (S.lthema) { schliesseThemaT(); return; }
+      if (S.tab !== "menue") { S.tab = "menue"; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
+      var n = Object.keys(faecherForm()).length;
+      if (S.fach && n > 1) { fwSet(""); S.klasse = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
+      sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); try { window.scrollTo(0, 0); } catch (e) {}
+      return;
+    }
+    if (S.thema) schliesseThema();
+  }
   function header() {
-    var s = S.sess, lehrer = s.rolle === "lehrer";
+    var s = S.sess, lehrer = s.rolle === "lehrer", showBack = canPortalBack();
     return h("div", { class: "top" },
-      h("div", {}, h("div", { class: "hello angemeldet", title: "Du bleibst angemeldet, bis du auf „Abmelden“ tippst." }, h("span", { class: "als", text: "👤 Angemeldet als " }), h("b", { class: "wer", text: s.name || s.benutzer || "" }), !lehrer && s.klasse && h("span", { class: "chip", text: "Klasse " + s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })), h("h1", { text: lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
+      h("div", { class: "top-main" },
+        h("div", { class: "navrow", role: "navigation", "aria-label": "Portal-Navigation" },
+          showBack ? h("button", { type: "button", class: "btn ghost small nav-back", onclick: goPortalBack, "aria-label": "Zurück", text: "← Zurück" }) : null,
+          h("button", { type: "button", class: "btn ghost small nav-start", onclick: goPortalStart, "aria-label": "Start – Übersicht", text: "⌂ Start" })),
+        h("div", { class: "hello angemeldet", title: "Du bleibst angemeldet, bis du auf „Abmelden“ tippst." }, h("span", { class: "als", text: "👤 Angemeldet als " }), h("b", { class: "wer", text: s.name || s.benutzer || "" }), !lehrer && s.klasse && h("span", { class: "chip", text: "Klasse " + s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })),
+        h("h1", { text: lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
       h("div", { class: "acts" }, wunschButton(), h("button", { class: "btn ghost", onclick: logout, "aria-label": "Abmelden", text: "Abmelden" })));
   }
   function wunschCtx() { return { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; }, info: function () { return S.sess && S.sess.wuensche; }, seiten: function () { return S.seiten.filter(kopSichtbar); }, render: function () { if (S.tab === "wuensche") render(); }, relogin: function () { dropSession("Bitte melde dich neu an."); } }; }
@@ -509,7 +554,7 @@
     }));
     var body = h("div", {});
     if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "ha") body = teacherHA(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
-    return h("div", {}, bar, body);
+    return h("div", {}, h("div", { class: "tabs-wrap" }, bar), body);
   }
   function classChips(cur, onpick, all) {
     var ks = (S.admin && Object.keys(S.admin.klassen)) || []; var seen = {}; ks.forEach(function (k) { seen[k] = 1; });

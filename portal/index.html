@@ -18,7 +18,7 @@
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="../fp/brand/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="../fp/brand/klassefit-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="portal.css?v=20261109ld">
+<link rel="stylesheet" href="portal.css?v=20261109nav">
 </head>
 <body>
 <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -31,7 +31,7 @@
 <script src="kf-antworten.js"></script>
 <script src="antworten.js"></script>
 <script src="kf-zurueck.js"></script>
-<script src="portal.js?v=20261109ld"></script>
+<script src="portal.js?v=20261109nav"></script>
 <script data-pwa>window.__TFGS_PWA={"sw": "../sw.js", "scope": "../", "ctx": "page", "pageHint": true};
 /* Installations-Hinweis + Service-Worker-Registrierung (wird vom Build in Passwortseite UND entschluesselte Seiten eingebettet).
    Konfiguration: window.__TFGS_PWA = {sw, scope, ctx:'gate'|'page', pageHint:true|false}
@@ -93,17 +93,18 @@
 
 </script>
 <script data-kf-zurueck>
-/* KlasseFit – gemeinsamer „Zurück“-Knopf (Handy/App ohne Browser-Zurück).
+/* KlasseFit – gemeinsamer „Zurück“- und „Start“-Knopf (Handy/App ohne Browser-Zurück).
    Build bettet ihn in jede Schüler-HTML-Seite ein (wie PWA). API für In-Page-Navigation:
      KFZurueck.push(fn)  – eine Ebene auf den Stack (fn wird beim Zurück aufgerufen)
      KFZurueck.pop()     – oberste Ebene entfernen (ohne auszuführen)
      KFZurueck.clear()   – Stack leeren
      KFZurueck.setGuard(fn) – fn() → string (Bestätigungstext) oder falsy; vor dem Verlassen
-   Verhalten: Stack → history.back() (wenn sinnvoll) → Portal-Start.
+   Verhalten Zurück: Stack → history.back() (wenn sinnvoll) → Portal-Start.
+   Start: immer zum Portal (/portal/), außer man ist schon dort.
    Keine Passwörter/Logins/localStorage-Schlüssel der Seiten. */
 (function () {
   /* Nach StatiCrypt-Entschlüsselung wird das DOM ersetzt – Knopf neu einhängen. */
-  if (window.KFZurueck && window.KFZurueck._v === 1) {
+  if (window.KFZurueck && window.KFZurueck._v === 2) {
     try { window.KFZurueck.remount && window.KFZurueck.remount(); } catch (e) {}
     return;
   }
@@ -120,7 +121,9 @@
   })();
   var stack = [];
   var guard = null;
+  var nav = null;
   var btn = null;
+  var startBtn = null;
   var spacer = null;
 
   function portalHome() {
@@ -166,45 +169,77 @@
     }
     goPortal();
   }
+  function start() {
+    if (portalHome()) return;
+    if (!confirmLeave()) return;
+    stack.length = 0;
+    update();
+    goPortal();
+  }
   function update() {
-    if (!btn) return;
-    var hide = portalHome() && !stack.length;
-    btn.hidden = hide;
-    btn.setAttribute("aria-hidden", hide ? "true" : "false");
+    if (!nav) return;
+    /* Auf dem Portal-Start übernimmt der Portal-Kopf Start/Zurück – schwebende Knöpfe ausblenden
+       (sonst Doppelung; auf /portal/ ohne Stack war Zurück bisher schon versteckt). */
+    var hide = portalHome();
+    nav.hidden = hide;
+    nav.setAttribute("aria-hidden", hide ? "true" : "false");
     if (spacer) spacer.hidden = hide;
-    btn.setAttribute("aria-label", stack.length ? "Zurück (in der Seite)" : "Zurück");
+    if (btn) {
+      btn.hidden = hide;
+      btn.setAttribute("aria-label", stack.length ? "Zurück (in der Seite)" : "Zurück");
+    }
+    if (startBtn) {
+      startBtn.hidden = hide;
+      startBtn.setAttribute("aria-label", "Start – zum Portal");
+    }
   }
   function ensure() {
-    if (btn && document.body && document.body.contains(btn)) { update(); return; }
-    btn = null; spacer = null;
+    if (nav && document.body && document.body.contains(nav)) { update(); return; }
+    nav = null; btn = null; startBtn = null; spacer = null;
+    var old = document.querySelectorAll("[data-kf-zurueck]");
+    for (var i = 0; i < old.length; i++) { try { old[i].parentNode && old[i].parentNode.removeChild(old[i]); } catch (e) {} }
     var st = document.createElement("style");
     st.setAttribute("data-kf-zurueck", "1");
     st.textContent =
-      "#kfZurueck{position:fixed;top:max(8px,env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));z-index:2147482000;"
-      + "min-width:44px;min-height:44px;padding:8px 12px;border:0;border-radius:999px;background:#0f172ae6;color:#fff;"
+      "#kfNav{position:fixed;top:max(8px,env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));z-index:2147482000;"
+      + "display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)}"
+      + "#kfNav[hidden],#kfZurueckPad[hidden]{display:none!important}"
+      + "#kfZurueck,#kfStart{min-width:44px;min-height:44px;padding:8px 12px;border:0;border-radius:999px;background:#0f172ae6;color:#fff;"
       + "font:700 14px/1.1 system-ui,Segoe UI,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;"
       + "-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px}"
-      + "#kfZurueck[hidden],#kfZurueckPad[hidden]{display:none!important}"
-      /* Tests: Warte-Sperre der Test-Engine blendet body>* aus – Zurück bleibt trotzdem sichtbar (09.11.2026) */
-      + "html.testgesperrt body>#kfZurueck#kfZurueck:not([hidden]){display:inline-flex!important}"
-      + "#kfZurueck:active{transform:scale(.97)}"
+      /* Tests: Warte-Sperre der Test-Engine blendet body>* aus – Navigation bleibt trotzdem sichtbar (09.11.2026) */
+      + "html.testgesperrt body>#kfNav#kfNav:not([hidden]){display:inline-flex!important}"
+      + "#kfZurueck:active,#kfStart:active{transform:scale(.97)}"
       + "#kfZurueckPad{height:52px;pointer-events:none;flex-shrink:0}"
-      + "@media print{#kfZurueck,#kfZurueckPad{display:none!important}}";
+      + "@media print{#kfNav,#kfZurueckPad{display:none!important}}";
     (document.head || document.documentElement).appendChild(st);
     spacer = document.createElement("div");
     spacer.id = "kfZurueckPad";
     spacer.setAttribute("data-kf-zurueck", "1");
     spacer.setAttribute("aria-hidden", "true");
+    nav = document.createElement("div");
+    nav.id = "kfNav";
+    nav.setAttribute("data-kf-zurueck", "1");
+    nav.setAttribute("role", "navigation");
+    nav.setAttribute("aria-label", "KlasseFit Navigation");
     btn = document.createElement("button");
     btn.id = "kfZurueck";
     btn.type = "button";
     btn.setAttribute("data-kf-zurueck", "1");
     btn.innerHTML = "<span aria-hidden=\"true\">←</span><span>Zurück</span>";
     btn.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); back(); });
+    startBtn = document.createElement("button");
+    startBtn.id = "kfStart";
+    startBtn.type = "button";
+    startBtn.setAttribute("data-kf-zurueck", "1");
+    startBtn.innerHTML = "<span aria-hidden=\"true\">⌂</span><span>Start</span>";
+    startBtn.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); start(); });
+    nav.appendChild(btn);
+    nav.appendChild(startBtn);
     function mount() {
       if (!document.body) return;
       if (!spacer.parentNode) document.body.insertBefore(spacer, document.body.firstChild);
-      if (!btn.parentNode) document.body.appendChild(btn);
+      if (!nav.parentNode) document.body.appendChild(nav);
       update();
     }
     if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
@@ -213,20 +248,23 @@
   }
 
   function remount() {
+    nav = document.getElementById("kfNav");
     btn = document.getElementById("kfZurueck");
+    startBtn = document.getElementById("kfStart");
     spacer = document.getElementById("kfZurueckPad");
-    if (!document.getElementById("kfZurueck") || (btn && !document.body.contains(btn))) {
-      btn = null; spacer = null;
+    if (!nav || (nav && document.body && !document.body.contains(nav))) {
+      nav = null; btn = null; startBtn = null; spacer = null;
     }
     ensure();
   }
   window.KFZurueck = {
-    _v: 1,
+    _v: 2,
     push: function (fn) { if (typeof fn === "function") { stack.push(fn); update(); } },
     pop: function () { var f = stack.pop(); update(); return f; },
     clear: function () { stack.length = 0; update(); },
     setGuard: function (fn) { guard = typeof fn === "function" ? fn : null; },
     back: back,
+    start: start,
     remount: remount,
     portalUrl: function () { return PORTAL; }
   };
@@ -239,7 +277,7 @@
   setTimeout(remount, 1200);
   try {
     var mo = new MutationObserver(function () {
-      if (!document.getElementById("kfZurueck") || (btn && document.body && !document.body.contains(btn))) remount();
+      if (!document.getElementById("kfNav") || (nav && document.body && !document.body.contains(nav))) remount();
     });
     mo.observe(document.documentElement, { childList: true, subtree: true });
   } catch (e) {}

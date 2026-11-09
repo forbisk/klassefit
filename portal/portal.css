@@ -44,7 +44,10 @@ p{margin:0}.muted{color:var(--ink2)}.small{font-size:13px}
 .note{margin-top:14px;font-size:12px;color:var(--ink2)}
 
 /* Kopf */
-.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 4px 10px}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px 12px;margin:8px 4px 10px;flex-wrap:wrap}
+.top .top-main{flex:1 1 200px;min-width:0}
+.top .navrow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.top .navrow .btn{width:auto;min-height:40px;padding:8px 12px;font-size:13px;font-weight:700}
 .top .hello{font-size:15px;color:var(--ink2);font-weight:600}
 .chip{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--glass);border:1px solid var(--glass-b);font-size:12px;font-weight:700;margin-left:6px;vertical-align:middle}
 .banner{margin:10px 4px;padding:10px 14px;border-radius:16px;font-size:13px;background:rgba(255,159,10,.18);border:1px solid rgba(255,159,10,.4)}
@@ -66,9 +69,12 @@ p{margin:0}.muted{color:var(--ink2)}.small{font-size:13px}
 .empty{padding:26px;text-align:center}
 
 /* Lehrer */
-.tabs{display:flex;gap:6px;padding:5px;border-radius:18px;margin:12px 0 4px;overflow-x:auto}
-.tabs button{flex:1;white-space:nowrap;font:inherit;font-size:13px;font-weight:700;border:0;background:transparent;color:var(--ink2);padding:9px 8px;border-radius:14px;cursor:pointer}
+.tabs-wrap{position:relative;margin:12px 0 4px}
+.tabs{display:flex;gap:6px;padding:5px;border-radius:18px;margin:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;touch-action:pan-x}
+.tabs button{flex:0 0 auto;white-space:nowrap;font:inherit;font-size:13px;font-weight:700;border:0;background:transparent;color:var(--ink2);padding:9px 12px;border-radius:14px;cursor:pointer}
 .tabs button[aria-selected=true]{background:var(--acc);color:#fff}
+.tabs-wrap::after{content:"";position:absolute;top:5px;right:0;bottom:5px;width:28px;pointer-events:none;border-radius:0 14px 14px 0;background:linear-gradient(to right,transparent,var(--glass-b));opacity:.95}
+@media (prefers-color-scheme:dark){.tabs-wrap::after{background:linear-gradient(to right,transparent,rgba(15,23,42,.85))}}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 4px}
 .chips button{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--glass-b);background:var(--glass);color:var(--ink);padding:6px 12px;border-radius:99px;cursor:pointer}
 .chips.scroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.chips.scroll::-webkit-scrollbar{display:none}.chips.scroll button{flex:none;white-space:nowrap}
@@ -159,9 +165,15 @@ main.deckmode{max-width:none;padding:0}
 .mrow2{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}.mrow2 .tag{margin-left:6px}.mrow2 .mcom{font-style:italic;margin-top:2px}
 @media (max-width:520px){.klcards{grid-template-columns:1fr 1fr}.tl{grid-template-columns:40px 1fr}.tl .tv{grid-column:2}}
 /* 💡 Fehler / Wunsch */
-.top .acts{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;justify-content:flex-end;flex:none}
+.top .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;flex:1 1 auto}
 .wu-btn{white-space:nowrap}
-@media (max-width:420px){.wu-btn{padding:9px 10px}.top .acts .btn{font-size:13px;padding:8px 10px}}@media (max-width:340px){.wu-btn .wu-l{display:none}}
+@media (max-width:420px){
+  .top .acts{width:100%;justify-content:flex-start}
+  .wu-btn{padding:9px 10px}
+  .top .acts .btn{font-size:13px;padding:8px 10px}
+  h1{font-size:28px}
+}
+@media (max-width:340px){.wu-btn .wu-l{display:none}}
 .wu-bg{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.35);display:flex;align-items:flex-end;justify-content:center;padding:12px;padding-bottom:calc(12px + var(--safe-b));overflow:auto}
 @media (min-width:600px){.wu-bg{align-items:center}}
 .wu-box{width:100%;max-width:520px;padding:18px;display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 24px);overflow:auto}
@@ -219,3 +231,5 @@ main.deckmode{max-width:none;padding:0}
 .lmenu h2.rolle{font-size:16px}
 .dfilter{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;margin:6px 0}.dfilter .dflab{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);margin-left:4px}
 .dfilter .chips{margin:6px 4px}.dfilter .chips.dthema{flex-basis:100%}
+
+/* 09.11.2026 nav: Start/Zurück im Portal-Kopf, scrollbare Lehrer-Laschen */

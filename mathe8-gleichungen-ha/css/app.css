@@ -55,4 +55,5 @@ button{border:0;border-radius:12px;color:#fff;cursor:pointer;font-size:1rem;padd
 .fld.eqf{display:flex;flex-wrap:wrap;width:100%;margin-right:0}.fld.eqf input{flex:1 1 14rem;width:auto;max-width:24rem;min-width:0}
 @media(max-width:700px){.fld.eqf input{flex-basis:100%;max-width:none}}
 /* 09.11.2026: fester „← Zurück“-Knopf (kf-zurueck.js, oben links) überdeckte den Seitentitel in der klebenden Kopfzeile – Titel rückt nach rechts */
-body:has(#kfZurueck:not([hidden])) .top{padding-left:calc(max(8px, env(safe-area-inset-left, 0px)) + 108px)}
+/* 09.11.2026 nav: Zurück+Start nebeneinander – Titel nicht unter den Knöpfen */
+body:has(#kfNav:not([hidden])) .top,body:has(#kfZurueck:not([hidden])) .top{padding-left:calc(max(8px, env(safe-area-inset-left, 0px)) + 200px)}
