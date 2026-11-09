@@ -8,7 +8,7 @@
   var LS = "tfgs_portal_v1", LSC = "tfgs_portal_cache", LSG = "tfgs_portal_gates";
   var API = window.PORTAL_API || "";
   var FACH = { mathe: "Mathe", informatik: "Informatik", klasse: "Klasse", privat: "Sonstiges" };
-  var ART = { material: ["Material", "📘"], mission: ["Missionen", "🚀"], selbstlernen: ["Selbstlernen", "🧠"], karten: ["Karteikarten", "🗂️"], tool: ["Werkzeug", "🧮"], folien: ["Folien", "🎞️"], test: ["Test", "📝"] };
+  var ART = { material: ["Material", "📘"], mission: ["Missionen", "🚀"], selbstlernen: ["Selbstlernen", "🧠"], karten: ["Karteikarten", "🗂️"], tool: ["Werkzeug", "🧮"], folien: ["Folien", "🎞️"], test: ["Test", "📝"], hausaufgabe: ["Hausaufgabe", "📝"] };
   var app = document.getElementById("app");
   var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "", thema: "" };
   /* Lehrkraft: Bereich Gymnasium / Sekundarschule (07.11.2026). Gymnasium = Klassen mit Endung "g" (8g, 9g). Wahl gilt nur in diesem Tab (sessionStorage),
@@ -215,7 +215,7 @@
     app.replaceChildren(form); user.focus();
   }
 
-  var VORSCHAU_ART = { selbstlernen: 1, mission: 1, karten: 1, test: 1 };   // Seiten mit Schüler-Anmeldung/Abgabe: Lehrkraft öffnet sie als Vorschau (?vorschau, nichts wird gespeichert/gesendet)
+  var VORSCHAU_ART = { selbstlernen: 1, mission: 1, karten: 1, test: 1, hausaufgabe: 1 };   // Seiten mit Schüler-Anmeldung/Abgabe: Lehrkraft öffnet sie als Vorschau (?vorschau, nichts wird gespeichert/gesendet)
   function card(s) {
     var f = fachKey(s.fach), isTest = s.art === "test", a = ART[s.art] || ART.material;
     var vor = !!(S.sess && S.sess.rolle === "lehrer" && VORSCHAU_ART[s.art] && okFolder(s.ordner));
@@ -274,7 +274,7 @@
     ["medien", "Informationen und Medien", "📰", /informationen\s+und\s+medien/i],
     ["klasse", "Klasse & Lernen", "🤝", /klassenregeln|warum\s+lernen|\bki\b/i],
     ["werkzeuge", "Werkzeuge", "🧮", /taschenrechner/i]];
-  var ROLLE = { material: [0, "Theorie & Folien"], folien: [0, "Theorie & Folien"], selbstlernen: [1, "Üben & Selbstarbeit"], mission: [1, "Üben & Selbstarbeit"], karten: [1, "Üben & Selbstarbeit"], tool: [2, "Weiteres"] };
+  var ROLLE = { material: [0, "Theorie & Folien"], folien: [0, "Theorie & Folien"], selbstlernen: [1, "Üben & Selbstarbeit"], mission: [1, "Üben & Selbstarbeit"], karten: [1, "Üben & Selbstarbeit"], hausaufgabe: [1, "Üben & Selbstarbeit"], tool: [2, "Weiteres"] };
   function hauptOf(s) { var t = s.titel || ""; for (var i = 0; i < HAUPT.length; i++) if (HAUPT[i].re.test(t)) return HAUPT[i].id; return ""; }
   function themaOf(s) {
     var txt = (s.titel || "") + " · " + (s.untertitel || "");
@@ -314,9 +314,64 @@
     if (window.KFZurueck) window.KFZurueck.push(function () { S.thema = ""; render(); });
   }
   function schliesseThema() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.thema = ""; render(); }
+  /* ---------- Hausaufgaben (09.11.2026) ----------
+     Eine Seite gilt als Hausaufgabe, wenn im Blatt „Seiten“ Art = „hausaufgabe“ ist ODER der Titel mit „Hausaufgabe“ beginnt.
+     Klassen/Sichtbarkeit wie bei allen Seiten (Server). Reihenfolge: offene zuerst, neueste (höchste „Sortierung“) oben; die oberste offene = „Aktuell“.
+     Fälligkeit optional im Untertitel oder Titel: „bis 13.11.“, „bis Fr 13.11.2026“, „fällig am 13.11.“ (nach dem Tag gilt sie als „früher“). */
+  var WT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+  function isHA(s) { return s && s.art !== "test" && (String(s.art || "").toLowerCase() === "hausaufgabe" || /^\s*hausaufgabe/i.test(s.titel || "")); }
+  function haFaellig(s) {
+    var m = /(?:bis|f(?:ä|ae)llig(?:\s+am)?|abgabe(?:\s+am)?)\s*(?:(?:mo|di|mi|do|fr|sa|so)\.?,?\s*)?(\d{1,2})\.\s?(\d{1,2})\.(\d{2,4})?/i.exec((s.untertitel || "") + " " + (s.titel || ""));
+    if (!m) return null;
+    var now = new Date(), y = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : now.getFullYear(), d = new Date(y, +m[2] - 1, +m[1], 23, 59, 59);
+    if (!m[3] && d.getTime() < now.getTime() - 200 * 864e5) d.setFullYear(y + 1);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function haListe(list) {   // [{s, due, offen, aktuell}]
+    var now = Date.now(), out = list.filter(isHA).map(function (s) { var d = haFaellig(s); return { s: s, due: d, offen: !d || d.getTime() >= now }; });
+    out.sort(function (a, b) { return (b.offen - a.offen) || ((+b.s.sort || 0) - (+a.s.sort || 0)); });
+    if (out.length && out[0].offen) out[0].aktuell = true;
+    return out;
+  }
+  function dueTxt(d) { return d ? "bis " + WT[d.getDay()] + " " + ("0" + d.getDate()).slice(-2) + "." + ("0" + (d.getMonth() + 1)).slice(-2) + "." : ""; }
+  function haKarte(x) {
+    var c = card(x.s); c.classList.add("hacard"); if (x.aktuell) c.classList.add("aktuell"); if (!x.offen) c.classList.add("frueher");
+    var tags = c.querySelector(".tags"), lab = x.aktuell ? "⭐ Aktuell" : (x.offen ? "offen" : "frühere Hausaufgabe");
+    if (tags) { tags.insertBefore(h("span", { class: "tag ha-badge" + (x.aktuell ? " akt" : x.offen ? "" : " alt"), text: lab }), tags.firstChild); if (x.due) tags.appendChild(h("span", { class: "tag ha-due", text: "📅 " + dueTxt(x.due) })); }
+    if (S.sess && S.sess.rolle === "lehrer") { var t = c.querySelector(".t"); if (t && x.s.klassen) t.appendChild(h("span", { class: "chip", style: "margin-left:6px", text: (x.s.klassen || []).join(", ") })); }
+    return c;
+  }
+  function haHauptKarte(all) {
+    var l = haListe(all), akt = l.filter(function (x) { return x.aktuell; })[0], n = l.filter(function (x) { return x.offen; }).length;
+    var sub = akt ? "Aktuell: " + akt.s.titel + (akt.due ? " · " + dueTxt(akt.due) : "") : (l.length ? "Keine offene Hausaufgabe – frühere findest du hier." : "Gerade keine Hausaufgaben – schön!");
+    return h("a", { class: "card glass hauptcard ha-haupt" + (akt ? " hat-akt" : ""), href: "#", "data-haupt": "hausaufgaben", onclick: function (e) { e.preventDefault(); oeffneThema("__ha"); } },
+      h("div", { class: "ico haupt-ha", text: "📝", "aria-hidden": "true" }),
+      h("div", {}, h("div", { class: "t", text: "Hausaufgaben" }), h("div", { class: "s", text: sub }), h("div", { class: "tags" }, n ? h("span", { class: "tag ha-badge akt", text: n + " offen" }) : null)),
+      h("div", { class: "chev", text: "›", "aria-hidden": "true" }));
+  }
+  function haAnsicht(all, zurueck) {
+    var box = h("div", { class: "smenu" }), l = haListe(all);
+    box.appendChild(h("div", { class: "thema-kopf" }, zurueck ? h("button", { class: "btn ghost small", text: zurueck, onclick: schliesseThema }) : null, h("h2", { class: "thema-titel", text: "📝 Hausaufgaben" })));
+    if (!l.length) { box.appendChild(h("div", { class: "glass empty" }, h("p", { text: "🎉 Gerade keine Hausaufgaben." }), h("p", { class: "muted", text: "Sobald dein Lehrer eine Hausaufgabe freischaltet, erscheint sie hier ganz oben." }))); return box; }
+    var offen = l.filter(function (x) { return x.offen; }), alt = l.filter(function (x) { return !x.offen; });
+    if (offen.length) { box.appendChild(h("h2", { text: "Offen" })); box.appendChild(h("div", { class: "list" }, offen.map(haKarte))); }
+    else box.appendChild(h("div", { class: "glass empty" }, h("p", { text: "✅ Keine offene Hausaufgabe." })));
+    if (alt.length) { box.appendChild(h("h2", { text: "Frühere Hausaufgaben" })); box.appendChild(h("div", { class: "list" }, alt.map(haKarte))); }
+    return box;
+  }
+  function teacherHA() {
+    var list = S.seiten.filter(function (s) { return inForm(s) && isHA(s) && (!S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0); });
+    var box = h("div", {}, sfSwitch(), classChips(S.klasse, function (k) { S.klasse = k; render(); }, "Alle Klassen"));
+    var kl = {}; list.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k && k !== "*" && (!S.klasse || k === S.klasse)) (kl[k] = kl[k] || []).push(s); }); });
+    var ks = Object.keys(kl).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
+    if (!ks.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Hausaufgaben für diese Auswahl. Neue Hausaufgabe: Seite im Blatt „Seiten“ mit Titel „Hausaufgabe …“ (oder Art „hausaufgabe“), Fälligkeit optional im Untertitel („bis 13.11.“)." })));
+    ks.forEach(function (k) { box.appendChild(h("h2", { text: "Klasse " + k })); box.appendChild(h("div", { class: "list" }, haListe(kl[k]).map(haKarte))); });
+    return box;
+  }
   function studentMenu(all) {
     var box = h("div", { class: "smenu" });
-    var rest = all.filter(function (s) { return s.art !== "test" && !hauptOf(s); });
+    if (S.thema === "__ha") { var hb = haAnsicht(all, "‹ Zurück"); hb.appendChild(h("h2", { text: "Immer dabei" })); hb.appendChild(hauptKarten(all)); return hb; }
+    var rest = all.filter(function (s) { return s.art !== "test" && !hauptOf(s) && !isHA(s); });
     var tests = all.filter(function (s) { return s.art === "test"; });
     var themen = themenListe(rest);
     var offen = S.thema && themen.filter(function (t) { return t.id === S.thema; })[0];
@@ -329,7 +384,7 @@
       box.appendChild(h("h2", { text: "Immer dabei" })); box.appendChild(hauptKarten(all));
       return box;
     }
-    box.appendChild(h("h2", { text: "Schnellzugriff" })); box.appendChild(hauptKarten(all));
+    box.appendChild(h("h2", { text: "Schnellzugriff" })); box.appendChild(h("div", { class: "list haupt" }, haHauptKarte(all))); box.appendChild(hauptKarten(all));
     var fo = [], byF = {}; themen.forEach(function (t) { if (!byF[t.fach]) { byF[t.fach] = []; fo.push(t.fach); } byF[t.fach].push(t); });
     fo.forEach(function (f) { box.appendChild(h("h2", { text: "Themen · " + FACH[f] })); box.appendChild(h("div", { class: "list" }, byF[f].map(themaKarte))); });
     if (tests.length) { box.appendChild(h("h2", { text: "Tests – vom Lehrer freigegeben" })); box.appendChild(h("div", { class: "list" }, tests.map(card))); }
@@ -424,12 +479,12 @@
 
   /* ---------- Lehrer ---------- */
   function teacherTabs() {
-    var tabs = [["menue", "Seiten"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
+    var tabs = [["menue", "Seiten"], ["ha", "Hausaufgaben"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
     var bar = h("div", { class: "tabs glass", role: "tablist" }, tabs.map(function (t) {
       return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "meldungen" && window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
     }));
     var body = h("div", {});
-    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
+    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "ha") body = teacherHA(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
     return h("div", {}, bar, body);
   }
   function classChips(cur, onpick, all) {
