@@ -209,3 +209,6 @@ main.deckmode{max-width:none;padding:0}
 .tag.ha-due{background:#fff4e6;color:#a74800}
 .hacard.aktuell{border:2px solid #f59f00;box-shadow:0 0 0 3px rgba(245,159,0,.18)}
 .hacard.frueher{opacity:.75}
+
+/* Ladezustand bis zur Server-Bestätigung (09.11.2026) */
+.laden{text-align:center}.laden .spin{margin:28vh auto 14px}.laden p{margin:0;font-size:15px}

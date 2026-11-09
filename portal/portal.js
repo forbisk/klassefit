@@ -69,6 +69,8 @@
     });
   }
   function kopSichtbar(s) { return !KOP[s.key] || S.kop[s.key] === true; }
+  /* Schüleransicht: zusätzlich zur Server-Filterung nur Seiten der eigenen Klasse (oder "*") – nie Reste eines anderen Kontos. */
+  function eigeneKlasse(s) { var k = String((S.sess && S.sess.klasse) || "").toLowerCase(); if (!k) return true; var l = (s.klassen || []).map(function (x) { return String(x).toLowerCase(); }); return l.indexOf(k) >= 0 || l.indexOf("*") >= 0; }
   setInterval(function () { if (!document.hidden && S.sess) kopPruefen(); }, 30000);
 
   /* ---------- Klassenpasswort-Schlüssel der Seiten (StatiCrypt "Angemeldet bleiben") ---------- */
@@ -132,11 +134,11 @@
   /* ---------- Sitzung ---------- */
   function takePayload(p) {
     S.sess = { token: (p.token || (S.sess && S.sess.token)), benutzer: p.profil.benutzer, name: p.profil.name, klasse: p.profil.klasse, rolle: p.profil.rolle, wuensche: (p.wuensche && typeof p.wuensche === "object") ? p.wuensche : null, gateBis: gateBisFor(p.profil) || undefined };
-    S.seiten = p.seiten || []; S.offline = false;
+    S.seiten = p.seiten || []; S.offline = false; S.bestaetigt = true;
     S.gates = gatesOf(S.seiten);
     applyGates(S.gates, gateBisFor(p.profil));
     lsSet(LS, S.sess);
-    lsSet(LSC, { seiten: S.seiten.map(function (s) { var c = {}; Object.keys(s).forEach(function (k) { if (k !== "gate") c[k] = s[k]; }); return c; }) });
+    lsSet(LSC, { benutzer: S.sess.benutzer, seiten: S.seiten.map(function (s) { var c = {}; Object.keys(s).forEach(function (k) { if (k !== "gate") c[k] = s[k]; }); return c; }) });
   }
   /* Identität/Sitzungen räumen – Lernfortschritt (sl10a-*, kg5-*, lk10a-*, Missionen-Antworten o. ä.) bleibt erhalten. */
   function clearIdentity() {
@@ -151,7 +153,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet("");
+    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.kop = {}; S.kopDone = false; S.bestaetigt = false; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet("");
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     renderLogin(msg || "");
   }
@@ -167,11 +169,22 @@
     return p && w.indexOf("..") < 0 ? "../" + w : "";
   }
   function gehWeiter() { var z = weiterZiel(); if (z) { try { history.replaceState(null, "", location.pathname); } catch (e) {} location.replace(z); return true; } return false; }
+  /* 09.11.2026: Nichts aus dem Speicher anzeigen, bevor der Server Sitzung + klassengefilterte Liste bestätigt hat (vorher blitzte die
+     Liste vom letzten Mal auf – bei geteilten Geräten auch die eines anderen Kontos). Bis dahin nur ein neutraler Ladezustand.
+     Der Cache dient nur noch als Offline-Notanzeige und nur für genau dasselbe Konto. */
+  function cacheFuer(sess) {
+    var c = lsGet(LSC); if (!c || !c.seiten || !sess || !c.benutzer) return null;
+    return String(c.benutzer).toLowerCase() === String(sess.benutzer || "").toLowerCase() ? c.seiten : null;
+  }
+  function renderLaden() {
+    app.className = "";
+    app.replaceChildren(h("div", { class: "laden", role: "status", "aria-live": "polite" }, h("div", { class: "spin", "aria-hidden": "true" }), h("p", { class: "muted", text: "Deine Seiten werden geladen …" })));
+  }
   function boot() {
-    var s = lsGet(LS), c = lsGet(LSC);
-    if (!s || !s.token) return renderLogin("");
-    S.sess = s;
-    if (c && c.seiten) { S.seiten = c.seiten; render(); kopPruefen(); }
+    var s = lsGet(LS);
+    if (!s || !s.token) { lsDel(LSC); return renderLogin(""); }
+    S.sess = s; S.seiten = []; S.kop = {}; S.bestaetigt = false;
+    renderLaden();
     refresh();
   }
   function refresh() {
@@ -179,8 +192,11 @@
     api({ action: "sitzung", token: S.sess.token }).then(function (r) {
       if (r.ok) { takePayload(r); if (gehWeiter()) return; render(); kopPruefen(); }
       else if (r.relogin) dropSession("Bitte melde dich neu an.");
-      else if (r.network) { S.offline = true; if (lsGet(LSC)) render(); else renderLogin(r.error); }
-      else { S.offline = true; render(); }
+      else {
+        if (!S.bestaetigt) { var c = cacheFuer(S.sess); S.seiten = c || []; }
+        S.offline = true;
+        if (S.bestaetigt || S.seiten.length) render(); else renderLogin(r.error || "Keine Verbindung. Bitte Internet prüfen.");
+      }
     });
   }
   document.addEventListener("visibilitychange", function () { if (!document.hidden && S.sess && Date.now() - (S.last || 0) > 300000) { S.last = Date.now(); refresh(); } });
@@ -200,7 +216,7 @@
     var btn = h("button", { class: "btn", type: "submit", text: "Anmelden" });
     var form = h("form", { class: "glass login", onsubmit: function (e) {
       e.preventDefault(); if (!user.value.trim() || !code.value.trim()) return;
-      btn.disabled = true; err.textContent = "";
+      btn.disabled = true; err.textContent = ""; S.seiten = []; S.kop = {}; S.kopDone = false; S.thema = ""; S.bestaetigt = false; lsDel(LSC);
       api({ action: "login", user: user.value.trim(), code: code.value, geraet: (navigator.userAgent || "").replace(/\(.*?\)/g, "").slice(0, 50) }).then(function (r) {
         if (r.ok) { sfSet(""); takePayload(r); S.tab = "menue"; if (gehWeiter()) return; render(); kopPruefen(); }
         else { btn.disabled = false; err.textContent = r.error || "Anmeldung fehlgeschlagen."; code.value = ""; code.focus(); }
@@ -409,7 +425,7 @@
     app.className = (S.sess.rolle === "lehrer" && S.tab === "dash") ? "wide" : "";
     var kids = [header()];
     if (S.offline) kids.push(h("div", { class: "banner", text: "Offline – Anzeige vom letzten Mal. Zum Öffnen der Seiten brauchst du Internet." }));
-    if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(studentMenu(S.seiten.filter(kopSichtbar))); }
+    if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(studentMenu(S.seiten.filter(kopSichtbar).filter(eigeneKlasse))); }
     app.replaceChildren.apply(app, kids);
   }
 
