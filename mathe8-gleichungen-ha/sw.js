@@ -2,7 +2,7 @@
    oder fremde Adressen (Apps-Script, Autosync, Abgeben laufen unveraendert direkt ins Netz).
    Nur Seiten/Dateien DIESER Seite (GET) werden bei erfolgreichem Laden als Notfall-Kopie abgelegt und nur dann
    gezeigt, wenn das Netz GANZ ausfaellt – so wird nie eine alte Test-Version statt der aktuellen ausgeliefert. */
-var CACHE = 'tfgs-pwa-v3:' + self.registration.scope;
+var CACHE = 'tfgs-pwa-v4:' + self.registration.scope;
 self.addEventListener('install', function () { self.skipWaiting(); });
 self.addEventListener('activate', function (e) {
   e.waitUntil((async function () {
