@@ -90,6 +90,8 @@
       + "font:700 14px/1.1 system-ui,Segoe UI,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;"
       + "-webkit-tap-highlight-color:transparent;touch-action:manipulation;display:inline-flex;align-items:center;gap:6px}"
       + "#kfZurueck[hidden],#kfZurueckPad[hidden]{display:none!important}"
+      /* Tests: Warte-Sperre der Test-Engine blendet body>* aus – Zurück bleibt trotzdem sichtbar (09.11.2026) */
+      + "html.testgesperrt body>#kfZurueck#kfZurueck:not([hidden]){display:inline-flex!important}"
       + "#kfZurueck:active{transform:scale(.97)}"
       + "#kfZurueckPad{height:52px;pointer-events:none;flex-shrink:0}"
       + "@media print{#kfZurueck,#kfZurueckPad{display:none!important}}";

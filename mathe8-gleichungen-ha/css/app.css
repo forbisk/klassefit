@@ -54,3 +54,5 @@ button{border:0;border-radius:12px;color:#fff;cursor:pointer;font-size:1rem;padd
 .fld .fn{font-weight:800;color:var(--pri)}.ansh{margin:.35rem 0 .1rem}
 .fld.eqf{display:flex;flex-wrap:wrap;width:100%;margin-right:0}.fld.eqf input{flex:1 1 14rem;width:auto;max-width:24rem;min-width:0}
 @media(max-width:700px){.fld.eqf input{flex-basis:100%;max-width:none}}
+/* 09.11.2026: fester „← Zurück“-Knopf (kf-zurueck.js, oben links) überdeckte den Seitentitel in der klebenden Kopfzeile – Titel rückt nach rechts */
+body:has(#kfZurueck:not([hidden])) .top{padding-left:calc(max(8px, env(safe-area-inset-left, 0px)) + 108px)}

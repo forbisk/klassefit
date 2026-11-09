@@ -10,7 +10,7 @@
   var FACH = { mathe: "Mathe", informatik: "Informatik", klasse: "Klasse", privat: "Sonstiges" };
   var ART = { material: ["Material", "📘"], mission: ["Missionen", "🚀"], selbstlernen: ["Selbstlernen", "🧠"], karten: ["Karteikarten", "🗂️"], tool: ["Werkzeug", "🧮"], folien: ["Folien", "🎞️"], test: ["Test", "📝"], hausaufgabe: ["Hausaufgabe", "📝"] };
   var app = document.getElementById("app");
-  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "", thema: "" };
+  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "", thema: "", fach: "", lthema: "", dashTyp: "", dashThema: "" };
   /* Lehrkraft: Bereich Gymnasium / Sekundarschule (07.11.2026). Gymnasium = Klassen mit Endung "g" (8g, 9g). Wahl gilt nur in diesem Tab (sessionStorage),
      nach jeder neuen Anmeldung wird neu gefragt. Schüler-Logins sind davon nicht betroffen. */
   var SF_KEY = "kf_lehrer_schulform";
@@ -19,6 +19,13 @@
   function sfGet() { try { var v = sessionStorage.getItem(SF_KEY); return v === "gym" || v === "sek" ? v : ""; } catch (e) { return ""; } }
   function sfSet(v) { S.schulform = v; try { if (v) sessionStorage.setItem(SF_KEY, v); else sessionStorage.removeItem(SF_KEY); } catch (e) {} }
   S.schulform = sfGet();
+  /* 09.11.2026 (t18u): danach Fachwahl Mathematik / Informatik (+ „Weiteres“ für fachübergreifende Seiten). Nur Tab-Dauer (sessionStorage),
+     wird bei Anmelden/Abmelden und beim Bereichswechsel gelöscht. */
+  var FW_KEY = "kf_lehrer_fach", FWAHL = { mathe: ["Mathematik", "📐"], informatik: ["Informatik", "💻"], weiteres: ["Weiteres · Klasse & Lernen", "🤝"] };
+  function fachWahlOf(s) { var f = fachKey(s.fach); return f === "mathe" || f === "informatik" ? f : "weiteres"; }
+  function fwGet() { try { var v = sessionStorage.getItem(FW_KEY); return FWAHL[v] ? v : ""; } catch (e) { return ""; } }
+  function fwSet(v) { S.fach = v; S.lthema = ""; try { if (v) sessionStorage.setItem(FW_KEY, v); else sessionStorage.removeItem(FW_KEY); } catch (e) {} }
+  S.fach = fwGet();
 
   /* ---------- Hilfen ---------- */
   function h(tag, attrs) {
@@ -153,7 +160,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.kop = {}; S.kopDone = false; S.bestaetigt = false; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet("");
+    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.kop = {}; S.kopDone = false; S.bestaetigt = false; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet(""); fwSet(""); S.dashTyp = ""; S.dashThema = "";
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     renderLogin(msg || "");
   }
@@ -218,7 +225,7 @@
       e.preventDefault(); if (!user.value.trim() || !code.value.trim()) return;
       btn.disabled = true; err.textContent = ""; S.seiten = []; S.kop = {}; S.kopDone = false; S.thema = ""; S.bestaetigt = false; lsDel(LSC);
       api({ action: "login", user: user.value.trim(), code: code.value, geraet: (navigator.userAgent || "").replace(/\(.*?\)/g, "").slice(0, 50) }).then(function (r) {
-        if (r.ok) { sfSet(""); takePayload(r); S.tab = "menue"; if (gehWeiter()) return; render(); kopPruefen(); }
+        if (r.ok) { sfSet(""); fwSet(""); takePayload(r); S.tab = "menue"; if (gehWeiter()) return; render(); kopPruefen(); }
         else { btn.disabled = false; err.textContent = r.error || "Anmeldung fehlgeschlagen."; code.value = ""; code.focus(); }
       });
     } },
@@ -269,7 +276,7 @@
     return box;
   }
   /* ---------- Schüler-Menü nach Themen (07.11.2026) ----------
-     Oben fest: „Meine Lücken“ und „Prüfungsfit“ (immer sichtbar; fehlt die Seite für die Klasse → ausgegraut mit Hinweis).
+     Oben: „Meine Lücken“ und „Prüfungsfit“ – nur wenn die Klasse eine passende Seite hat (seit 09.11.2026 sonst ganz unsichtbar).
      Darunter Themen-Kacheln je Fach; ein Thema öffnet alle passenden Seiten gebündelt (Theorie/Folien → Üben/Selbstarbeit → Weiteres).
      Sichtbarkeit kommt unverändert vom Server (Blatt „Seiten“: Klasse, Aktiv, Standard sichtbar, Freigaben) – hier wird nur gruppiert.
      Zuordnung über Titel/Untertitel (keine Ordnernamen im öffentlichen Code); unbekannte Seiten: „Folien X“/„Selbstarbeit X“ → Thema „X“. */
@@ -309,15 +316,16 @@
     out.sort(function (a, b) { return (spaet(a) - spaet(b)) || (a.sort - b.sort); });
     return out;
   }
+  /* 09.11.2026 (t18u): Karten nur, wenn die Klasse wirklich eine passende Seite hat – sonst ganz weg (nicht ausgegraut). */
   function hauptKarten(all) {
-    return h("div", { class: "list haupt" }, HAUPT.map(function (m) {
+    var cards = HAUPT.map(function (m) {
       var s = all.filter(function (x) { return hauptOf(x) === m.id && x.art !== "test"; })[0];
       if (s) { var c = card(s); c.classList.add("hauptcard"); c.setAttribute("data-haupt", m.id); var ic = c.querySelector(".ico"); if (ic) { ic.textContent = m.ico; ic.className = "ico haupt-" + m.id; } return c; }
-      return h("div", { class: "card glass hauptcard off", "data-haupt": m.id, "aria-disabled": "true" },
-        h("div", { class: "ico haupt-" + m.id, text: m.ico, "aria-hidden": "true" }),
-        h("div", {}, h("div", { class: "t", text: m.titel }), h("div", { class: "s", text: "Für deine Klasse noch nicht freigeschaltet – kommt, sobald es passende Aufgaben gibt." })));
-    }));
+      return null;
+    }).filter(Boolean);
+    return cards.length ? h("div", { class: "list haupt" }, cards) : null;
   }
+  function immerDabei(all) { var k = hauptKarten(all); return k ? [h("h2", { text: "Immer dabei" }), k] : []; }
   function themaKarte(t) {
     var arten = {}; t.seiten.forEach(function (s) { arten[(ROLLE[s.art] || [3, "Weiteres"])[1]] = 1; });
     return h("a", { class: "card glass themacard", href: "#", "data-thema": t.id, onclick: function (e) { e.preventDefault(); oeffneThema(t.id); } },
@@ -386,7 +394,7 @@
   }
   function studentMenu(all) {
     var box = h("div", { class: "smenu" });
-    if (S.thema === "__ha") { var hb = haAnsicht(all, "‹ Zurück"); hb.appendChild(h("h2", { text: "Immer dabei" })); hb.appendChild(hauptKarten(all)); return hb; }
+    if (S.thema === "__ha") { var hb = haAnsicht(all, "‹ Zurück"); immerDabei(all).forEach(function (x) { hb.appendChild(x); }); return hb; }
     var rest = all.filter(function (s) { return s.art !== "test" && !hauptOf(s) && !isHA(s); });
     var tests = all.filter(function (s) { return s.art === "test"; });
     var themen = themenListe(rest);
@@ -397,10 +405,10 @@
       var grp = {}, ord = [];
       offen.seiten.forEach(function (s) { var r = (ROLLE[s.art] || [3, "Weiteres"])[1]; if (!grp[r]) { grp[r] = []; ord.push(r); } grp[r].push(s); });
       ord.forEach(function (r) { box.appendChild(h("h2", { text: r })); box.appendChild(h("div", { class: "list" }, grp[r].map(card))); });
-      box.appendChild(h("h2", { text: "Immer dabei" })); box.appendChild(hauptKarten(all));
+      immerDabei(all).forEach(function (x) { box.appendChild(x); });
       return box;
     }
-    box.appendChild(h("h2", { text: "Schnellzugriff" })); box.appendChild(h("div", { class: "list haupt" }, haHauptKarte(all))); box.appendChild(hauptKarten(all));
+    box.appendChild(h("h2", { text: "Schnellzugriff" })); box.appendChild(h("div", { class: "list haupt" }, haHauptKarte(all))); var hk = hauptKarten(all); if (hk) box.appendChild(hk);
     var fo = [], byF = {}; themen.forEach(function (t) { if (!byF[t.fach]) { byF[t.fach] = []; fo.push(t.fach); } byF[t.fach].push(t); });
     fo.forEach(function (f) { box.appendChild(h("h2", { text: "Themen · " + FACH[f] })); box.appendChild(h("div", { class: "list" }, byF[f].map(themaKarte))); });
     if (tests.length) { box.appendChild(h("h2", { text: "Tests – vom Lehrer freigegeben" })); box.appendChild(h("div", { class: "list" }, tests.map(card))); }
@@ -410,7 +418,7 @@
   function header() {
     var s = S.sess, lehrer = s.rolle === "lehrer";
     return h("div", { class: "top" },
-      h("div", {}, h("div", { class: "hello" }, "Hallo" + (s.name ? ", " + s.name.split(" ")[0] : ""), !lehrer && s.klasse && h("span", { class: "chip", text: s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })), h("h1", { text: lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
+      h("div", {}, h("div", { class: "hello angemeldet", title: "Du bleibst angemeldet, bis du auf „Abmelden“ tippst." }, h("span", { class: "als", text: "👤 Angemeldet als " }), h("b", { class: "wer", text: s.name || s.benutzer || "" }), !lehrer && s.klasse && h("span", { class: "chip", text: "Klasse " + s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })), h("h1", { text: lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
       h("div", { class: "acts" }, wunschButton(), h("button", { class: "btn ghost", onclick: logout, "aria-label": "Abmelden", text: "Abmelden" })));
   }
   function wunschCtx() { return { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; }, info: function () { return S.sess && S.sess.wuensche; }, seiten: function () { return S.seiten.filter(kopSichtbar); }, render: function () { if (S.tab === "wuensche") render(); }, relogin: function () { dropSession("Bitte melde dich neu an."); } }; }
@@ -513,18 +521,93 @@
     var n = { gym: 0, sek: 0 }, kl = { gym: {}, sek: {} };
     S.seiten.forEach(function (s) { var f = formOfPage(s); n[f]++; (s.klassen || []).forEach(function (k) { if (k && k !== "*" && (isGymKl(k) ? "gym" : "sek") === f) kl[f][k] = 1; }); });
     var srt = function (o) { return Object.keys(o).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }).join(", "); };
-    var opt = function (f, ico, t) { return h("a", { class: "card glass sfw", href: "#", "data-sf": f, onclick: function (e) { e.preventDefault(); sfSet(f); S.tab = "menue"; S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); kopPruefen(); } },
+    var opt = function (f, ico, t) { return h("a", { class: "card glass sfw", href: "#", "data-sf": f, onclick: function (e) { e.preventDefault(); sfSet(f); fwSet(""); S.tab = "menue"; S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); kopPruefen(); } },
       h("div", { class: "ico " + (f === "gym" ? "mathe" : "informatik"), text: ico, "aria-hidden": "true" }),
       h("div", {}, h("div", { class: "t", text: t }), h("div", { class: "s", text: (srt(kl[f]) ? "Klassen " + srt(kl[f]) + " · " : "") + n[f] + " Seiten" })),
       h("div", { class: "chev", text: "›", "aria-hidden": "true" })); };
     return h("div", { class: "sfwahl" }, h("h2", { text: "Welcher Bereich?" }), h("div", { class: "list" }, opt("gym", "🎓", "Gymnasium"), opt("sek", "🏫", "Sekundarschule")),
       h("p", { class: "note", text: "Die Auswahl gilt, bis du dich abmeldest oder den Tab schließt. Wechseln geht jederzeit oben über „Bereich wechseln“." }));
   }
-  function sfSwitch() { return h("div", { class: "chips sfsw" }, h("button", { "aria-pressed": "true", text: (S.schulform === "gym" ? "🎓 Gymnasium" : "🏫 Sekundarschule") }), h("button", { "aria-pressed": "false", text: "⇄ Bereich wechseln", onclick: function () { sfSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); } })); }
+  function sfSwitch() { return h("div", { class: "chips sfsw" }, h("button", { "aria-pressed": "true", text: (S.schulform === "gym" ? "🎓 Gymnasium" : "🏫 Sekundarschule") }), h("button", { "aria-pressed": "false", text: "⇄ Bereich wechseln", onclick: function () { sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); } })); }
   function inForm(s) { return !S.schulform || formOfPage(s) === S.schulform; }
+  /* ---------- Lehrer-Seiten: Bereich → Fach → Themen → Theorie/Folien, Missionen bzw. Selbstarbeit, Hausaufgaben, Tests (09.11.2026, t18u) ---------- */
+  function rolleT(s) {
+    if (s.art === "test") return [4, "📝 Tests (Schüler sehen sie nur nach Freigabe)"];
+    if (isHA(s)) return [3, "🏠 Hausaufgaben"];
+    if (s.art === "material" || s.art === "folien") return [0, "🎞️ Theorie & Folien"];
+    if (s.art === "mission") return [1, "🚀 Missionen"];
+    if (s.art === "selbstlernen" || s.art === "karten") return [2, fachWahlOf(s) === "informatik" ? "🧠 Üben" : "🧠 Selbstarbeit & Üben"];
+    return [5, "🧮 Weiteres"];
+  }
+  function themaOfT(s) { var hp = hauptOf(s); return hp ? ["haupt", "Meine Lücken & Prüfungsfit", "🎯", null] : themaOf(s); }
+  function themenT(list) {
+    var by = {}, out = [];
+    list.forEach(function (s) { var t = themaOfT(s), k = t[0];
+      if (!by[k]) { by[k] = { id: k, titel: t[1], ico: t[2], sort: 1e9, seiten: [] }; out.push(by[k]); }
+      by[k].seiten.push(s); if (s.art !== "test" && !isHA(s)) by[k].sort = Math.min(by[k].sort, +s.sort || 0); });
+    out.forEach(function (t) { if (t.sort === 1e9) t.sort = Math.min.apply(null, t.seiten.map(function (s) { return +s.sort || 0; })) + 1000;
+      t.seiten.sort(function (a, b) { return (rolleT(a)[0] - rolleT(b)[0]) || ((+a.sort || 0) - (+b.sort || 0)); }); });
+    var spaet = function (t) { return t.id === "werkzeuge" ? 2 : t.id === "haupt" ? 1 : 0; };
+    out.sort(function (a, b) { return (spaet(a) - spaet(b)) || (a.sort - b.sort); });
+    return out;
+  }
+  function seitenForm() { return S.seiten.filter(inForm); }
+  function faecherForm() { var f = {}; seitenForm().forEach(function (s) { f[fachWahlOf(s)] = (f[fachWahlOf(s)] || 0) + 1; }); return f; }
+  function fachWahl(f) {
+    var opt = function (k) { var kl = {}; seitenForm().forEach(function (s) { if (fachWahlOf(s) === k) (s.klassen || []).forEach(function (x) { if (x && x !== "*") kl[x] = 1; }); });
+      var ks = Object.keys(kl).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }).join(", ");
+      return h("a", { class: "card glass fw" + (k === "weiteres" ? " fw-mini" : ""), href: "#", "data-fach": k, onclick: function (e) { e.preventDefault(); fwSet(k); S.klasse = ""; render(); try { window.scrollTo(0, 0); } catch (x) {} } },
+        h("div", { class: "ico " + (k === "informatik" ? "informatik" : k === "mathe" ? "mathe" : "klasse"), text: FWAHL[k][1], "aria-hidden": "true" }),
+        h("div", {}, h("div", { class: "t", text: FWAHL[k][0] }), h("div", { class: "s", text: (ks ? "Klassen " + ks + " · " : "") + f[k] + (f[k] === 1 ? " Seite" : " Seiten") + (k === "weiteres" ? " · fachübergreifend (z. B. Klassenregeln, KI & Lernen)" : " · Themen mit Folien, " + (k === "informatik" ? "Missionen" : "Selbstarbeit") + ", Tests und Hausaufgaben") })),
+        h("div", { class: "chev", text: "›", "aria-hidden": "true" })); };
+    var main = ["mathe", "informatik"].filter(function (k) { return f[k]; });
+    return h("div", { class: "fwahl" }, h("h2", { text: "Welches Fach?" }), h("div", { class: "list" }, main.map(opt)), f.weiteres ? h("div", { class: "list", style: "margin-top:10px" }, opt("weiteres")) : null,
+      h("p", { class: "note", text: "Die Auswahl gilt, bis du dich abmeldest oder den Tab schließt. Wechseln geht jederzeit über „Fach wechseln“." }));
+  }
+  function fachSwitch(f) {
+    var n = Object.keys(f).length;
+    return h("div", { class: "chips fwsw" }, h("button", { "aria-pressed": "true", text: FWAHL[S.fach][1] + " " + FWAHL[S.fach][0] }),
+      n > 1 ? h("button", { "aria-pressed": "false", text: "⇄ Fach wechseln", onclick: function () { fwSet(""); S.klasse = ""; render(); } }) : null);
+  }
+  function oeffneThemaT(id) { S.lthema = id; render(); try { window.scrollTo(0, 0); } catch (e) {} if (window.KFZurueck) window.KFZurueck.push(function () { S.lthema = ""; render(); }); }
+  function schliesseThemaT() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.lthema = ""; render(); }
+  function themaKarteT(t) {
+    var n = {}; t.seiten.forEach(function (s) { var r = rolleT(s); n[r[0]] = n[r[0]] || [r[1], 0]; n[r[0]][1]++; });
+    var kl = {}; t.seiten.forEach(function (s) { (s.klassen || []).forEach(function (x) { if (x && x !== "*") kl[x] = 1; }); });
+    var parts = Object.keys(n).sort().map(function (k) { var lab = n[k][0].replace(/^\S+\s/, "").replace(/\s*\(.*\)$/, ""); return n[k][1] + " " + lab; });
+    return h("a", { class: "card glass themacard", href: "#", "data-lthema": t.id, onclick: function (e) { e.preventDefault(); oeffneThemaT(t.id); } },
+      h("div", { class: "ico " + (S.fach === "informatik" ? "informatik" : S.fach === "mathe" ? "mathe" : "klasse"), text: t.ico, "aria-hidden": "true" }),
+      h("div", {}, h("div", { class: "t", text: t.titel }), h("div", { class: "s", text: parts.join(" · ") }),
+        h("div", { class: "tags" }, Object.keys(kl).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }).map(function (x) { return h("span", { class: "tag", text: x }); }),
+          t.seiten.some(isHA) ? h("span", { class: "tag ha-badge", text: "🏠 HA" }) : null, t.seiten.some(function (s) { return s.art === "test"; }) ? h("span", { class: "tag test", text: "📝 Test" }) : null)),
+      h("div", { class: "chev", text: "›", "aria-hidden": "true" }));
+  }
   function teacherMenu() {
-    var list = S.seiten.filter(function (s) { return inForm(s) && (!S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0); });
-    return h("div", {}, sfSwitch(), classChips(S.klasse, function (k) { S.klasse = k; render(); }, "Alle Klassen"), groupsTeacher(list));
+    var f = faecherForm(), keys = Object.keys(f);
+    if (S.fach && !f[S.fach]) fwSet("");
+    if (!S.fach && keys.length === 1) fwSet(keys[0]);   // nur ein Fach in diesem Bereich (z. B. Gymnasium: Mathe) → direkt dorthin
+    if (!S.fach) return h("div", {}, sfSwitch(), fachWahl(f));
+    var inF = seitenForm().filter(function (s) { return fachWahlOf(s) === S.fach; });
+    var kls = {}; inF.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k && k !== "*") kls[k] = 1; }); });
+    if (S.klasse && !kls[S.klasse]) S.klasse = "";
+    var list = inF.filter(function (s) { return !S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0; });
+    var kchips = h("div", { class: "chips" }, [""].concat(Object.keys(kls).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); })).map(function (k) { return h("button", { "aria-pressed": S.klasse === k ? "true" : "false", text: k || "Alle Klassen", onclick: function () { S.klasse = k; render(); } }); }));
+    var themen = themenT(list), offen = S.lthema && themen.filter(function (t) { return t.id === S.lthema; })[0];
+    if (S.lthema && !offen) S.lthema = "";
+    var box = h("div", { class: "lmenu" }, sfSwitch(), fachSwitch(f), kchips);
+    if (offen) {
+      box.appendChild(h("div", { class: "thema-kopf" }, h("button", { class: "btn ghost small", text: "‹ Alle Themen", onclick: schliesseThemaT }), h("h2", { class: "thema-titel", text: offen.ico + " " + offen.titel })));
+      var grp = {}, ord = [], hm = {}; haListe(offen.seiten).forEach(function (x) { hm[x.s.key] = x; });
+      offen.seiten.forEach(function (s) { var r = rolleT(s)[1]; if (!grp[r]) { grp[r] = []; ord.push(r); } grp[r].push(s); });
+      ord.forEach(function (r) { var items = grp[r]; if (/Hausaufgaben/.test(r)) items = haListe(items).map(function (x) { return x.s; });
+        box.appendChild(h("h2", { class: "rolle", text: r })); box.appendChild(h("div", { class: "list" }, items.map(function (s) { return hm[s.key] ? haKarte(hm[s.key]) : card(s); }))); });
+      return box;
+    }
+    box.appendChild(h("h2", { text: "Themen · " + FWAHL[S.fach][0] + (S.klasse ? " · Klasse " + S.klasse : "") }));
+    if (!themen.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Seiten für diese Auswahl." })));
+    else box.appendChild(h("div", { class: "list" }, themen.map(themaKarteT)));
+    box.appendChild(h("p", { class: "note", text: "Tests und Hausaufgaben stehen im jeweiligen Thema. Alle Hausaufgaben auf einen Blick: Tab „Hausaufgaben“; Tests freischalten: Tab „Freigaben“." }));
+    return box;
   }
   function groupsTeacher(list) {   // Lehrer sehen Tests immer, gekennzeichnet
     var box = groups(list.filter(function (s) { return s.art !== "test"; })), tests = list.filter(function (s) { return s.art === "test"; });
@@ -631,7 +714,7 @@
     var klassen = []; d.schueler.forEach(function (s) { if (s.klasse && klassen.indexOf(s.klasse) < 0 && (!S.schulform || (isGymKl(s.klasse) ? "gym" : "sek") === S.schulform)) klassen.push(s.klasse); });
     sites = sites.filter(inForm);
     klassen.sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
-    var pages = sites.filter(function (s) { return S.dashSeite ? s.key === S.dashSeite : (!S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0); });
+    var pages = sites.filter(function (s) { return S.dashSeite ? s.key === S.dashSeite : ((!S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0) && dashTypOk(s) && dashThemaOk(s)); });
     var keep = {}; pages.forEach(function (s) { keep[s.key] = 1; });
     var th = d.themen.filter(function (t) { return keep[t.seite]; });
     var sch = d.schueler.filter(function (s) {
@@ -653,6 +736,23 @@
       return (parseInt(a.klasse) - parseInt(b.klasse)) || (a.klasse < b.klasse ? -1 : a.klasse > b.klasse ? 1 : (a.anzeige < b.anzeige ? -1 : a.anzeige > b.anzeige ? 1 : 0));
     });
     return { klassen: klassen, pages: pages, th: th, sch: sch, byKey: byKey };
+  }
+  /* 09.11.2026 (t18u): Dashboard-Filter Themen (Lernseiten) / Tests / Hausaufgaben + Thema. Nur Anzeige – Datenquelle admin_fortschritt unverändert. */
+  function dashFull(p) { var x = null; S.seiten.forEach(function (s) { if (s.key === p.key) x = s; }); return x ? Object.assign({}, p, { untertitel: x.untertitel, art: p.art || x.art, titel: p.titel || x.titel }) : p; }
+  function dashTypOf(p) { p = dashFull(p); return p.art === "test" ? "tests" : isHA(p) ? "ha" : "themen"; }
+  function dashTypOk(p) { return !S.dashTyp || dashTypOf(p) === S.dashTyp; }
+  function dashThemaOf(p) { return themaOfT(dashFull(p)); }
+  function dashThemaOk(p) { return !S.dashThema || dashThemaOf(p)[0] === S.dashThema; }
+  function dashFilterLeiste(d) {
+    var basis = d.seiten.filter(inForm).filter(function (s) { return !S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0; });
+    var cnt = { "": basis.length, themen: 0, tests: 0, ha: 0 }; basis.forEach(function (s) { cnt[dashTypOf(s)]++; });
+    var typ = chipRow([["", "Alles (" + cnt[""] + ")"], ["themen", "📚 Themen (" + cnt.themen + ")"], ["tests", "📝 Tests (" + cnt.tests + ")"], ["ha", "🏠 Hausaufgaben (" + cnt.ha + ")"]], S.dashTyp, function (k) { S.dashTyp = k; S.dashSeite = ""; S.dashThema = ""; render(); });
+    typ.classList.add("dtyp");
+    var th = {}, tho = []; basis.filter(dashTypOk).forEach(function (s) { var t = dashThemaOf(s); if (!th[t[0]]) { th[t[0]] = t; tho.push(t); } });
+    if (S.dashThema && !th[S.dashThema]) S.dashThema = "";
+    var them = tho.length > 1 ? chipRow([["", "Alle Themen"]].concat(tho.map(function (t) { return [t[0], t[2] + " " + t[1]]; })), S.dashThema, function (k) { S.dashThema = k; S.dashSeite = ""; render(); }, true) : null;
+    if (them) them.classList.add("dthema");
+    return h("div", { class: "dfilter" }, h("div", { class: "dflab", text: "Filter" }), typ, them);
   }
   /* portal-7: Übersicht je Klasse (Karten) – klick = Klasse filtern */
   function classCards(d, v) {
@@ -757,9 +857,10 @@
       bad.length > 0 && h("div", { class: "banner", text: "Nicht lesbar: " + bad.map(function (q) { return q.titel; }).join(", ") + ". Die übrigen Daten sind trotzdem aktuell. (Zugriff/Freigabe prüfen, dann „Aktualisieren“.)" }),
       srcLine,
       chipRow([["", "Alle Klassen"]].concat(v.klassen.map(function (k) { return [k, k]; })), S.dashKlasse, function (k) { S.dashKlasse = k; if (S.dashSeite && v.byKey[S.dashSeite] && k && (v.byKey[S.dashSeite].klassen || []).indexOf(k) < 0) S.dashSeite = ""; render(); }),
-      chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
+      dashFilterLeiste(d),
+      chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return inForm(s) && (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).filter(function (s) { return dashTypOk(s) && dashThemaOk(s); }).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
       chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"]], S.dashSort, function (k) { S.dashSort = k; render(); }),
-      !S.dashKlasse && !S.dashSeite ? classCards(d, v) : null,
+      !S.dashKlasse && !S.dashSeite && !S.dashTyp && !S.dashThema ? classCards(d, v) : null,
       h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),
       v.sch.length && v.th.length ? h("div", { class: "heat glass" }, tbl) : h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für diese Auswahl gibt es keine Schüler oder Spalten." })),
       h("div", { class: "legend" }, [["c0", "nicht begonnen"], ["c1", "< 33 %"], ["c2", "33–66 %"], ["c3", "> 66 %"], ["c4", "fertig / Test ≥ 85 %"], ["cz", "Test nur begonnen"], ["cn", "Anzahl (ohne Prozent)"]].map(function (l) { return h("span", {}, h("i", { class: l[0] }), l[1]); })),

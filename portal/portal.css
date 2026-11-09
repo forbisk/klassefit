@@ -212,3 +212,10 @@ main.deckmode{max-width:none;padding:0}
 
 /* Ladezustand bis zur Server-Bestätigung (09.11.2026) */
 .laden{text-align:center}.laden .spin{margin:28vh auto 14px}.laden p{margin:0;font-size:15px}
+/* 09.11.2026 (t18u): „Angemeldet als“, Fachwahl, Lehrer-Themen, Dashboard-Filter */
+.top .hello.angemeldet{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}
+.top .hello .als{color:var(--ink2);font-weight:600}.top .hello .wer{color:var(--ink);font-weight:800}
+.fwahl .card.fw-mini{padding-top:10px;padding-bottom:10px;opacity:.95}
+.lmenu h2.rolle{font-size:16px}
+.dfilter{display:flex;flex-wrap:wrap;align-items:center;gap:0 8px;margin:6px 0}.dfilter .dflab{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);margin-left:4px}
+.dfilter .chips{margin:6px 4px}.dfilter .chips.dthema{flex-basis:100%}
