@@ -307,6 +307,7 @@
     ["kommutativ", "Kommutativgesetz", "🔁", /kommutativ/i],
     ["daten", "Bits, Bytes & Sicherheit", "💾", /bits,?\s+bytes/i],          // Informatik 6/7 (10.11.2026) – vor „ordner“, weil dort /missionen/ greift
     ["binaer", "Binärcode, Pixel & Speicher", "🔢", /bin(ä|ae)rcode/i],      // Informatik 8 (10.11.2026)
+    ["studium", "Studium", "🎓", /studium\s*:\s*modellierung/i],             // persönliche Studien-Folien, nur Lehrkraft (10.11.2026)
     ["ordner", "Ordner und Dateien", "🗂️", /ordner\s+und\s+dateien|missionen/i],
     ["medien", "Informationen und Medien", "📰", /informationen\s+und\s+medien/i],
     ["klasse", "Klasse & Lernen", "🤝", /klassenregeln|warum\s+lernen|\bki\b/i],
