@@ -45,6 +45,12 @@
       if (Array.isArray(c)) add(c); else e.appendChild(c.nodeType ? c : document.createTextNode(String(c))); } })(Array.prototype.slice.call(arguments, 2));
     return e;
   }
+  function tipId(id) {
+    if (!id) return null;
+    if (window.KFTip && KFTip.el) { var n = KFTip.el(id); if (n) return n; }
+    var tx = window.KFTip && KFTip.text(id);
+    return tx ? h("span", { class: "kf-tid", title: tx, "data-tip": tx, tabindex: "0", text: String(id).replace(/^[a-z]+:/, "") }) : null;
+  }
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
@@ -866,7 +872,7 @@
     else if (dd && dd.verlauf) {
       var ml = dd.meldungen || [];
       if (ml.length) body.push(h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: "⚑ Fehler gemeldet (" + ml.length + ")" })), ml.map(function (m) {
-        return h("div", { class: "mrow2" }, h("div", {}, h("b", { text: m.grund || "Meldung" }), h("span", { class: "tag" + (m.status === "new" ? " hot" : ""), text: MST[m.status] || m.status || "neu" }), h("span", { class: "muted", text: " · " + fdt(m.z) + " · " + (m.seite || "") + (m.aufgabe ? " · " + m.aufgabe : "") })),
+        return h("div", { class: "mrow2" }, h("div", {}, h("b", { text: m.grund || "Meldung" }), h("span", { class: "tag" + (m.status === "new" ? " hot" : ""), text: MST[m.status] || m.status || "neu" }), h("span", { class: "muted" }, " · " + fdt(m.z) + " · " + (m.seite || ""), m.aufgabe ? [" · ", tipId(m.aufgabe) || m.aufgabe] : null)),
           m.kommentar ? h("div", { class: "mcom", text: "„" + m.kommentar + "“" }) : null); })));
       var byDay = {}, days = []; dd.verlauf.forEach(function (e) { var k = new Date(e.z).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }); if (!byDay[k]) { byDay[k] = []; days.push(k); } byDay[k].push(e); });
       var tt = {}; d.themen.forEach(function (t) { tt[t.seite + "|" + t.thema] = t.label; });
@@ -874,7 +880,7 @@
       body.push(h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: "Verlauf (Portal-Seiten)" }), h("span", { class: "tag", text: dd.verlaufGesamt + " Einträge" })),
         days.length ? days.slice(0, 14).map(function (k) { return h("div", { class: "tlday" }, h("em", { text: k }), byDay[k].slice(0, 12).map(function (e) {
           return h("div", { class: "tl" }, h("span", { class: "tm", text: new Date(e.z).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) }),
-            h("span", { text: (ttl[e.seite] || e.seite) + " · " + (tt[e.seite + "|" + e.thema] || e.thema || "") + (e.item ? " · " + e.item : "") }),
+            h("span", {}, (ttl[e.seite] || e.seite) + " · " + (tt[e.seite + "|" + e.thema] || e.thema || ""), e.item ? [" · ", tipId(e.item) || e.item] : null),
             h("span", { class: "tv", text: e.typ === "fertig" ? "✓ fertig" : e.wert != null ? (e.max ? e.wert + "/" + e.max : String(e.wert)) : e.typ })); }), byDay[k].length > 12 ? h("div", { class: "muted", text: "… " + (byDay[k].length - 12) + " weitere" }) : null); })
         : h("p", { class: "muted", text: "Noch keine Einträge auf den neuen Portal-Seiten (Altdaten siehe oben)." })));
     }
