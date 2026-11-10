@@ -38,7 +38,7 @@
   }
   function taskUrl(r) { var t = String(r.task_id).replace(/^pf:/, ""); return "../pruefungsfit-mathe/#/rv/" + encodeURIComponent(t) + "/" + encodeURIComponent(r.seed) + (/^test/.test(r.task_variant) ? "/t" : ""); }
   function reset() { M.mode = ""; M.ptoken = ""; M.pw = ""; M.list = null; M.err = ""; M.busy = false; M.open = ""; M.auto = false; }
-  window.PortalMeldungen = { state: M, reset: reset, view: function (h, rr, ctx) {
+  window.PortalMeldungen = { state: M, reset: reset, taskUrl: taskUrl, view: function (h, rr, ctx) {
     ctx = ctx || {};
     var sess = ctx.sess ? ctx.sess() : null;
     var tok = ctx.token ? ctx.token() : "";

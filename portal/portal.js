@@ -172,7 +172,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.kop = {}; S.kopDone = false; S.bestaetigt = false; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet(""); fwSet(""); S.dashTyp = ""; S.dashThema = "";
+    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalGlocke) window.PortalGlocke.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.kop = {}; S.kopDone = false; S.bestaetigt = false; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet(""); fwSet(""); S.dashTyp = ""; S.dashThema = "";
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     renderLogin(msg || "");
   }
@@ -492,9 +492,16 @@
           h("button", { type: "button", class: "btn ghost small nav-start", onclick: goPortalStart, "aria-label": "Start – Übersicht", text: "⌂ Start" })),
         h("div", { class: "hello angemeldet", title: "Du bleibst angemeldet, bis du auf „Abmelden“ tippst." }, h("span", { class: "als", text: "👤 Angemeldet als " }), h("b", { class: "wer", text: s.name || s.benutzer || "" }), !lehrer && s.klasse && h("span", { class: "chip", text: "Klasse " + s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })),
         h("h1", { text: lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
-      h("div", { class: "acts" }, wunschButton(), h("button", { class: "btn ghost", onclick: logout, "aria-label": "Abmelden", text: "Abmelden" })));
+      h("div", { class: "acts" }, lehrer ? glockeButton() : null, wunschButton(), h("button", { class: "btn ghost", onclick: logout, "aria-label": "Abmelden", text: "Abmelden" })));
   }
   function wunschCtx() { return { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; }, info: function () { return S.sess && S.sess.wuensche; }, seiten: function () { return S.seiten.filter(kopSichtbar); }, render: function () { if (S.tab === "wuensche") render(); }, relogin: function () { dropSession("Bitte melde dich neu an."); } }; }
+  /* 10.11.2026: Glocke (neue Schülerfragen/Meldungen) – glocke.js */
+  function glockeButton() {
+    if (!window.PortalGlocke) return null;
+    return window.PortalGlocke.button(h, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; },
+      relogin: function () { dropSession("Bitte melde dich neu an."); },
+      openTab: function (t) { if (!S.schulform) { S.schulform = "sek"; try { sfSet("sek"); } catch (e) {} } S.tab = t; if (t === "dash" && typeof loadDash === "function" && !S.dash) loadDash(false); render(); try { window.scrollTo(0, 0); } catch (e) {} } });
+  }
   function wunschButton() { return window.PortalWuensche ? window.PortalWuensche.button(h, wunschCtx()) : null;
   }
   function render() {

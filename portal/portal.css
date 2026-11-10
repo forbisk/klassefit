@@ -277,3 +277,26 @@ main.deckmode{max-width:none;padding:0}
 .aklg{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink2);margin:6px 2px}
 .akbar{width:54px;height:8px;border-radius:6px;flex-shrink:0;background:linear-gradient(90deg,hsl(0,72%,40%),hsl(55,72%,36%),hsl(125,72%,40%))}
 @media (max-width:480px){.akh{display:none}.aklg{font-size:10px}}
+/* 10.11.2026: Glocke – neue Schülerfragen/Meldungen (glocke.js) */
+.kfg-btn{position:relative;min-width:44px;padding-left:12px;padding-right:12px}
+.kfg-btn .kfg-n{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ef4444;color:#fff;font:800 11px/20px system-ui,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--glass-b,#fff)}
+.kfg-btn .kfg-n[hidden]{display:none}
+.kfg-btn.on{animation:kfgw 1.2s ease-in-out 2}
+@keyframes kfgw{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}
+@media (prefers-reduced-motion:reduce){.kfg-btn.on{animation:none}}
+.kfg-sheet{max-width:720px;background:rgba(255,255,255,.97)}
+@media (prefers-color-scheme:dark){.kfg-sheet{background:rgba(15,23,42,.97)}}
+.kfg-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.kfg-top h3{margin:0}.kfg-topr{display:flex;align-items:center;gap:6px}
+.kfg-hint{font-size:12px;margin:6px 0 10px}
+.kfg-it{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 10px;background:rgba(127,127,127,.06)}
+.kfg-it.offen{border-color:#f59e0b;box-shadow:inset 3px 0 0 #f59e0b}
+.kfg-kopf{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}
+.kfg-typ{font-weight:800}.kfg-neu{background:#ef4444;color:#fff;border-radius:999px;padding:0 7px;font-size:11px;font-weight:800}
+.kfg-auf{font-weight:700;margin:6px 0 2px;font-size:13px;overflow-wrap:anywhere}
+.kfg-txt{white-space:pre-wrap;overflow-wrap:anywhere;margin:4px 0}
+.kfg-ans{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0;padding:6px 8px;border-radius:10px;background:rgba(47,191,113,.12);font-size:13px}
+.kfg-ta{width:100%;box-sizing:border-box;margin:6px 0;padding:8px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.6);color:inherit;font:inherit;resize:vertical}
+@media (prefers-color-scheme:dark){.kfg-ta{background:rgba(0,0,0,.25)}}
+.kfg-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kfg-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:30;max-width:calc(100vw - 24px);padding:10px 16px;border-radius:999px;background:#0f172ae6;color:#fff;font-weight:700;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.3);cursor:pointer}
