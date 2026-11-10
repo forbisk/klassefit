@@ -841,6 +841,40 @@
     return s.filter(Boolean).join(" · ");
   }
   /* sichtbare Seiten/Spalten/Schüler nach den Filtern */
+  /* 10.11.2026 (t39u): Aktivität = Ø aktive Lernminuten pro Tag, letzte 7 Tage (Backend portal-7n, Feld aktivMin; ältere Backends: „noch keine Daten“).
+     Messbeginn d.aktivMin.seit: vorher gibt es keine Werte – dann grau statt rot. Farben rot (0) → gelb → grün (≥ AK_ZIEL). Trend gegen Tag -13…-7. */
+  var AK_ZIEL = 15;
+  function akDays(a, b) { var x = Date.parse(a + "T12:00:00"), y = Date.parse(b + "T12:00:00"); return isFinite(x) && isFinite(y) ? Math.round((y - x) / 86400e3) : NaN; }
+  function akInfo(d, id) {
+    var A = d && d.aktivMin; if (!A || !A.seit || !A.heute) return { st: "none" };
+    var lauf = akDays(A.seit, A.heute) + 1; if (!(lauf >= 1)) return { st: "none" };
+    var cov = Math.min(7, lauf), covP = Math.max(0, Math.min(7, lauf - 7)), x = (A.u || {})[id] || { m7: 0, m14: 0, t7: 0, letzte: "" };
+    var avg = x.m7 / cov, o = { st: cov >= 3 ? "ok" : "warm", avg: avg, cov: cov, t7: x.t7 || 0, letzte: x.letzte || "", seit: A.seit, heute: A.heute, arrow: "" };
+    if (covP >= 3) { var pv = x.m14 / covP, df = avg - pv; o.prev = pv;
+      o.arrow = (Math.abs(df) >= 2 && (pv === 0 ? avg >= 2 : Math.abs(df) / pv >= 0.2)) ? (df > 0 ? "up" : "down") : "eq"; }
+    return o;
+  }
+  function akColor(avg) { var f = Math.max(0, Math.min(1, avg / AK_ZIEL)), hue = Math.round(f * 125); return "hsl(" + hue + ",72%," + (f > 0.4 && f < 0.75 ? 36 : 40) + "%)"; }
+  function akFmtDay(t) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t || ""); return m ? m[3] + "." + m[2] + "." : t; }
+  function akTip(o) {
+    if (o.st === "none") return "Aktivität: noch keine Daten (Messung startet mit dem neuen Backend). Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + ".";
+    var l = ["Ø " + (Math.round(o.avg * 10) / 10).toString().replace(".", ",") + " min pro Tag, letzte " + (o.cov < 7 ? o.cov + " Tage (Messung seit " + akFmtDay(o.seit) + ")" : "7 Tage") + ", Ziel " + AK_ZIEL];
+    l.push("aktive Tage: " + o.t7 + "/" + o.cov);
+    if (o.letzte) { var n = akDays(o.letzte, o.heute); l.push("zuletzt aktiv " + (n <= 0 ? "heute" : n === 1 ? "gestern" : "vor " + n + " Tagen")); } else l.push("seit Messbeginn nicht aktiv");
+    if (o.prev != null) l.push("davor: Ø " + (Math.round(o.prev * 10) / 10).toString().replace(".", ",") + " min/Tag");
+    else l.push("Trend: noch kein Vergleichszeitraum");
+    if (o.st === "warm") l.push("noch wenig Daten – aussagekräftig ab " + akFmtDay(new Date(Date.parse(o.seit + "T12:00:00") + 2 * 86400e3).toISOString().slice(0, 10)));
+    return l.join(" · ");
+  }
+  function akChip(d, id) {
+    var o = akInfo(d, id), ar = { up: "↑", down: "↓", eq: "→" }[o.arrow] || "";
+    if (o.st === "none") return h("span", { class: "akw", title: akTip(o), "aria-label": akTip(o) }, h("span", { class: "akt ak0", text: "–" }));
+    var v = Math.round(o.avg);
+    return h("span", { class: "akw", title: akTip(o), "aria-label": akTip(o) },
+      h("span", { class: "akt" + (o.st === "warm" ? " ak0" : ""), style: o.st === "ok" ? "background:" + akColor(o.avg) : null }, h("b", { text: String(v) }), h("i", { text: "min" })),
+      ar ? h("em", { class: "akp ak-" + o.arrow, text: ar }) : null, h("small", { class: "akd", text: o.t7 + "/" + o.cov }));
+  }
+  function akSortVal(d, id) { var o = akInfo(d, id); return o.st === "none" ? -1 : o.avg; }
   function dashView() {
     var d = S.dash, sites = d.seiten || [], byKey = {}; sites.forEach(function (s) { byKey[s.key] = s; });
     var klassen = []; d.schueler.forEach(function (s) { if (s.klasse && klassen.indexOf(s.klasse) < 0 && (!S.schulform || (isGymKl(s.klasse) ? "gym" : "sek") === S.schulform)) klassen.push(s.klasse); });
@@ -865,6 +899,7 @@
     sch.sort(function (a, b) {
       if (S.dashSort === "zuletzt") return (b._last - a._last) || (a.anzeige < b.anzeige ? -1 : 1);
       if (S.dashSort === "fortschritt") return (b._score - a._score) || (a.anzeige < b.anzeige ? -1 : 1);
+      if (S.dashSort === "aktiv") return (akSortVal(d, b.id) - akSortVal(d, a.id)) || (a.anzeige < b.anzeige ? -1 : 1);
       return (parseInt(a.klasse) - parseInt(b.klasse)) || (a.klasse < b.klasse ? -1 : a.klasse > b.klasse ? 1 : (a.anzeige < b.anzeige ? -1 : a.anzeige > b.anzeige ? 1 : 0));
     });
     return { klassen: klassen, pages: pages, th: th, sch: sch, byKey: byKey };
@@ -980,7 +1015,7 @@
     var srcLine = h("div", { class: "src" }, "Stand " + new Date(d.erzeugt || now).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " · ",
       (d.quellen || []).map(function (q) { return h("span", { class: q.ok ? "ok" : "bad", title: q.ok ? (q.n + " Zeilen gelesen" + (q.zugeordnet != null ? ", " + q.zugeordnet + " zugeordnet" : "") + (q.nichtZugeordnet ? ", " + q.nichtZugeordnet + " nicht zuordenbar" : "")) : (q.fehler || "nicht lesbar"), text: (q.ok ? "✓ " : "⚠ ") + q.titel.replace(/ \(.*\)/, "") + " "}); }),
       h("button", { class: "btn ghost small", disabled: S.dashLoading ? true : null, text: S.dashLoading ? "Lädt …" : "↻ Aktualisieren", onclick: function () { loadDash(true); } }));
-    var head1 = [h("th", { class: "l", rowspan: "2", text: "Schüler" })], head2 = [];
+    var head1 = [h("th", { class: "l", rowspan: "2", title: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · Pfeil = Trend gegen die 7 Tage davor · x/7 = aktive Tage" }, "Schüler ", h("span", { class: "akh", text: "· Ø min/Tag" }))], head2 = [];
     v.pages.forEach(function (p) { var n = v.th.filter(function (t) { return t.seite === p.key; }).length; if (n) head1.push(h("th", { class: "pg", colspan: String(n), text: p.titel, title: p.key })); });
     v.th.forEach(function (t) { head2.push(h("th", { text: t.label, title: (v.byKey[t.seite] ? v.byKey[t.seite].titel + " · " : "") + t.label })); });
     var hasM = !!d.meldungen; head1.push(h("th", { rowspan: "2", text: "Ø", title: "Durchschnitt der sichtbaren Seiten" })); if (hasM) head1.push(h("th", { rowspan: "2", text: "⚑", title: "Fehler-Meldungen offen" }));
@@ -988,7 +1023,7 @@
     var tbl = h("table", {}, h("thead", {}, h("tr", {}, head1), h("tr", {}, head2)),
       h("tbody", {}, v.sch.map(function (s) {
         var z = d.zellen[s.id] || {};
-        return h("tr", { class: "rw", onclick: function () { openDetail(s.id); } }, h("th", { class: "l" }, h("button", { class: "nm", type: "button", text: s.anzeige, title: "Klasse " + s.klasse + " – Details" }), !S.dashKlasse && h("small", { text: " " + s.klasse })),
+        return h("tr", { class: "rw", onclick: function () { openDetail(s.id); } }, h("th", { class: "l" }, h("div", { class: "nmrow" }, h("button", { class: "nm", type: "button", text: s.anzeige, title: "Klasse " + s.klasse + " – Details" }), !S.dashKlasse && h("small", { text: " " + s.klasse }), akChip(d, s.id))),
           v.th.map(function (t) { var c = z[t.seite + "|" + t.thema]; return h("td", { class: cls(c), text: ctext(c), title: t.label + ": " + cdesc(c) + (c && c.zuletzt ? " · " + fdt(c.zuletzt) : "") }); }),
           h("td", { class: "avg " + (s._any ? cls({ pct: s._score, skala: "pct" }) : "c0"), text: s._any ? String(Math.round(s._score)) : "–", title: "Ø " + r1(s._score) + " %" }),
           hasM ? (function () { var m = meldOf(s.id); return h("td", { class: m.offen ? "mh" : "c0", text: m.gesamt ? String(m.offen) : "", title: m.gesamt ? m.offen + " offen von " + m.gesamt : "keine Meldungen" }); })() : null,
@@ -1004,9 +1039,11 @@
           onclick: function () { KFDruck.printAll(d, v, { cls: cls, ctext: ctext, cdesc: cdesc, r1: r1, fdt: fdt }); } }),
         h("span", { class: "muted", text: "Eine Datei: Klassenübersicht und ein Blatt je sichtbarem Schüler (A4, Drucken / Als PDF speichern)." })) : null,
       chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return inForm(s) && (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).filter(function (s) { return dashTypOk(s) && dashThemaOk(s); }).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
-      chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"]], S.dashSort, function (k) { S.dashSort = k; render(); }),
+      chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"], ["aktiv", "Aktivität"]], S.dashSort, function (k) { S.dashSort = k; render(); }),
       !S.dashKlasse && !S.dashSeite && !S.dashTyp && !S.dashThema ? classCards(d, v) : null,
       h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),
+      h("div", { class: "aklg", title: "Gezählt werden nur Minuten mit geöffneter Lernseite und Bedienung (Tippen/Scrollen) in der letzten Minute, nur bei Anmeldung im Portal." },
+        h("span", { class: "akbar" }), h("span", { text: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · ↑↓ Trend zu den 7 Tagen davor · x/7 aktive Tage" + (d.aktivMin && d.aktivMin.seit ? " · Messung seit " + akFmtDay(d.aktivMin.seit) : " · noch keine Daten") })),
       v.sch.length && v.th.length ? h("div", { class: "heat glass" }, tbl) : h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für diese Auswahl gibt es keine Schüler oder Spalten." })),
       h("div", { class: "legend" }, [["c0", "nicht begonnen"], ["c1", "< 33 %"], ["c2", "33–66 %"], ["c3", "> 66 %"], ["c4", "fertig / Test ≥ 85 %"], ["cz", "Test nur begonnen"], ["cn", "Anzahl (ohne Prozent)"]].map(function (l) { return h("span", {}, h("i", { class: l[0] }), l[1]); })),
       h("p", { class: "note", text: "Zahl = Prozent bzw. Aufgaben; ✓ = fertig. Test-Spalten zeigen das Ergebnis in Prozent (Tooltip: Punkte, Note). Altdaten stammen aus den bisherigen Seiten (Missionen, Selbstlernen/Wiederholung 10a, Tests) und werden nur gelesen. Klick auf einen Namen öffnet die Details." }),
