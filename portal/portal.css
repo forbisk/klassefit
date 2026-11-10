@@ -234,3 +234,14 @@ main.deckmode{max-width:none;padding:0}
 
 /* 09.11.2026 nav: Start/Zurück im Portal-Kopf, scrollbare Lehrer-Laschen */
 .top h1:focus{outline:none}
+
+/* 10.11.2026 (t137u/t138u): Lehrer-Druck und Prüfungsansicht – nur Dashboard der Lehrkraft */
+.dprintbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 4px 4px}
+.dprintbar .btn{width:auto}
+.dprintbar .muted{font-size:13px;max-width:42rem}
+.sh-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.sh-actions{display:flex;flex-wrap:wrap;gap:8px;flex:none}
+.sheet .kfd-exam{margin:0 0 12px;padding:10px 12px 14px}
+.sheet .kfd-exam h2{font-size:1.15rem;margin:.2rem 0 .3rem}
+.sheet .thgrid{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:12px;align-items:start}
+@media (max-width:720px){.sheet .thgrid{grid-template-columns:1fr}}

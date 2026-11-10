@@ -864,6 +864,12 @@
       body.push(box);
     });
     if (!body.length) body.push(h("p", { class: "muted", text: "Keine Daten vorhanden." }));
+    if (window.KFDruck && window.THEMEN && KFDruck.hasExamView(d, st)) {
+      if (!document.getElementById("thStyle")) {
+        var ths = document.createElement("style"); ths.id = "thStyle"; ths.textContent = THEMEN.CSS + (THEMEN.PRINT_CSS || ""); document.head.appendChild(ths);
+      }
+      var exam = h("div", { class: "kfd-exam dsec" }); exam.innerHTML = KFDruck.detailExamHtml(d, st); body.unshift(exam);
+    }
     var dd = (S.dd || {})[st.id], mo = meldOf(st.id), ak = d.aktivitaet ? d.aktivitaet[st.id] : null;
     var sc = 0, n = 0; v.sch.forEach(function (x) { if (x.id === st.id) { sc = x._score; n = 1; } });
     var top = h("div", { class: "tiles dt" }, [[n ? Math.round(sc) + " %" : "–", "Ø Fortschritt"], [ak ? String(ak.tage7 || 0) : "–", "aktive Tage (7)"], [ak ? String(ak.n7 || 0) : "–", "Aktionen (7 Tage)"], mo ? [String(mo.offen) + (mo.gesamt > mo.offen ? " / " + mo.gesamt : ""), "⚑ Meldungen offen"] : null].filter(Boolean).map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: t[0] }), h("span", { text: t[1] })); }));
@@ -888,7 +894,10 @@
     return h("div", { class: "sheet-bg", onclick: function (e) { if (e.target === e.currentTarget) close(); } },
       h("div", { class: "sheet glass", role: "dialog", "aria-modal": "true", "aria-label": "Details " + st.anzeige },
         h("div", { class: "sh-top" }, h("div", {}, h("h3", { text: st.anzeige }), h("div", { class: "s muted", text: "Klasse " + st.klasse + " · zuletzt aktiv: " + (st.zuletzt ? fdt(st.zuletzt) + " (" + ago(st.zuletzt) + ")" : "noch nie") })),
-          h("button", { class: "btn ghost small", text: "Schließen", onclick: close })), body));
+          h("div", { class: "sh-actions" },
+            window.KFDruck ? h("button", { class: "btn small", type: "button", id: "kfdPrintOne", text: "Als PDF speichern",
+              onclick: function (ev) { ev.stopPropagation(); KFDruck.printOne(d, st, v, { cls: cls, ctext: ctext, cdesc: cdesc, r1: r1, fdt: fdt }); } }) : null,
+            h("button", { class: "btn ghost small", text: "Schließen", onclick: close }))), body));
   }
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.dashDetail) { S.dashDetail = ""; render(); } });
   function teacherDash() {
@@ -922,6 +931,10 @@
       srcLine,
       chipRow([["", "Alle Klassen"]].concat(v.klassen.map(function (k) { return [k, k]; })), S.dashKlasse, function (k) { S.dashKlasse = k; if (S.dashSeite && v.byKey[S.dashSeite] && k && (v.byKey[S.dashSeite].klassen || []).indexOf(k) < 0) S.dashSeite = ""; render(); }),
       dashFilterLeiste(d),
+      window.KFDruck ? h("div", { class: "dprintbar" },
+        h("button", { class: "btn small", type: "button", id: "kfdPrintAll", text: "Alle Bewertungen ausdrucken",
+          onclick: function () { KFDruck.printAll(d, v, { cls: cls, ctext: ctext, cdesc: cdesc, r1: r1, fdt: fdt }); } }),
+        h("span", { class: "muted", text: "Eine Datei: Klassenübersicht und ein Blatt je sichtbarem Schüler (A4, Drucken / Als PDF speichern)." })) : null,
       chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return inForm(s) && (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).filter(function (s) { return dashTypOk(s) && dashThemaOk(s); }).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
       chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"]], S.dashSort, function (k) { S.dashSort = k; render(); }),
       !S.dashKlasse && !S.dashSeite && !S.dashTyp && !S.dashThema ? classCards(d, v) : null,
