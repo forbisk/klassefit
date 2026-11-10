@@ -95,7 +95,7 @@
   /* ---------- Klassenpasswort-Schlüssel der Seiten (StatiCrypt "Angemeldet bleiben") ---------- */
   function gateKeyName(o) { return "tfgs_sc_" + o; }
   /* Befristete Konten (z. B. Vertretung): Gate nur bis Freigaben-Bis; tfgs_sc_exp_<ordner>. */
-  var GATE_BIS = { vertretung: Date.parse("2026-11-13T07:00:00+01:00") };
+  var GATE_BIS = { vertretung: Date.parse("2026-11-24T07:00:00+01:00") };
   function gateBisFor(profil) {
     if (!profil) return 0;
     var u = String(profil.benutzer || "").toLowerCase();
