@@ -94,14 +94,16 @@
 
   /* ---------- Klassenpasswort-Schlüssel der Seiten (StatiCrypt "Angemeldet bleiben") ---------- */
   function gateKeyName(o) { return "tfgs_sc_" + o; }
-  /* Befristete Konten (z. B. Vertretung): Gate nur bis Freigaben-Bis; tfgs_sc_exp_<ordner>. */
+  /* Befristete Konten (z. B. Vertretung): Gate nur bis Freigaben-Bis; tfgs_sc_exp_<ordner>.
+     Quelle (B3, ab portal-7o): profil.gateBis vom Backend (aus Blatt „Freigaben“, Spalte Bis). GATE_BIS nur noch Fallback für ältere Backends –
+     gleicher Wert steht in unterricht-build/template*.html (build.py check_gate_bis bricht ab, wenn die Stellen nicht übereinstimmen). */
   var GATE_BIS = { vertretung: Date.parse("2026-11-24T07:00:00+01:00") };
   function gateBisFor(profil) {
     if (!profil) return 0;
-    var u = String(profil.benutzer || "").toLowerCase();
-    if (GATE_BIS[u]) return GATE_BIS[u];
     var g = +profil.gateBis || 0;
-    return g > 0 ? g : 0;
+    if (g > 0) return g;
+    var u = String(profil.benutzer || "").toLowerCase();
+    return GATE_BIS[u] || 0;
   }
   /* Spalte "Gate-Key" im Blatt: entweder nur der Schlüssel der eigenen Seite, oder "schluessel;ordner=schluessel;…" (zusätzliche Ordner,
      die von dieser Seite aus verlinkt sind bzw. dasselbe Klassenpasswort haben). Nur 64 Hex-Zeichen und gültige Ordnernamen werden übernommen. */

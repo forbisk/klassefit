@@ -1,0 +1,57 @@
+/* Installations-Hinweis + Service-Worker-Registrierung (wird vom Build in Passwortseite UND entschluesselte Seiten eingebettet).
+   Konfiguration: window.__TFGS_PWA = {sw, scope, ctx:'gate'|'page', pageHint:true|false}
+   - Hinweis NUR auf Handy/Tablet (Android: Installieren-Knopf, iOS: „Teilen → Zum Home-Bildschirm“), nie am PC,
+     nie in der schon installierten App, ueber ✕ dauerhaft ausblendbar.
+   - 'gate' = Passwortseite (vor jedem Test/jeder Seite); 'page' = nur Startseite (index) eines Ordners und nur, wenn pageHint
+     (Test-Ordner: false -> nie waehrend/innerhalb eines Tests).
+   Keine Aenderung an Passwoertern, Anmeldungen, localStorage-Schluesseln der Seiten oder Daten. */
+(function () {
+  var C = window.__TFGS_PWA; if (!C || window.__TFGS_PWA_DONE === C.ctx) return; window.__TFGS_PWA_DONE = C.ctx;
+  try { if ('serviceWorker' in navigator && C.sw) navigator.serviceWorker.register(C.sw, { scope: C.scope, updateViaCache: 'none' }).catch(function () {}); } catch (e) {}
+  var ua = navigator.userAgent || '';
+  var ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var android = /Android/.test(ua);
+  if (!ios && !android) return;                                                   // nie am PC
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  if (standalone) return;                                                         // App laeuft schon installiert
+  var KEY = 'tfgs_pwa_hint_aus';
+  try { if (localStorage.getItem(KEY)) return; } catch (e) {}
+  if (C.ctx === 'page') {
+    if (!C.pageHint) return;                                                      // Test-Ordner: nie in der Seite
+    var p = location.pathname; if (!/\/(index\.html)?$/.test(p)) return;          // nur Startseite des Ordners
+  }
+  var deferred = null, box = null, shown = false;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; render(); });
+  window.addEventListener('appinstalled', function () { try { localStorage.setItem(KEY, '1'); } catch (e) {} if (box) box.remove(); });
+  function dismiss() { try { localStorage.setItem(KEY, '1'); } catch (e) {} if (box) { box.remove(); box = null; } }
+  function render() {
+    if (!shown) return; if (box) box.remove();
+    box = document.createElement('div'); box.setAttribute('data-pwa', '1'); box.id = 'tfgs-pwa-hint'; box.setAttribute('role', 'note');
+    box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:2147483000;background:#0f172a;color:#fff;border-radius:14px;padding:12px 40px 12px 14px;font:15px/1.35 system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.4);max-width:520px;margin:0 auto';
+    var t = document.createElement('span');
+    if (ios) t.textContent = '📲 Als App speichern: unten auf „Teilen“ (⬆︎) tippen und dann „Zum Home-Bildschirm“ wählen.';
+    else if (deferred) t.textContent = '📲 Diese Seite als App auf dem Handy installieren?';
+    else t.textContent = '📲 Als App speichern: im Browser-Menü (⋮) „App installieren“ bzw. „Zum Startbildschirm hinzufügen“ wählen.';
+    box.appendChild(t);
+    if (!ios && deferred) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Installieren';
+      b.style.cssText = 'margin-left:10px;padding:6px 12px;border:0;border-radius:8px;background:#14b8a6;color:#04201d;font:600 15px system-ui,sans-serif;cursor:pointer';
+      b.onclick = function () { var d = deferred; deferred = null; d.prompt(); d.userChoice.then(function () { dismiss(); }, function () {}); };
+      box.appendChild(b);
+    }
+    var x = document.createElement('button'); x.type = 'button'; x.setAttribute('aria-label', 'Hinweis schließen'); x.textContent = '✕';
+    x.style.cssText = 'position:absolute;top:6px;right:6px;width:32px;height:32px;border:0;background:transparent;color:#fff;font-size:18px;cursor:pointer';
+    x.onclick = dismiss; box.appendChild(x);
+    (document.body || document.documentElement).appendChild(box);
+  }
+  function ready() {
+    if (C.ctx === 'gate') { var c = document.getElementById('staticrypt_content'); if (!c || c.classList.contains('hidden')) return false; }
+    else { var t = document.querySelector('[data-pwa-test]'); if (t) return false; }
+    return true;
+  }
+  var tries = 0, iv = setInterval(function () {
+    if (++tries > 20) { clearInterval(iv); return; }
+    if (!document.body) return;
+    if (ready()) { clearInterval(iv); setTimeout(function () { if (ready()) { shown = true; render(); } }, 1200); }
+  }, 400);
+})();
