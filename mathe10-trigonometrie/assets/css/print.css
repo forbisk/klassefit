@@ -56,6 +56,13 @@ td.num{text-align:right;white-space:nowrap;font-weight:800}
 .heft-entry .hb.box{border:1.5px solid #1c3f8a;border-radius:6px;padding:1.5mm 3mm;margin-left:12mm;background:#fff}
 .heft-entry .hb.ex{background:#fff7d6;border-left:3px solid #f7c948;margin-left:12mm;padding:1.5mm 3mm}
 .heft-entry .hb.box,.heft-entry .hb.ex{padding-left:3mm}
+.heft-entry .wtab{border-collapse:collapse;width:100%;font:700 9.5pt var(--font);margin:1mm 0}
+.heft-entry .wtab th,.heft-entry .wtab td{border:0.4mm solid #1c3f8a;padding:0.8mm 1.4mm;text-align:center}
+.heft-entry .wtab th{background:#1c3f8a;color:#fff}
+.heft-entry .wtab .approx{display:block;font-size:7.5pt;font-weight:600;color:#4a5568}
+.heft-entry .wtab td.kern{background:#fff3bf}
+.heft-entry .wtab .nd{color:#c0392b}
+
 .solve{--lw:auto;--rw:auto;display:inline-flex;flex-direction:column;gap:.5mm;font-size:12pt;font-weight:800}
 .sl{display:grid;grid-template-columns:var(--lw) 7mm var(--rw) auto;align-items:center;padding:.3mm 2mm;border-radius:4px}
 .sl .l{text-align:right;white-space:nowrap}.sl .e{text-align:center}.sl .r{white-space:nowrap}
