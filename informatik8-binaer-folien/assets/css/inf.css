@@ -1,0 +1,22 @@
+
+.inf.sol .task-a .q{font-size:25px;line-height:1.2}.inf.sol .task-a .a{font-size:23px}.inf.sol .why{font-size:19px}.inf.sol .task-a{margin-bottom:4px}
+.inf .task-i,.inf .task-a .q{font-size:30px;line-height:1.25}.inf .task-a .a{font-size:25px}.inf .task-i,.inf .task-a{margin-bottom:6px}.inf .res{color:#15803d;font-weight:900}.inf .why{font-size:22px;color:#334155}
+.tasks.c1{grid-template-columns:1fr}
+.sopts{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:26px;margin-top:4px}.sfig svg{max-height:96px;width:auto;margin-top:4px}
+.bigline{font-size:46px;font-weight:800;margin:8px 0}.bigemo{font-size:180px;line-height:1;margin-top:20px}
+.station .realobj{font-size:34px;background:#fef3c7;border-radius:18px;padding:12px 20px;margin-bottom:14px;border-left:10px solid #f59e0b}
+.station .auftr{font-size:36px;line-height:1.35;margin:0;padding-left:46px}.station .auftr li{margin:8px 0}
+.figwrap{display:flex;justify-content:center;align-items:center}.figwrap svg{max-width:100%;height:auto}
+.mono{font-family:ui-monospace,Consolas,monospace;font-weight:800;letter-spacing:.08em}
+.utable{border-collapse:collapse;font-size:38px;margin:0 auto}.utable td,.utable th{border:3px solid #cbd5e1;padding:10px 26px;text-align:center}.utable th{background:#ccfbf1}
+.tl{display:flex;gap:16px;align-items:stretch;margin-top:10px}.tl .tle{flex:1;background:#fff;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.1);padding:16px;text-align:center;font-size:26px}.tl .tle b{display:block;font-size:34px;color:#0f766e}.tl .tle .em{font-size:64px;display:block}
+.demo-box{background:#fff;border-radius:26px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:24px 30px}
+.bitl{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}.bitl button{width:150px;height:190px;border-radius:22px;border:4px solid #0f766e;background:#f1f5f9;font:900 64px var(--font-head,sans-serif);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.bitl button small{font-size:28px;color:#0f766e}.bitl button.on{background:#fde047;box-shadow:0 0 40px #facc15}.bitl button .lamp{font-size:58px}
+.bitout{text-align:center;font-size:52px;font-weight:900;margin-top:22px}.bitout .mono{color:#0f766e}
+.cz{display:flex;flex-direction:column;gap:18px;font-size:40px}.cz input{font:800 46px ui-monospace,monospace;padding:10px 18px;border-radius:14px;border:3px solid #94a3b8;width:100%;text-transform:uppercase}
+.cz .row{display:flex;gap:16px;align-items:center}.cz button{font:800 40px var(--font-head,sans-serif);border-radius:16px;border:0;background:#0f766e;color:#fff;padding:8px 26px;cursor:pointer}
+.cz .out{font:900 60px ui-monospace,monospace;color:#be123c;letter-spacing:.1em;min-height:72px}.cz .abc{font:700 30px ui-monospace,monospace;letter-spacing:.32em;color:#334155}.cz .abc b{color:#be123c}
+.px{display:flex;gap:40px;align-items:center;justify-content:center}.px .g{display:grid;grid-template-columns:repeat(8,64px);gap:3px;background:#94a3b8;padding:3px}.px .g i{width:64px;height:64px;background:#fff;cursor:pointer}.px .g i.on{background:#111827}
+.px .codes{font:800 40px ui-monospace,monospace;line-height:67px;color:#0f766e}
+.pw{font-size:38px}.pw label{display:flex;gap:14px;align-items:center;margin:8px 0}.pw input[type=range]{width:520px}.pw input[type=checkbox]{width:34px;height:34px}.pw .res{font-size:48px;font-weight:900;color:#0f766e;margin-top:14px}

@@ -1,0 +1,121 @@
+/* Zusätze für die Präsentation „Vierecke“ (Kl. 7) – Grundlage ist das mathe7-Design */
+[data-chapter="7"]{--accent:#0d9aa8} [data-chapter="8"]{--accent:#c2410c} [data-chapter="9"]{--accent:#1c3f8a}
+.vsvg{display:block;max-width:100%;height:auto}
+.slide.title .art .title-v{width:100%;height:auto;margin-top:60px;filter:drop-shadow(0 12px 30px rgba(27,37,54,.14))}
+.slide.title .end-art .title-v{margin-top:120px}
+.roadmap.r9{grid-template-columns:repeat(3,1fr);gap:20px}
+.roadmap.r9 .stop{height:178px;padding:16px 24px}
+.roadmap.r9 .stop .emoji{font-size:58px}
+.roadmap.r9 .stop b{font-size:34px}
+.roadmap.r9 .stop .n{font-size:32px}
+.legend{margin-top:18px}
+/* Dreiecke */
+.trirow{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;margin-top:10px}
+.tcard2{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:22px 20px}
+.tcard2 svg{height:190px;width:auto}
+.tcard2 b{font:600 38px var(--font-head);color:var(--accent)}
+.tcard2 span{font-size:28px;color:var(--ink-2)}
+/* Figuren groß */
+.figbig{flex:1.15;min-width:0;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:30px;box-shadow:var(--shadow);padding:20px}
+.figbig svg{max-height:760px;width:100%;height:auto}
+.figbig.haus-w svg{max-height:740px}
+.stepslist.big{font-size:40px;gap:18px;align-self:center}
+.stepslist.big li{padding:14px 24px}
+.row.grow{align-items:stretch}
+/* Alltag */
+.emogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin:16px 0 20px}
+.emo-c{background:#fff;border-radius:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;padding:16px 10px}
+.emo-c span{font-family:var(--emoji);font-size:96px;line-height:1.1}
+.emo-c b{font:600 32px var(--font-head)}
+/* Galerien */
+.gal6{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;flex:1;min-height:0}
+.gcard{background:#fff;border-radius:26px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14px 20px;gap:4px;border-top:12px solid var(--gc,#9aa6b8)}
+.gcard svg{height:190px;width:auto;max-width:100%}
+.gcard b{font:600 40px var(--font-head);color:var(--gc)}
+.gcard span{font-size:29px;line-height:1.25;color:var(--ink-2)}
+.gal6.formeln .gcard span{font-size:38px;font-weight:800;color:var(--ink)}
+.gal6.formeln .gcard svg{height:160px}
+.c-quadrat{--gc:#d9483b}.c-rechteck{--gc:#e8772e}.c-parallelogramm{--gc:#2f6fe0}.c-raute{--gc:#8e4fd8}.c-trapez{--gc:#1f9d6a}.c-drachen{--gc:#0d8f8f}
+.gal8{display:grid;grid-template-columns:repeat(8,1fr);gap:14px;margin:0 0 18px}
+.gfig{background:#fff;border-radius:20px;box-shadow:var(--shadow);height:200px;display:flex;align-items:center;justify-content:center;position:relative;padding:28px 10px 10px}
+.gfig svg{max-height:160px;width:auto;max-width:100%}
+.gfig .gn{position:absolute;top:6px;left:12px;font:700 34px var(--font-head);color:var(--accent)}
+.flatgrid.gal .tl{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px 30px}
+.flatgrid.gal .tl li{font-size:30px;padding:4px 0}
+.slide.sol .flatgrid.gal .tl li{font-size:28px}
+/* Lösungen: kurze Erklärung */
+.why{display:block;font-size:.62em;font-weight:700;color:var(--muted);line-height:1.2;margin-top:2px}
+.tl .a{display:block}
+.tl li{flex-wrap:wrap}
+.nivgrid.long .tl li .a{flex-basis:100%}
+.slide.sol .nivgrid.long .tl li{font-size:30px}
+.nivgrid.long .tl li{font-size:32px}
+.flatgrid .tl li .a{flex-basis:100%}
+.slide.check .flatgrid.n4 .tl li,.slide.check .flatgrid.n6 .tl li{font-size:40px}
+.slide.sol .flatgrid.n6 .tl li{font-size:34px}
+.tf-hint{font-size:28px;color:var(--muted);font-weight:700}
+/* Eigenschaften-Tabelle */
+.ptab{border-collapse:separate;border-spacing:0;background:#fff;border-radius:24px;box-shadow:var(--shadow);overflow:hidden;font-size:28px;width:100%}
+.ptab th{background:var(--accent);color:#fff;padding:8px 10px;font:700 24px var(--font);text-align:center;vertical-align:bottom}
+.ptab th svg{height:44px;width:auto;margin:0 auto 4px;background:#fff;border-radius:8px;padding:2px}
+.ptab td{padding:7px 14px;border-top:2px solid #eef1f6;text-align:center}
+.ptab td:first-child{text-align:left;font-weight:800}
+.ptab .y{color:var(--ok);font-size:34px}.ptab .nn{color:#b6bfcc}
+.ptab.mini-t{font-size:30px}.ptab.mini-t td{height:62px;min-width:150px}
+.fn{font-size:24px;color:var(--muted);margin:10px 0 0}
+/* Tim */
+.slide .person > svg{width:220px;height:220px;flex:none}
+.bubble .bfig{float:right;margin:0 0 6px 18px}.bubble .bfig svg{height:120px;width:auto}
+/* Konstruktion */
+.cstep4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:10px}
+.cstep4 .card{display:flex;flex-direction:column;gap:12px;padding:28px 26px;position:relative;min-height:330px}
+.cstep4 .cn{width:72px;height:72px;border-radius:50%;background:var(--accent);color:#fff;font:700 42px var(--font-head);display:grid;place-items:center}
+.cstep4 b{font:600 42px var(--font-head)}
+.cstep4 span{font-size:31px;line-height:1.3}
+/* zusammengesetzt */
+.two-fig{display:grid;grid-template-columns:1fr 1fr;gap:32px;flex:1;min-height:0}
+.two-fig .card{display:flex;flex-direction:column;align-items:center;gap:10px;font-size:34px;text-align:center}
+.two-fig .card h3{margin:0;font:600 38px var(--font-head);color:var(--accent)}
+.two-fig svg{height:430px;width:auto;max-width:100%}
+/* Sachaufgaben */
+.sachgrid.n6{grid-template-columns:repeat(3,1fr);gap:20px}
+.sachgrid.n6 .sach{font-size:28px;padding:12px 20px}
+.sach .sq{line-height:1.3}
+.sach .sa{color:var(--ok);font-weight:700;font-size:27px;border-top:2px dashed #e5e9f0;padding-top:6px}
+/* Selbstcheck */
+.selfcheck{width:100%}.selfcheck td{padding:7px 20px;font-size:29px}
+/* Viereck-Labor */
+.vlab{display:grid;grid-template-columns:1.25fr 1fr;gap:30px;flex:1;min-height:0}
+.vl-fig{background:#fff;border-radius:30px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:10px}
+.vl-svg{width:100%;height:100%;max-height:780px}
+.vl-side{display:flex;flex-direction:column;gap:18px}
+.vl-types{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.vl-t{font-size:30px;padding:12px 16px;border-left:12px solid var(--c)!important}
+.vl-t.on{background:var(--c)!important;color:#fff}
+.vl-tog{display:flex;flex-wrap:wrap;gap:12px}
+.vl-o,.vl-re{font-size:28px;padding:10px 18px}
+.vl-info{background:#fff;border-radius:24px;box-shadow:var(--shadow);padding:16px 26px;flex:1;min-height:0}
+.vl-name{font:700 46px var(--font-head)}
+.vl-info ul{margin:8px 0 0;padding-left:30px;font-size:30px;line-height:1.35}
+.vl-q{font-size:32px;color:var(--ink-2);margin:8px 0 0}
+/* Winkelsumme */
+.wsum{display:grid;grid-template-columns:1.45fr .75fr;gap:30px;flex:1;min-height:0}
+.ws-fig{background:#fff;border-radius:30px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:10px;touch-action:none}
+.ws-svg{width:100%;height:100%;max-height:780px;touch-action:none}
+.ws-h{cursor:grab}
+.ws-side{display:flex;flex-direction:column;gap:20px;justify-content:center}
+.ws-tab{display:flex;flex-direction:column;gap:10px}
+.ws-r,.ws-sum{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:10px 26px;font:700 44px var(--font-head);border-left:14px solid var(--c)}
+.ws-r b{color:var(--c)}
+.ws-sum{--c:var(--ink);background:var(--accent-soft);font-size:52px}
+.ws-note{font-size:24px;color:var(--muted)}
+.ws-bad{background:#fbe3e0;color:#9b1c1c;border-radius:18px;padding:18px 24px;font-size:32px;font-weight:800}
+/* lange Aufgaben kompakter */
+.nivgrid.long .tl{gap:6px}
+.nivgrid.long .tl li{font-size:30px;padding:4px 0;line-height:1.22}
+.slide.sol .nivgrid.long .tl li{font-size:27px;padding:3px 0}
+.slide.sol .nivgrid.long .tl li .a{font-size:28px}
+.why{font-size:.8em;color:#5b6678}
+.nivgrid.long .niv{padding:14px 22px 16px}
+.gfig{height:250px}.gfig svg{max-height:205px}
+.flatgrid.gal .tl li{font-size:32px}

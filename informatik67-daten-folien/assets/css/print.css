@@ -1,0 +1,85 @@
+:root{
+  --ink:#1b2536; --ink-2:#3b4658; --muted:#6b7688;
+  --paper:#f5faf9; --paper-2:#e6f2ef; --card:#ffffff;
+  --line:#d5e6e2;
+  --c1:#0f766e; --c2:#0891b2; --c3:#2563eb; --c4:#7c3aed; --c5:#0d9488; --c6:#c2185b; --c7:#e8590c; --c8:#15803d; --c9:#9333ea; --c10:#be123c;
+  --xcol:#7c3aed; --ncol:#0f766e;
+  --ok:#1f9d55; --bad:#d63b3b;
+  --accent:var(--c1);
+  --accent-soft:color-mix(in srgb,var(--accent) 14%,white);
+  --radius:28px;
+  --shadow:0 10px 30px rgba(27,37,54,.12),0 2px 6px rgba(27,37,54,.08);
+  --font:"Nunito","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  --font-head:"Fredoka","Nunito","Segoe UI",system-ui,sans-serif;
+  --emoji:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;
+}
+*{box-sizing:border-box}
+/* ===== Druck-/Dokument-Stil für heft.html, uebung.html ===== */
+*{box-sizing:border-box}
+html,body{margin:0;background:#e9eef0;font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
+.page{width:210mm;min-height:297mm;margin:10mm auto;background:#fff;padding:14mm 16mm 16mm;box-shadow:0 4px 24px rgba(0,0,0,.15);position:relative}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid var(--c1);padding-bottom:3mm;margin-bottom:6mm;gap:6mm}
+.doc-head .school{font:600 15pt var(--font-head);color:#1c3f8a}
+.doc-head .teacher{font:700 10.5pt var(--font);color:var(--ink-2)}
+.doc-head .meta{text-align:right;font-size:9.5pt;color:var(--muted);font-weight:700}
+h1{font:600 22pt var(--font-head);margin:0 0 3mm;color:var(--ink)}
+h1 .hl{color:var(--c1)}
+h2{font:600 15pt var(--font-head);margin:7mm 0 2.5mm;color:#1c3f8a;break-after:avoid}
+h3{font:800 11.5pt var(--font);margin:4mm 0 1.5mm;color:var(--c1);break-after:avoid}
+p,li,td,th{font-size:10.5pt;line-height:1.45}
+.small{font-size:9pt;color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:2mm 0 4mm}
+th,td{border:1px solid #cfdad7;padding:1.6mm 2.4mm;text-align:left;vertical-align:top}
+th{background:#e6f2ef;font-weight:800}
+td.num{text-align:right;white-space:nowrap;font-weight:800}
+.own{background:#fff4d6;border-left:4px solid #e0a614;padding:1mm 3mm;border-radius:0 6px 6px 0;font-size:10pt}
+.own b.tag{color:#8a6d00}
+.tag-own{display:inline-block;background:#e0a614;color:#fff;font-size:8pt;font-weight:900;border-radius:4px;padding:0 4px;margin-left:4px;vertical-align:1px}
+.lesson{break-inside:avoid-page}
+.m{font-family:var(--font);font-weight:800;white-space:nowrap}
+.m i,.solve i,.fr i{font-style:italic;color:var(--xcol);font-weight:800}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.85em;line-height:1.05;margin:0 .1em}
+.fr .nu{border-bottom:.09em solid currentColor;padding:0 .15em}
+.fr .de{padding:0 .15em}
+/* Heft */
+.heft-entry{border:2px solid #cfdad7;border-radius:10px;padding:4mm 5mm 4mm;margin:0 0 6mm;break-inside:avoid;background:linear-gradient(90deg,rgba(15,118,110,.06) 1px,transparent 1px),linear-gradient(0deg,rgba(15,118,110,.06) 1px,transparent 1px);background-size:5mm 5mm;position:relative}
+.heft-entry::before{content:"";position:absolute;left:14mm;top:0;bottom:0;border-left:1.5px solid #f2a1a1}
+.heft-entry .he-h{display:flex;align-items:center;gap:3mm;margin-bottom:2mm;padding-left:12mm}
+.heft-entry .he-n{background:#f7c948;color:#5b4300;font:900 9pt var(--font);border-radius:5px;padding:.5mm 2mm;letter-spacing:.06em}
+.heft-entry .he-t{font:600 14pt var(--font-head);color:#1c3f8a}
+.heft-entry .he-tag{margin-left:auto;font:900 8pt var(--font);color:#fff;background:#0f766e;border-radius:4px;padding:.4mm 1.6mm}
+.heft-entry .he-sl{font:700 8.5pt var(--font);color:var(--muted)}
+.heft-entry .hb{font-size:11.5pt;line-height:1.5;padding-left:12mm;margin:1.2mm 0}
+.heft-entry .hb .term{font-weight:900;color:#c0392b;border-bottom:2px solid #f7c948}
+.heft-entry .hb.rule{display:flex;gap:3mm;align-items:center;font:600 12pt var(--font-head)}
+.heft-entry .hb.rule .nr{flex:none;display:grid;place-items:center;width:7mm;height:7mm;border-radius:50%;background:#c0392b;color:#fff;font-size:10pt}
+.heft-entry .hb.box{border:1.5px solid #1c3f8a;border-radius:6px;padding:1.5mm 3mm;margin-left:12mm;background:#fff}
+.heft-entry .hb.ex{background:#fff7d6;border-left:3px solid #f7c948;margin-left:12mm;padding:1.5mm 3mm}
+.heft-entry .hb.box,.heft-entry .hb.ex{padding-left:3mm}
+.solve{--lw:auto;--rw:auto;display:inline-flex;flex-direction:column;gap:.5mm;font-size:12pt;font-weight:800}
+.sl{display:grid;grid-template-columns:var(--lw) 7mm var(--rw) auto;align-items:center;padding:.3mm 2mm;border-radius:4px}
+.sl .l{text-align:right;white-space:nowrap}.sl .e{text-align:center}.sl .r{white-space:nowrap}
+.sl .o{padding-left:5mm;color:#c2185b;white-space:nowrap}
+.sl .o .lab{font-size:.75em;font-style:italic;color:var(--muted);font-weight:700}
+.sl.fin{background:#e6f2ef;box-shadow:inset 0 0 0 1.5px #0f766e}
+.probe{font-size:10.5pt;font-weight:700;margin-top:1mm}
+.probe .ok{color:var(--ok)}
+.hchain{display:flex;align-items:center;gap:2mm;flex-wrap:wrap}
+.hchain .bx{border:1.5px solid #1c3f8a;border-radius:5px;padding:.5mm 2.5mm;font-weight:800;background:#fff}
+.hchain .ar{color:#c2185b;font-weight:800;font-size:10pt}
+.opc{color:#c2185b;font-weight:800}
+.set{font-weight:800}
+/* Übungsblatt */
+.tasks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2mm 6mm;margin:1mm 0 3mm}
+.tasks-grid div{font-size:12pt;padding:1.5mm 0;border-bottom:1px dotted #cfdad7}
+.tasks-grid b{color:var(--muted);font-size:10pt;margin-right:2mm}
+.textt{margin:1.5mm 0 1.5mm;font-size:11pt;line-height:1.45}
+.lines{height:24mm;background:repeating-linear-gradient(transparent 0 5.5mm,#dfe7e5 5.5mm 5.8mm);margin-bottom:3mm}
+.sol-list div{font-size:10.5pt;padding:1.2mm 0;border-bottom:1px dotted #cfdad7}
+.sol-list b{color:var(--muted);margin-right:2mm}
+.namefield{display:flex;gap:10mm;font-size:10.5pt;margin-bottom:4mm}
+.namefield span{flex:1;border-bottom:1px solid #999;padding-bottom:1mm}
+.foot{position:absolute;bottom:7mm;left:16mm;right:16mm;font-size:8pt;color:var(--muted);display:flex;justify-content:space-between}
+.printbtn{position:fixed;right:18px;top:18px;background:var(--c1);color:#fff;border:0;border-radius:10px;padding:10px 16px;font:800 14px var(--font);cursor:pointer;box-shadow:var(--shadow)}
+@page{size:A4;margin:0}
+@media print{html,body{background:#fff}.page{margin:0;box-shadow:none;width:210mm;min-height:auto;page-break-after:always}.page:last-child{page-break-after:auto}.printbtn{display:none}}

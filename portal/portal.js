@@ -10,7 +10,7 @@
   var FACH = { mathe: "Mathe", informatik: "Informatik", klasse: "Klasse", privat: "Sonstiges" };
   var ART = { material: ["Material", "📘"], mission: ["Missionen", "🚀"], selbstlernen: ["Selbstlernen", "🧠"], karten: ["Karteikarten", "🗂️"], tool: ["Werkzeug", "🧮"], folien: ["Folien", "🎞️"], test: ["Test", "📝"], hausaufgabe: ["Hausaufgabe", "📝"] };
   var app = document.getElementById("app");
-  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "", thema: "", fach: "", lthema: "", dashTyp: "", dashThema: "" };
+  var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "", thema: "", fach: "", lthema: "", fthema: "", dauerWahl: "", dashTyp: "", dashThema: "" };
   /* Lehrkraft: Bereich Gymnasium / Sekundarschule (07.11.2026). Gymnasium = Klassen mit Endung "g" (8g, 9g). Wahl gilt nur in diesem Tab (sessionStorage),
      nach jeder neuen Anmeldung wird neu gefragt. Schüler-Logins sind davon nicht betroffen. */
   var SF_KEY = "kf_lehrer_schulform";
@@ -305,6 +305,8 @@
     ["gleichungen", "Gleichungen lösen", "⚖️", /gleichungen/i],
     ["rationale", "Rationale Zahlen", "➗", /rationale\s+zahlen|multiplizieren\s+und\s+dividieren/i],
     ["kommutativ", "Kommutativgesetz", "🔁", /kommutativ/i],
+    ["daten", "Bits, Bytes & Sicherheit", "💾", /bits,?\s+bytes/i],          // Informatik 6/7 (10.11.2026) – vor „ordner“, weil dort /missionen/ greift
+    ["binaer", "Binärcode, Pixel & Speicher", "🔢", /bin(ä|ae)rcode/i],      // Informatik 8 (10.11.2026)
     ["ordner", "Ordner und Dateien", "🗂️", /ordner\s+und\s+dateien|missionen/i],
     ["medien", "Informationen und Medien", "📰", /informationen\s+und\s+medien/i],
     ["klasse", "Klasse & Lernen", "🤝", /klassenregeln|warum\s+lernen|\bki\b/i],
@@ -451,7 +453,7 @@
       try { history.pushState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (e2) {} }
     }
     if (window.KFZurueck) { try { window.KFZurueck.clear(); } catch (e) {} }
-    S.thema = ""; S.lthema = "";
+    S.thema = ""; S.lthema = ""; S.fthema = "";
     if (S.sess.rolle === "lehrer") {
       S.tab = "menue"; sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; S.dashDetail = "";
       var n = { gym: 0, sek: 0 }; S.seiten.forEach(function (s) { n[formOfPage(s)]++; });
@@ -466,7 +468,14 @@
     if (briefingId()) { leaveBriefing(); return; }
     if (S.sess.rolle === "lehrer") {
       if (S.lthema) { schliesseThemaT(); return; }
-      if (S.tab !== "menue") { S.tab = "menue"; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
+      if (S.tab === "freigaben" && S.admin) {   // Freigaben: Thema → Fach → Seiten-Tab
+        var tf = {}; S.admin.seiten.forEach(function (s) { if (s.art === "test" && inForm(s)) tf[fachWahlOf(s)] = 1; });
+        var nT = 0; if (S.fthema) S.admin.seiten.forEach(function (s) { if (s.art === "test" && inForm(s) && fachWahlOf(s) === S.fach) { var id = freigThema(s).id; if (!tf["t:" + id]) { tf["t:" + id] = 1; nT++; } } });
+        if (S.fthema && nT > 1) { S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
+        var nF = Object.keys(tf).filter(function (k) { return k.indexOf("t:") !== 0; }).length;
+        if (S.fach && nF > 1) { fwSet(""); S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
+      }
+      if (S.tab !== "menue") { S.tab = "menue"; S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
       var n = Object.keys(faecherForm()).length;
       if (S.fach && n > 1) { fwSet(""); S.klasse = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
       sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); try { window.scrollTo(0, 0); } catch (e) {}
@@ -679,27 +688,86 @@
     return box;
   }
   function loadAdmin() { api({ action: "admin_uebersicht", token: S.sess.token }).then(function (r) { if (r.ok) { S.admin = r; render(); } else if (r.relogin) dropSession("Bitte melde dich neu an."); }); }
+  /* ---------- Freigaben: Fach → Thema → Test (10.11.2026, t35u) ----------
+     Nur Darstellung/Gruppierung: Schalter, API-Aufruf admin_freigabe (seite, klasse, aktiv, bis) und Werte unverändert.
+     Fach = kf_lehrer_fach (wie Tab „Seiten“), Thema aus Titel/Untertitel (THEMEN), sonst „Ohne Thema“.
+     Datum: nur wenn im Titel/Untertitel ein Datum steht (z. B. 11.11.) – nichts erfinden. Einzel-Freigaben (@benutzer) unter dem Test, eingeklappt. */
+  function testDatum(s) {
+    var m = /(^|[^\d])(\d{1,2})\.(\d{1,2})\.(\d{2,4})?(?!\d)/.exec((s.titel || "") + " · " + (s.untertitel || ""));
+    if (!m) return "";
+    var d = +m[2], mo = +m[3]; if (d < 1 || d > 31 || mo < 1 || mo > 12) return "";
+    return (d < 10 ? "0" : "") + d + "." + (mo < 10 ? "0" : "") + mo + "." + (m[4] ? (m[4].length === 2 ? "20" + m[4] : m[4]) : "");
+  }
+  function freigThema(s) { var t = themaOf(s); return t[3] ? { id: t[0], titel: t[1], ico: t[2], ord: THEMEN.indexOf(t) } : { id: "ohne", titel: "Ohne Thema", ico: "📄", ord: 1e6 }; }
+  function freigSwitch(s, k, f, dauer, label) {
+    var on = !!(f && f.aktiv && !(f.bis && Date.now() > f.bis));
+    var sw = h("button", { class: "sw", role: "switch", "aria-checked": on ? "true" : "false", "aria-label": s.titel + " für " + label, onclick: function () {
+      var want = sw.getAttribute("aria-checked") !== "true", bis = 0, d = dauer.value;
+      if (want && d === "hour") bis = Date.now() + 3600e3; if (want && d === "day") { var e = new Date(); e.setHours(23, 59, 59, 0); bis = e.getTime(); }
+      sw.setAttribute("aria-checked", want ? "true" : "false");
+      api({ action: "admin_freigabe", token: S.sess.token, seite: s.key, klasse: k, aktiv: want, bis: bis }).then(function (r) { if (!r.ok) sw.setAttribute("aria-checked", want ? "false" : "true"); else loadAdmin(); });
+    } });
+    return { on: on, row: h("div", { class: "row" }, h("div", { class: "grow" }, h("div", { class: "t", text: label }), !!(on && f.bis) && h("div", { class: "s", text: "bis " + new Date(f.bis).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" }) })), sw) };
+  }
+  function freigTest(s, fr, einzel, dauer) {
+    var dat = testDatum(s), nOn = 0;
+    var g = h("div", { class: "ftest", "data-ftest": "1" }, h("div", { class: "ftest-hd" }, h("span", { class: "ftest-name", text: s.titel }), dat ? h("small", { class: "ftest-datum", text: dat }) : null,
+      s.untertitel ? h("div", { class: "ftest-sub", text: s.untertitel }) : null));
+    (s.klassen || []).forEach(function (k) { var x = freigSwitch(s, k, fr[s.key + "|" + k.toLowerCase()], dauer, "Klasse " + k); if (x.on) nOn++; g.appendChild(x.row); });
+    var ez = einzel[s.key] || [];
+    if (ez.length) {
+      var nm = {}; (S.admin.konten || []).forEach(function (k) { nm[String(k.benutzer).toLowerCase()] = k.name || k.benutzer; });
+      var aktivN = ez.filter(function (f) { return f.aktiv && !(f.bis && Date.now() > f.bis); }).length;
+      var d = h("details", { class: "feinzel" }, h("summary", { text: "Einzel-Freigaben · " + ez.length + (ez.length === 1 ? " Person" : " Personen") + (aktivN ? " (" + aktivN + " an)" : "") }));
+      ez.forEach(function (f) { var b = String(f.klasse).replace(/^@/, ""); d.appendChild(freigSwitch(s, f.klasse, f, dauer, nm[b.toLowerCase()] || b).row); });
+      g.appendChild(d);
+    }
+    return { el: g, on: nOn };
+  }
+  function oeffneFThema(id) { S.fthema = S.fthema === id ? "" : id; render(); }
   function teacherFreigaben() {
     if (!S.admin) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Lade …" }));
     var dauer = h("select", { id: "dauer", "aria-label": "Dauer der Freigabe" }, h("option", { value: "0", text: "bis ich ausschalte" }), h("option", { value: "day", text: "nur heute" }), h("option", { value: "hour", text: "1 Stunde" }));
-    var box = h("div", {}, h("div", { class: "row glass", style: "margin-top:12px;border-radius:18px" }, h("div", { class: "grow" }, h("div", { class: "t", text: "Dauer beim Einschalten" }), h("div", { class: "s", text: "Tests sind für Schüler standardmäßig unsichtbar." })), dauer));
+    if (S.dauerWahl) dauer.value = S.dauerWahl; dauer.addEventListener("change", function () { S.dauerWahl = dauer.value; });
+    var box = h("div", { class: "freig" });
     var tests = S.admin.seiten.filter(function (s) { return s.art === "test" && inForm(s); });
-    var fr = {}; S.admin.freigaben.forEach(function (f) { fr[f.seite + "|" + f.klasse.toLowerCase()] = f; });
-    tests.forEach(function (s) {
-      var g = h("div", { class: "group glass" }, h("div", { class: "hd", text: s.titel }));
-      (s.klassen || []).forEach(function (k) {
-        var f = fr[s.key + "|" + k.toLowerCase()], on = !!(f && f.aktiv && !(f.bis && Date.now() > f.bis));
-        var sw = h("button", { class: "sw", role: "switch", "aria-checked": on ? "true" : "false", "aria-label": s.titel + " für " + k, onclick: function () {
-          var want = sw.getAttribute("aria-checked") !== "true", bis = 0, d = dauer.value;
-          if (want && d === "hour") bis = Date.now() + 3600e3; if (want && d === "day") { var e = new Date(); e.setHours(23, 59, 59, 0); bis = e.getTime(); }
-          sw.setAttribute("aria-checked", want ? "true" : "false");
-          api({ action: "admin_freigabe", token: S.sess.token, seite: s.key, klasse: k, aktiv: want, bis: bis }).then(function (r) { if (!r.ok) sw.setAttribute("aria-checked", want ? "false" : "true"); else loadAdmin(); });
-        } });
-        g.appendChild(h("div", { class: "row" }, h("div", { class: "grow" }, h("div", { class: "t", text: "Klasse " + k }), !!(on && f.bis) && h("div", { class: "s", text: "bis " + new Date(f.bis).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" }) })), sw));
-      });
+    var fr = {}, einzel = {}; S.admin.freigaben.forEach(function (f) { var k = String(f.klasse || ""); if (k.charAt(0) === "@") (einzel[f.seite] = einzel[f.seite] || []).push(f); else fr[f.seite + "|" + k.toLowerCase()] = f; });
+    var ff = {}; tests.forEach(function (s) { ff[fachWahlOf(s)] = (ff[fachWahlOf(s)] || 0) + 1; });
+    var fk = ["mathe", "informatik", "weiteres"].filter(function (k) { return ff[k]; });
+    if (!tests.length) { box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Test-Seiten vorhanden." }))); return box; }
+    if (S.fach && !ff[S.fach]) { if (fk.length === 1) fwSet(fk[0]); else fwSet(""); }
+    if (!S.fach && fk.length === 1) fwSet(fk[0]);
+    if (!S.fach) {
+      box.appendChild(h("h2", { text: "Freigaben · Welches Fach?" }));
+      box.appendChild(h("div", { class: "list" }, fk.map(function (k) {
+        return h("a", { class: "card glass fw", href: "#", "data-ffach": k, onclick: function (e) { e.preventDefault(); fwSet(k); S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (x) {} } },
+          h("div", { class: "ico " + (k === "informatik" ? "informatik" : k === "mathe" ? "mathe" : "klasse"), text: FWAHL[k][1], "aria-hidden": "true" }),
+          h("div", {}, h("div", { class: "t", text: FWAHL[k][0] }), h("div", { class: "s", text: ff[k] + (ff[k] === 1 ? " Test" : " Tests") })),
+          h("div", { class: "chev", text: "›", "aria-hidden": "true" }));
+      })));
+      return box;
+    }
+    box.appendChild(h("div", { class: "chips ffsw" }, fk.map(function (k) { return h("button", { "aria-pressed": S.fach === k ? "true" : "false", "data-ffach": k, text: FWAHL[k][1] + " " + FWAHL[k][0], onclick: function () { if (S.fach !== k) { fwSet(k); S.fthema = ""; render(); } } }); })));
+    box.appendChild(h("div", { class: "row glass", style: "margin-top:8px;border-radius:18px" }, h("div", { class: "grow" }, h("div", { class: "t", text: "Dauer beim Einschalten" }), h("div", { class: "s", text: "Tests sind für Schüler standardmäßig unsichtbar." })), dauer));
+    var by = {}, th = [];
+    tests.filter(function (s) { return fachWahlOf(s) === S.fach; }).forEach(function (s) { var t = freigThema(s); if (!by[t.id]) { by[t.id] = t; t.tests = []; th.push(t); } by[t.id].tests.push(s); });
+    th.sort(function (a, b) { return a.ord - b.ord; });
+    th.forEach(function (t) { t.tests.sort(function (a, b) { return ((+a.sort || 0) - (+b.sort || 0)) || (a.titel < b.titel ? -1 : 1); }); });
+    if (S.fthema && !by[S.fthema]) S.fthema = "";
+    if (!S.fthema && th.length === 1) S.fthema = th[0].id;
+    box.appendChild(h("h2", { text: "Themen · " + FWAHL[S.fach][0] }));
+    th.forEach(function (t) {
+      var open = S.fthema === t.id, items = t.tests.map(function (s) { return freigTest(s, fr, einzel, dauer); }), nOn = items.reduce(function (a, x) { return a + x.on; }, 0);
+      var kl = {}; t.tests.forEach(function (s) { (s.klassen || []).forEach(function (x) { if (x && x !== "*") kl[x] = 1; }); });
+      var g = h("div", { class: "group glass fthema" + (open ? " open" : ""), "data-fthema": t.id },
+        h("button", { class: "fthema-hd", "aria-expanded": open ? "true" : "false", onclick: function () { oeffneFThema(t.id); } },
+          h("span", { class: "fthema-ico", text: t.ico, "aria-hidden": "true" }),
+          h("span", { class: "fthema-t" }, h("span", { class: "t", text: t.titel }), h("span", { class: "s", text: t.tests.length + (t.tests.length === 1 ? " Test" : " Tests") + (Object.keys(kl).length ? " · " + Object.keys(kl).sort().join(", ") : "") })),
+          nOn ? h("span", { class: "tag ok", text: nOn + " frei" }) : null,
+          h("span", { class: "chev", text: open ? "▾" : "›", "aria-hidden": "true" })));
+      if (open) items.forEach(function (x) { g.appendChild(x.el); });
       box.appendChild(g);
     });
-    if (!tests.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Test-Seiten vorhanden." })));
     return box;
   }
   function teacherKonten() {
