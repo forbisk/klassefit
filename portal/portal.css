@@ -233,3 +233,4 @@ main.deckmode{max-width:none;padding:0}
 .dfilter .chips{margin:6px 4px}.dfilter .chips.dthema{flex-basis:100%}
 
 /* 09.11.2026 nav: Start/Zurück im Portal-Kopf, scrollbare Lehrer-Laschen */
+.top h1:focus{outline:none}

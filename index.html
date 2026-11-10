@@ -101,7 +101,7 @@
      KFZurueck.clear()   – Stack leeren
      KFZurueck.setGuard(fn) – fn() → string (Bestätigungstext) oder falsy; vor dem Verlassen
    Verhalten Zurück: Stack → history.back() (wenn sinnvoll) → Portal-Start.
-   Start: immer zum Portal (/portal/), außer man ist schon dort.
+   Start: immer zur Portal-Startseite (/portal/?start=1), außer man ist schon dort.
    Keine Passwörter/Logins/localStorage-Schlüssel der Seiten. */
 (function () {
   /* Nach StatiCrypt-Entschlüsselung wird das DOM ersetzt – Knopf neu einhängen. */
@@ -114,11 +114,10 @@
       var p = location.pathname || "";
       var i = p.indexOf("/portal");
       if (i >= 0) return p.slice(0, i + "/portal".length) + "/";
-      // /unterricht/<site>/… → /unterricht/portal/
-      var m = p.match(/^(.*?\/(?:unterricht\/)?)(?:[^/]+\/)/);
-      if (m) return m[1] + "portal/";
+      // GitHub-Pages-Kopie: /unterricht/<site>/… → /unterricht/portal/; klassefit.de: /<site>/… → /portal/
+      if (/^\/unterricht\//.test(p)) return "/unterricht/portal/";
     } catch (e) {}
-    return "/unterricht/portal/";
+    return "/portal/";
   })();
   var stack = [];
   var guard = null;
@@ -150,9 +149,11 @@
     if (!msg) return true;
     try { return confirm(String(msg)); } catch (e) { return true; }
   }
-  function goPortal() {
-    try { location.assign(new URL(PORTAL, location.origin).href); } catch (e) {
-      try { location.href = PORTAL; } catch (e2) {}
+  /* start=true → /portal/?start=1: Portal öffnet die echte Startseite (Lehrkraft: Bereichswahl), nicht das zuletzt gewählte Fach. */
+  function goPortal(startSeite) {
+    var ziel = PORTAL + (startSeite ? "?start=1" : "");
+    try { location.assign(new URL(ziel, location.origin).href); } catch (e) {
+      try { location.href = ziel; } catch (e2) {}
     }
   }
   function back() {
@@ -175,7 +176,7 @@
     if (!confirmLeave()) return;
     stack.length = 0;
     update();
-    goPortal();
+    goPortal(true);
   }
   function update() {
     if (!nav) return;

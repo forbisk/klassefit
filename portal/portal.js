@@ -26,6 +26,12 @@
   function fwGet() { try { var v = sessionStorage.getItem(FW_KEY); return FWAHL[v] ? v : ""; } catch (e) { return ""; } }
   function fwSet(v) { S.fach = v; S.lthema = ""; try { if (v) sessionStorage.setItem(FW_KEY, v); else sessionStorage.removeItem(FW_KEY); } catch (e) {} }
   S.fach = fwGet();
+  /* 10.11.2026 (t34u): /portal/?start=1 (schwebender Start auf Unterseiten) = echte Startseite: gespeicherten Bereich/Fach verwerfen, Parameter entfernen. */
+  (function () {
+    if (!/[?&]start=1(&|$)/.test(location.search)) return;
+    sfSet(""); fwSet("");
+    try { var q = location.search.replace(/([?&])start=1(&|$)/, "$1").replace(/[?&]$/, ""); history.replaceState(null, "", location.pathname + q + location.hash); } catch (e) {}
+  })();
 
   /* ---------- Hilfen ---------- */
   function h(tag, attrs) {
@@ -430,6 +436,8 @@
     }
     return !!S.thema;                    // Schüler: Thema oder Hausaufgaben (__ha)
   }
+  /* Start = echte Startseite (10.11.2026, t34u): Lehrkraft → Bereichswahl (wie nach dem Login, ohne Abmelden), Schüler → „Meine Seiten“.
+     Bereich/Fach werden auch im sessionStorage gelöscht, damit nichts die alte Wahl sofort wiederherstellt. */
   function goPortalStart() {
     if (!S.sess) return;
     if (briefingId()) {
@@ -438,9 +446,14 @@
     }
     if (window.KFZurueck) { try { window.KFZurueck.clear(); } catch (e) {} }
     S.thema = ""; S.lthema = "";
-    if (S.sess.rolle === "lehrer") S.tab = "menue";
+    if (S.sess.rolle === "lehrer") {
+      S.tab = "menue"; sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; S.dashDetail = "";
+      var n = { gym: 0, sek: 0 }; S.seiten.forEach(function (s) { n[formOfPage(s)]++; });
+      if (n.gym && !n.sek) sfSet("gym"); else if (n.sek && !n.gym) sfSet("sek");   // nur ein Bereich → nächste Ebene (Fachwahl bzw. einziges Fach)
+    }
     render();
     try { window.scrollTo(0, 0); } catch (e) {}
+    try { var f = document.querySelector(".top h1"); if (f) { f.setAttribute("tabindex", "-1"); f.focus({ preventScroll: true }); } } catch (e) {}
   }
   function goPortalBack() {
     if (!S.sess || !canPortalBack()) return;
