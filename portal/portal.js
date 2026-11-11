@@ -837,13 +837,16 @@
     if (c.status === "fertig") return "c4"; if (c.zwischenstand) return "cz";
     return p == null ? (c.wert != null ? "cn" : "c1") : p >= 66 ? "c3" : p >= 33 ? "c2" : "c1";
   }
+  function zvText(c) { var v = c.vorlaeufig; return v ? (v.pc != null ? "≈" + Math.round(v.pc) : v.b != null ? v.b + "/" + v.n : "·") : "·"; }   // 11.11.2026: vorläufig (nicht abgegeben)
   function ctext(c) {
-    if (!c) return "–"; if (c.skala === "pct") return c.pct != null ? String(Math.round(c.pct)) : "·";
+    if (!c) return "–"; if (c.zwischenstand) return zvText(c); if (c.skala === "pct") return c.pct != null ? String(Math.round(c.pct)) : "·";
     if (c.status === "fertig") return "✓"; if (c.pct != null) return String(Math.round(c.pct)); return c.wert != null ? String(c.wert) : "·";
   }
   function cdesc(c) {   // Klartext für Tooltip und Detail
     if (!c) return "nicht begonnen";
-    if (c.zwischenstand) return "Test begonnen, noch nicht abgegeben (Zwischenstand)";
+    if (c.zwischenstand) { var v = c.vorlaeufig; if (!v) return "Test begonnen, noch nicht abgegeben (Zwischenstand)";
+      return "NICHT abgegeben – vorläufig" + (v.p != null ? " " + r1(v.p) + " von " + r1(v.mx) + " P. (" + r1(v.pc) + " %, nur automatisch bewertete Aufgaben)" : "") +
+        (v.b != null ? " · " + v.b + "/" + v.n + " Aufgaben bearbeitet" : "") + (v.gr ? " · Version " + v.gr : "") + " · letzter Zwischenstand " + fdt(v.z); }
     var s = [];
     if (c.skala === "pct") { if (c.wert != null && c.max) s.push(r1(c.wert) + " von " + r1(c.max) + " P."); if (c.pct != null) s.push(r1(c.pct) + " %"); if (c.note) s.push((c.endnote ? "Endnote " : "Note ") + c.note); if (c.endnote && (c.autoNote || c.autoP != null)) s.push("(automatisch: " + (c.autoP != null ? r1(c.autoP) + " von " + r1(c.autoMx) + " P." : "") + (c.autoNote ? ", Note " + c.autoNote : "") + ")"); if (c.gruppe) s.push("Version " + c.gruppe); if (c.versuche > 1) s.push(c.versuche + " Abgaben (letzte gezählt)"); }
     else if (c.max === 100) s.push(r1(c.wert) + " %"); else if (c.max) s.push(c.wert + " von " + c.max + (c.pct != null ? " (" + r1(c.pct) + " %)" : "")); else if (c.wert != null) s.push(String(c.wert));
@@ -960,7 +963,7 @@
       var box = h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: p.titel }), !has && h("span", { class: "tag", text: "keine Daten" })));
       rows.forEach(function (t) {
         var c = z[p.key + "|" + t.thema]; if (!c && !has) return;
-        var w = c ? (c.pct != null ? c.pct : (c.status === "fertig" ? 100 : 0)) : 0;
+        var w = c ? (c.pct != null ? c.pct : c.vorlaeufig && c.vorlaeufig.pc != null ? c.vorlaeufig.pc : (c.status === "fertig" ? 100 : 0)) : 0;
         box.appendChild(h("div", { class: "drow" }, h("span", { class: "dl", text: t.label }),
           h("span", { class: "bar" }, h("i", { class: cls(c), style: "width:" + Math.max(c ? 4 : 0, Math.min(100, w)) + "%" })), h("span", { class: "dv", text: cdesc(c) })));
       });
