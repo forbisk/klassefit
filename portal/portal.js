@@ -402,7 +402,7 @@
   }
   function teacherHA() {
     var list = S.seiten.filter(function (s) { return inForm(s) && isHA(s) && (!S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0); });
-    var box = h("div", {}, sfSwitch(), classChips(S.klasse, function (k) { S.klasse = k; render(); }, "Alle Klassen"));
+    var box = h("div", {}, wahlLeiste(bereichSel(), klasseSel(klassenNamen(), S.klasse, function (k) { S.klasse = k; render(); })));
     var kl = {}; list.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k && k !== "*" && (!S.klasse || k === S.klasse)) (kl[k] = kl[k] || []).push(s); }); });
     var ks = Object.keys(kl).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
     if (!ks.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Hausaufgaben für diese Auswahl. Neue Hausaufgabe: Seite im Blatt „Seiten“ mit Titel „Hausaufgabe …“ (oder Art „hausaufgabe“), Fälligkeit optional im Untertitel („bis 13.11.“)." })));
@@ -440,10 +440,7 @@
       if (S.lthema) return true;
       if (S.tab !== "menue") return true;
       if (!S.schulform) return false;
-      var n = Object.keys(faecherForm()).length;
-      if (S.fach && n > 1) return true;
-      if (S.fach) return true;           // nur ein Fach → direkt zur Bereichswahl
-      return true;                       // Fachwahl → Bereichswahl
+      return true;                       // Themenliste → Bereichswahl (Fach/Klasse sind seit 12.11.2026 Drop-downs, keine eigene Ebene)
     }
     return !!S.thema;                    // Schüler: Thema oder Hausaufgaben (__ha)
   }
@@ -475,12 +472,8 @@
         var tf = {}; S.admin.seiten.forEach(function (s) { if (s.art === "test" && inForm(s)) tf[fachWahlOf(s)] = 1; });
         var nT = 0; if (S.fthema) S.admin.seiten.forEach(function (s) { if (s.art === "test" && inForm(s) && fachWahlOf(s) === S.fach) { var id = freigThema(s).id; if (!tf["t:" + id]) { tf["t:" + id] = 1; nT++; } } });
         if (S.fthema && nT > 1) { S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
-        var nF = Object.keys(tf).filter(function (k) { return k.indexOf("t:") !== 0; }).length;
-        if (S.fach && nF > 1) { fwSet(""); S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
       }
       if (S.tab !== "menue") { S.tab = "menue"; S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
-      var n = Object.keys(faecherForm()).length;
-      if (S.fach && n > 1) { fwSet(""); S.klasse = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} return; }
       sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); try { window.scrollTo(0, 0); } catch (e) {}
       return;
     }
@@ -594,12 +587,30 @@
     if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "ha") body = teacherHA(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
     return h("div", {}, h("div", { class: "tabs-wrap" }, bar), body);
   }
-  function classChips(cur, onpick, all) {
+  function klSort(a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }
+  function klassenNamen() {
     var ks = (S.admin && Object.keys(S.admin.klassen)) || []; var seen = {}; ks.forEach(function (k) { seen[k] = 1; });
-    S.seiten.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k !== "*") seen[k] = 1; }); });
-    var names = Object.keys(seen).filter(function (k) { return !S.schulform || (isGymKl(k) ? "gym" : "sek") === S.schulform; }).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
-    return h("div", { class: "chips" }, [""].concat(names).map(function (k) { return h("button", { "aria-pressed": cur === k ? "true" : "false", text: k || all, onclick: function () { onpick(k); } }); }));
+    S.seiten.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k && k !== "*") seen[k] = 1; }); });
+    return Object.keys(seen).filter(function (k) { return !S.schulform || (isGymKl(k) ? "gym" : "sek") === S.schulform; }).sort(klSort);
   }
+  /* 12.11.2026 (Paulius: „lieber alles als Drop-down-Liste“): Bereich · Fach · Klasse als EINE kompakte Zeile nativer <select>.
+     Gleiche Zustände/Logik wie vorher (sfSet, fwSet, S.klasse bzw. S.dashKlasse); sessionStorage-Schlüssel und Hash-Routen unverändert. */
+  function wahlSel(lab, cls, opts, cur, onpick, dis) {
+    var sel = h("select", { class: "wsel " + cls, "aria-label": lab, disabled: dis ? true : null });
+    opts.forEach(function (o) { var op = h("option", { value: o[0], text: o[1] }); if (o[0] === cur) op.selected = true; sel.appendChild(op); });
+    sel.value = cur; sel.addEventListener("change", function () { onpick(sel.value); });
+    return h("label", { class: "wahl-f" }, h("span", { class: "wahl-l", text: lab }), sel);
+  }
+  function wahlLeiste() { return h("div", { class: "wahl", role: "group", "aria-label": "Auswahl" }, Array.prototype.slice.call(arguments)); }
+  function bereichSel() {
+    return wahlSel("Bereich", "wsel-sf", [["sek", "🏫 Sekundarschule"], ["gym", "🎓 Gymnasium"]], S.schulform, function (v) {
+      if (!v || v === S.schulform) return;
+      sfSet(v); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; S.dashThema = ""; S.fthema = ""; render(); kopPruefen(); try { window.scrollTo(0, 0); } catch (e) {} });
+  }
+  function fachSel(keys, onpick) {
+    return wahlSel("Fach", "wsel-fach", keys.map(function (k) { return [k, FWAHL[k][1] + " " + FWAHL[k][0]]; }), S.fach, onpick || function (v) { if (v === S.fach) return; fwSet(v); S.klasse = ""; render(); try { window.scrollTo(0, 0); } catch (e) {} }, keys.length < 2);
+  }
+  function klasseSel(names, cur, onpick) { return wahlSel("Klasse", "wsel-kl", [["", "Alle Klassen"]].concat(names.map(function (k) { return [k, k]; })), cur || "", onpick); }
   function schulformWahl() {
     var n = { gym: 0, sek: 0 }, kl = { gym: {}, sek: {} };
     S.seiten.forEach(function (s) { var f = formOfPage(s); n[f]++; (s.klassen || []).forEach(function (k) { if (k && k !== "*" && (isGymKl(k) ? "gym" : "sek") === f) kl[f][k] = 1; }); });
@@ -609,9 +620,9 @@
       h("div", {}, h("div", { class: "t", text: t }), h("div", { class: "s", text: (srt(kl[f]) ? "Klassen " + srt(kl[f]) + " · " : "") + n[f] + " Seiten" })),
       h("div", { class: "chev", text: "›", "aria-hidden": "true" })); };
     return h("div", { class: "sfwahl" }, h("h2", { text: "Welcher Bereich?" }), h("div", { class: "list" }, opt("gym", "🎓", "Gymnasium"), opt("sek", "🏫", "Sekundarschule")),
-      h("p", { class: "note", text: "Die Auswahl gilt, bis du dich abmeldest oder den Tab schließt. Wechseln geht jederzeit oben über „Bereich wechseln“." }));
+      h("p", { class: "note", text: "Die Auswahl gilt, bis du dich abmeldest oder den Tab schließt. Wechseln geht jederzeit oben über die Auswahlliste „Bereich“." }));
   }
-  function sfSwitch() { return h("div", { class: "chips sfsw" }, h("button", { "aria-pressed": "true", text: (S.schulform === "gym" ? "🎓 Gymnasium" : "🏫 Sekundarschule") }), h("button", { "aria-pressed": "false", text: "⇄ Bereich wechseln", onclick: function () { sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; render(); } })); }
+
   function inForm(s) { return !S.schulform || formOfPage(s) === S.schulform; }
   /* ---------- Lehrer-Seiten: Bereich → Fach → Themen → Theorie/Folien, Missionen bzw. Selbstarbeit, Hausaufgaben, Tests (09.11.2026, t18u) ---------- */
   function rolleT(s) {
@@ -636,22 +647,7 @@
   }
   function seitenForm() { return S.seiten.filter(inForm); }
   function faecherForm() { var f = {}; seitenForm().forEach(function (s) { f[fachWahlOf(s)] = (f[fachWahlOf(s)] || 0) + 1; }); return f; }
-  function fachWahl(f) {
-    var opt = function (k) { var kl = {}; seitenForm().forEach(function (s) { if (fachWahlOf(s) === k) (s.klassen || []).forEach(function (x) { if (x && x !== "*") kl[x] = 1; }); });
-      var ks = Object.keys(kl).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }).join(", ");
-      return h("a", { class: "card glass fw" + (k === "weiteres" ? " fw-mini" : ""), href: "#", "data-fach": k, onclick: function (e) { e.preventDefault(); fwSet(k); S.klasse = ""; render(); try { window.scrollTo(0, 0); } catch (x) {} } },
-        h("div", { class: "ico " + (k === "informatik" ? "informatik" : k === "mathe" ? "mathe" : "klasse"), text: FWAHL[k][1], "aria-hidden": "true" }),
-        h("div", {}, h("div", { class: "t", text: FWAHL[k][0] }), h("div", { class: "s", text: (ks ? "Klassen " + ks + " · " : "") + f[k] + (f[k] === 1 ? " Seite" : " Seiten") + (k === "weiteres" ? " · fachübergreifend (z. B. Klassenregeln, KI & Lernen)" : " · Themen mit Folien, " + (k === "informatik" ? "Missionen" : "Selbstarbeit") + ", Tests und Hausaufgaben") })),
-        h("div", { class: "chev", text: "›", "aria-hidden": "true" })); };
-    var main = ["mathe", "informatik"].filter(function (k) { return f[k]; });
-    return h("div", { class: "fwahl" }, h("h2", { text: "Welches Fach?" }), h("div", { class: "list" }, main.map(opt)), f.weiteres ? h("div", { class: "list", style: "margin-top:10px" }, opt("weiteres")) : null,
-      h("p", { class: "note", text: "Die Auswahl gilt, bis du dich abmeldest oder den Tab schließt. Wechseln geht jederzeit über „Fach wechseln“." }));
-  }
-  function fachSwitch(f) {
-    var n = Object.keys(f).length;
-    return h("div", { class: "chips fwsw" }, h("button", { "aria-pressed": "true", text: FWAHL[S.fach][1] + " " + FWAHL[S.fach][0] }),
-      n > 1 ? h("button", { "aria-pressed": "false", text: "⇄ Fach wechseln", onclick: function () { fwSet(""); S.klasse = ""; render(); } }) : null);
-  }
+  var FACH_ORD = ["mathe", "informatik", "weiteres"];
   function oeffneThemaT(id) { S.lthema = id; render(); try { window.scrollTo(0, 0); } catch (e) {} if (window.KFZurueck) window.KFZurueck.push(function () { S.lthema = ""; render(); }); }
   function schliesseThemaT() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.lthema = ""; render(); }
   function themaKarteT(t) {
@@ -668,16 +664,17 @@
   function teacherMenu() {
     var f = faecherForm(), keys = Object.keys(f);
     if (S.fach && !f[S.fach]) fwSet("");
-    if (!S.fach && keys.length === 1) fwSet(keys[0]);   // nur ein Fach in diesem Bereich (z. B. Gymnasium: Mathe) → direkt dorthin
-    if (!S.fach) return h("div", {}, sfSwitch(), fachWahl(f));
+    keys = FACH_ORD.filter(function (k) { return f[k]; });
+    if (!S.fach && keys.length) fwSet(keys[0]);   // 12.11.2026: keine Fach-Karten mehr – erstes Fach vorgewählt, Wechsel über die Liste „Fach“
+    if (!S.fach) return h("div", {}, wahlLeiste(bereichSel()), h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Seiten in diesem Bereich." })));
     var inF = seitenForm().filter(function (s) { return fachWahlOf(s) === S.fach; });
     var kls = {}; inF.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k && k !== "*") kls[k] = 1; }); });
     if (S.klasse && !kls[S.klasse]) S.klasse = "";
     var list = inF.filter(function (s) { return !S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0; });
-    var kchips = h("div", { class: "chips" }, [""].concat(Object.keys(kls).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); })).map(function (k) { return h("button", { "aria-pressed": S.klasse === k ? "true" : "false", text: k || "Alle Klassen", onclick: function () { S.klasse = k; render(); } }); }));
+    var kchips = klasseSel(Object.keys(kls).sort(klSort), S.klasse, function (k) { S.klasse = k; S.lthema = ""; render(); });
     var themen = themenT(list), offen = S.lthema && themen.filter(function (t) { return t.id === S.lthema; })[0];
     if (S.lthema && !offen) S.lthema = "";
-    var box = h("div", { class: "lmenu" }, sfSwitch(), fachSwitch(f), kchips);
+    var box = h("div", { class: "lmenu" }, wahlLeiste(bereichSel(), fachSel(keys), kchips));
     if (offen) {
       box.appendChild(h("div", { class: "thema-kopf" }, h("button", { class: "btn ghost small", text: "‹ Alle Themen", onclick: schliesseThemaT }), h("h2", { class: "thema-titel", text: offen.ico + " " + offen.titel })));
       var grp = {}, ord = [], hm = {}; haListe(offen.seiten).forEach(function (x) { hm[x.s.key] = x; });
@@ -746,18 +743,8 @@
     var fk = ["mathe", "informatik", "weiteres"].filter(function (k) { return ff[k]; });
     if (!tests.length) { box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Test-Seiten vorhanden." }))); return box; }
     if (S.fach && !ff[S.fach]) { if (fk.length === 1) fwSet(fk[0]); else fwSet(""); }
-    if (!S.fach && fk.length === 1) fwSet(fk[0]);
-    if (!S.fach) {
-      box.appendChild(h("h2", { text: "Freigaben · Welches Fach?" }));
-      box.appendChild(h("div", { class: "list" }, fk.map(function (k) {
-        return h("a", { class: "card glass fw", href: "#", "data-ffach": k, onclick: function (e) { e.preventDefault(); fwSet(k); S.fthema = ""; render(); try { window.scrollTo(0, 0); } catch (x) {} } },
-          h("div", { class: "ico " + (k === "informatik" ? "informatik" : k === "mathe" ? "mathe" : "klasse"), text: FWAHL[k][1], "aria-hidden": "true" }),
-          h("div", {}, h("div", { class: "t", text: FWAHL[k][0] }), h("div", { class: "s", text: ff[k] + (ff[k] === 1 ? " Test" : " Tests") })),
-          h("div", { class: "chev", text: "›", "aria-hidden": "true" }));
-      })));
-      return box;
-    }
-    box.appendChild(h("div", { class: "chips ffsw" }, fk.map(function (k) { return h("button", { "aria-pressed": S.fach === k ? "true" : "false", "data-ffach": k, text: FWAHL[k][1] + " " + FWAHL[k][0], onclick: function () { if (S.fach !== k) { fwSet(k); S.fthema = ""; render(); } } }); })));
+    if (!S.fach) fwSet(fk[0]);   // 12.11.2026: keine Fach-Karten mehr – erstes Fach vorgewählt
+    box.appendChild(wahlLeiste(bereichSel(), fachSel(fk, function (k) { if (S.fach !== k) { fwSet(k); S.fthema = ""; render(); } })));
     box.appendChild(h("div", { class: "row glass", style: "margin-top:8px;border-radius:18px" }, h("div", { class: "grow" }, h("div", { class: "t", text: "Dauer beim Einschalten" }), h("div", { class: "s", text: "Tests sind für Schüler standardmäßig unsichtbar." })), dauer));
     var by = {}, th = [];
     tests.filter(function (s) { return fachWahlOf(s) === S.fach; }).forEach(function (s) { var t = freigThema(s); if (!by[t.id]) { by[t.id] = t; t.tests = []; th.push(t); } by[t.id].tests.push(s); });
@@ -926,13 +913,11 @@
   function dashFilterLeiste(d) {
     var basis = d.seiten.filter(inForm).filter(function (s) { return !S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0; });
     var cnt = { "": basis.length, themen: 0, tests: 0, ha: 0 }; basis.forEach(function (s) { cnt[dashTypOf(s)]++; });
-    var typ = chipRow([["", "Alles (" + cnt[""] + ")"], ["themen", "📚 Themen (" + cnt.themen + ")"], ["tests", "📝 Tests (" + cnt.tests + ")"], ["ha", "🏠 Hausaufgaben (" + cnt.ha + ")"]], S.dashTyp, function (k) { S.dashTyp = k; S.dashSeite = ""; S.dashThema = ""; render(); });
-    typ.classList.add("dtyp");
+    var typ = chipRow([["", "Alles (" + cnt[""] + ")"], ["themen", "📚 Themen (" + cnt.themen + ")"], ["tests", "📝 Tests (" + cnt.tests + ")"], ["ha", "🏠 Hausaufgaben (" + cnt.ha + ")"]], S.dashTyp, function (k) { S.dashTyp = k; S.dashSeite = ""; S.dashThema = ""; render(); }, "Typ", "dtyp");
     var th = {}, tho = []; basis.filter(dashTypOk).forEach(function (s) { var t = dashThemaOf(s); if (!th[t[0]]) { th[t[0]] = t; tho.push(t); } });
     if (S.dashThema && !th[S.dashThema]) S.dashThema = "";
-    var them = tho.length > 1 ? chipRow([["", "Alle Themen"]].concat(tho.map(function (t) { return [t[0], t[2] + " " + t[1]]; })), S.dashThema, function (k) { S.dashThema = k; S.dashSeite = ""; render(); }, true) : null;
-    if (them) them.classList.add("dthema");
-    return h("div", { class: "dfilter" }, h("div", { class: "dflab", text: "Filter" }), typ, them);
+    var them = tho.length > 1 ? chipRow([["", "Alle Themen"]].concat(tho.map(function (t) { return [t[0], t[2] + " " + t[1]]; })), S.dashThema, function (k) { S.dashThema = k; S.dashSeite = ""; render(); }, "Thema", "dthema") : null;
+    return [typ, them];
   }
   /* portal-7: Übersicht je Klasse (Karten) – klick = Klasse filtern */
   function classCards(d, v) {
@@ -951,8 +936,9 @@
         h("div", { class: "ks" }, h("span", { text: k.n + " Schüler" }), h("span", { text: k.act + " aktiv (7 T.)" }), h("span", { text: k.any + " mit Fortschritt" }), d.meldungen ? h("span", { class: k.m ? "hot" : "", text: "⚑ " + k.m + " offen" }) : null));
     }));
   }
-  function chipRow(list, cur, onpick, scroll) {
-    return h("div", { class: "chips" + (scroll ? " scroll" : "") }, list.map(function (k) { return h("button", { "aria-pressed": cur === k[0] ? "true" : "false", text: k[1], onclick: function () { onpick(k[0]); } }); }));
+  /* 12.11.2026: Dashboard-Auswahlreihen (Typ, Thema, Seite/Test, Sortierung) als <select> statt Chip-Reihe – gleiche Werte und Callbacks. */
+  function chipRow(list, cur, onpick, lab, cls) {
+    return wahlSel(lab || "Auswahl", cls || "", list, cur || "", onpick);
   }
   function detailSheet(v) {
     var d = S.dash, st = null; d.schueler.forEach(function (s) { if (s.id === S.dashDetail) st = s; }); if (!st) return null;
@@ -1042,17 +1028,13 @@
           hasM ? (function () { var m = meldOf(s.id); return h("td", { class: m.offen ? "mh" : "c0", text: m.gesamt ? String(m.offen) : "", title: m.gesamt ? m.offen + " offen von " + m.gesamt : "keine Meldungen" }); })() : null,
           h("td", { class: "lt", text: ago(s._last), title: s._last ? fdt(s._last) : "keine Aktivität" }));
       })));
-    return h("div", {}, sfSwitch(),
+    return h("div", {}, wahlLeiste.apply(null, [bereichSel(), klasseSel(v.klassen, S.dashKlasse, function (k) { S.dashKlasse = k; if (S.dashSeite && v.byKey[S.dashSeite] && k && (v.byKey[S.dashSeite].klassen || []).indexOf(k) < 0) S.dashSeite = ""; render(); })].concat(dashFilterLeiste(d), [chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return inForm(s) && (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).filter(function (s) { return dashTypOk(s) && dashThemaOk(s); }).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, "Seite / Test", "dseite"), chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"], ["aktiv", "Aktivität"]], S.dashSort, function (k) { S.dashSort = k; render(); }, "Sortieren", "dsort")])),
       bad.length > 0 && h("div", { class: "banner", text: "Nicht lesbar: " + bad.map(function (q) { return q.titel; }).join(", ") + ". Die übrigen Daten sind trotzdem aktuell. (Zugriff/Freigabe prüfen, dann „Aktualisieren“.)" }),
       srcLine,
-      chipRow([["", "Alle Klassen"]].concat(v.klassen.map(function (k) { return [k, k]; })), S.dashKlasse, function (k) { S.dashKlasse = k; if (S.dashSeite && v.byKey[S.dashSeite] && k && (v.byKey[S.dashSeite].klassen || []).indexOf(k) < 0) S.dashSeite = ""; render(); }),
-      dashFilterLeiste(d),
       window.KFDruck ? h("div", { class: "dprintbar" },
         h("button", { class: "btn small", type: "button", id: "kfdPrintAll", text: "Alle Bewertungen ausdrucken",
           onclick: function () { KFDruck.printAll(d, v, { cls: cls, ctext: ctext, cdesc: cdesc, r1: r1, fdt: fdt }); } }),
         h("span", { class: "muted", text: "Eine Datei: Klassenübersicht und ein Blatt je sichtbarem Schüler (A4, Drucken / Als PDF speichern)." })) : null,
-      chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return inForm(s) && (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).filter(function (s) { return dashTypOk(s) && dashThemaOk(s); }).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, true),
-      chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"], ["aktiv", "Aktivität"]], S.dashSort, function (k) { S.dashSort = k; render(); }),
       !S.dashKlasse && !S.dashSeite && !S.dashTyp && !S.dashThema ? classCards(d, v) : null,
       h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),
       h("div", { class: "aklg", title: "Gezählt werden nur Minuten mit geöffneter Lernseite und Bedienung (Tippen/Scrollen) in der letzten Minute, nur bei Anmeldung im Portal." },

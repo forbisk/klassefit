@@ -300,3 +300,30 @@ main.deckmode{max-width:none;padding:0}
 @media (prefers-color-scheme:dark){.kfg-ta{background:rgba(0,0,0,.25)}}
 .kfg-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .kfg-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:30;max-width:calc(100vw - 24px);padding:10px 16px;border-radius:999px;background:#0f172ae6;color:#fff;font-weight:700;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.3);cursor:pointer}
+/* 12.11.2026: Bereich · Fach · Klasse als kompakte Drop-down-Zeile (portal.js wahlLeiste) */
+.wahl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 4px}
+.wahl-f{display:flex;flex-direction:column;gap:2px;flex:1 1 150px;max-width:260px;min-width:0}
+.wahl-l{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
+.wahl select{width:100%;min-height:40px;font-size:15px;font-weight:600;padding:7px 10px}
+.wahl select:disabled{opacity:1;color:var(--ink);-webkit-appearance:none;appearance:none;background-image:none}
+@media (max-width:520px){.wahl-f{flex:1 1 calc(50% - 12px);max-width:none}.wahl select{font-size:16px}}
+/* Glocke v2 (12.11.2026): Aufgabentext + eingeklappte gelesene offene Fragen */
+.kfg-aufg{margin:2px 0 4px;font-size:13px;line-height:1.35;overflow-wrap:anywhere;color:var(--ink2)}
+.kfg-alt{margin-top:6px;border-top:1px dashed var(--line);padding-top:8px}
+.kfg-alt>summary{cursor:pointer;font-weight:700;font-size:13px;padding:6px 2px;color:var(--ink2)}
+.kfg-alt[open]>summary{margin-bottom:8px}
+/* Lücken: Spinnennetz je Schüler (12.11.2026) */
+.lk-name{font:inherit;font-weight:600;color:var(--acc,#6d4aff);background:none;border:0;padding:2px 0;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:3px}
+.lk-sheet{max-width:640px}
+.lk-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.lk-top h3{margin:0}
+.lk-sum{margin:4px 0 6px;font-size:13px}
+.lk-chart{display:flex;justify-content:center;color:var(--ink)}.lk-radar{width:100%;max-width:440px;height:auto;overflow:visible}
+.lk-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin:4px 0 10px;color:var(--ink2)}
+.lk-leg i{display:inline-block;width:14px;height:0;border-top:3px solid;vertical-align:middle;margin-right:4px}.lk-leg i.d{border-top-style:dashed}
+.lk-list{display:flex;flex-direction:column;gap:6px}
+.lk-row{display:grid;grid-template-columns:1fr 90px 44px;gap:4px 10px;align-items:center;padding:6px 8px;border-radius:10px;border:1px solid var(--line)}
+.lk-row.rot{border-left:4px solid #dc2626}.lk-row.orange{border-left:4px solid #f59e0b}.lk-row.gruen{border-left:4px solid #16a34a}.lk-row.grau,.lk-row.aus{border-left:4px dashed #94a3b8}
+.lk-rt{display:flex;flex-direction:column;min-width:0}.lk-rt b{font-size:13px;overflow-wrap:anywhere}.lk-st{font-size:11.5px;color:var(--ink2)}
+.lk-bar{height:8px;border-radius:99px;background:rgba(127,127,127,.18);overflow:hidden}.lk-bar i{display:block;height:100%;border-radius:99px}
+.lk-pc{font-weight:700;font-size:13px;text-align:right}
+@media (max-width:520px){.lk-row{grid-template-columns:1fr 64px 40px}}
