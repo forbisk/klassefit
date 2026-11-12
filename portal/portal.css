@@ -84,7 +84,6 @@ p{margin:0}.muted{color:var(--ink2)}.small{font-size:13px}
 .sw{position:relative;flex:none;width:51px;height:31px;border-radius:99px;background:rgba(120,120,128,.35);border:0;cursor:pointer;transition:background .2s}
 .sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .2s}
 .sw[aria-checked=true]{background:var(--ok)}.sw[aria-checked=true]::after{transform:translateX(20px)}
-select{font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--glass);color:var(--ink)}
 .group{margin-bottom:12px;overflow:hidden}.group>.hd{padding:12px 16px 4px;font-weight:800}
 
 /* Dashboard (Lehrer) */
@@ -182,7 +181,8 @@ main.deckmode{max-width:none;padding:0}
 .wu-typs{display:flex;gap:8px}
 .wu-typ{flex:1;font:inherit;font-size:16px;font-weight:700;padding:12px;border-radius:14px;border:1px solid var(--glass-b);background:var(--glass);color:var(--ink);cursor:pointer}
 .wu-typ[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
-.wu-box select,.wu-box textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.6);color:var(--ink)}
+.wu-box select{width:100%}
+.wu-box textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.6);color:var(--ink)}
 .wu-box textarea{resize:vertical;min-height:110px}
 .wu-cnt{font-size:11px;color:var(--ink2);text-align:right}
 .wu-prev{display:flex;gap:10px;align-items:center}.wu-prev img{max-width:120px;max-height:90px;border-radius:10px;border:1px solid var(--line)}
@@ -304,9 +304,8 @@ main.deckmode{max-width:none;padding:0}
 .wahl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;margin:10px 4px}
 .wahl-f{display:flex;flex-direction:column;gap:2px;flex:1 1 150px;max-width:260px;min-width:0}
 .wahl-l{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
-.wahl select{width:100%;min-height:40px;font-size:15px;font-weight:600;padding:7px 10px}
-.wahl select:disabled{opacity:1;color:var(--ink);-webkit-appearance:none;appearance:none;background-image:none}
-@media (max-width:520px){.wahl-f{flex:1 1 calc(50% - 12px);max-width:none}.wahl select{font-size:16px}}
+.wahl select{width:100%}
+@media (max-width:520px){.wahl-f{flex:1 1 calc(50% - 12px);max-width:none}}
 /* Glocke v2 (12.11.2026): Aufgabentext + eingeklappte gelesene offene Fragen */
 .kfg-aufg{margin:2px 0 4px;font-size:13px;line-height:1.35;overflow-wrap:anywhere;color:var(--ink2)}
 .kfg-alt{margin-top:6px;border-top:1px dashed var(--line);padding-top:8px}
@@ -340,3 +339,39 @@ main.deckmode{max-width:none;padding:0}
 .sv-kpi{display:flex;gap:8px;align-items:baseline}.sv-kpi b{font-size:20px}
 .tag.sv-pc{background:#ede9fe;color:#5b21b6}
 @media (prefers-color-scheme:dark){.sv-banner{background:#451a03;color:#fde68a}.sv-banner .muted,.sv-act .wahl-l{color:#fcd34d}.tag.sv-pc{background:#3b0764;color:#ddd6fe}}
+
+/* ===== 12.11.2026 (Paulius, Sprachanruf 15:24): alle Auswahllisten in Glas-Optik (Apple-Stil) =====
+   Natives <select> bleibt (Tastatur, Screenreader, Handy-Auswahlrad); gestylt wird das geschlossene Feld: appearance:none + eigener Pfeil.
+   Ein Stil für alle: Bereich/Fach/Klasse/Schüler, Dashboard-, Wünsche-, Freigaben-Filter, Schülersicht-Banner. */
+:root{--sel-bg:rgba(255,255,255,.66);--sel-bg-h:rgba(255,255,255,.82);--sel-b:rgba(255,255,255,.9);--sel-edge:rgba(15,23,42,.12);
+  --sel-sh:0 1px 0 rgba(255,255,255,.75) inset,0 6px 18px rgba(15,23,42,.10),0 1px 3px rgba(15,23,42,.08);
+  --sel-sh-h:0 1px 0 rgba(255,255,255,.8) inset,0 10px 26px rgba(15,23,42,.14),0 2px 5px rgba(15,23,42,.08);
+  --sel-pfeil:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23334155' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --sel-solid:rgba(255,255,255,.96)}
+@media (prefers-color-scheme:dark){:root{--sel-bg:rgba(30,41,59,.62);--sel-bg-h:rgba(51,65,85,.72);--sel-b:rgba(255,255,255,.16);--sel-edge:rgba(255,255,255,.10);
+  --sel-sh:0 1px 0 rgba(255,255,255,.08) inset,0 6px 18px rgba(0,0,0,.35);--sel-sh-h:0 1px 0 rgba(255,255,255,.1) inset,0 10px 26px rgba(0,0,0,.45);
+  --sel-pfeil:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23e2e8f0' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --sel-solid:rgba(23,32,48,.97)}}
+select{-webkit-appearance:none;-moz-appearance:none;appearance:none;font:inherit;font-size:15px;font-weight:600;line-height:1.25;color:var(--ink);
+  min-height:44px;max-width:100%;padding:10px 40px 10px 14px;border-radius:14px;border:1px solid var(--sel-b);outline:none;cursor:pointer;text-overflow:ellipsis;
+  background-color:var(--sel-bg);background-image:var(--sel-pfeil);background-repeat:no-repeat;background-position:right 15px center;background-size:12px 8px;
+  -webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:var(--sel-sh);
+  transition:background-color .2s ease,box-shadow .25s ease,border-color .2s ease,transform .2s cubic-bezier(.2,.8,.2,1),background-position .25s cubic-bezier(.2,.8,.2,1)}
+select::-ms-expand{display:none}
+@media (hover:hover){select:hover:not(:disabled){background-color:var(--sel-bg-h);box-shadow:var(--sel-sh-h);transform:translateY(-1px);background-position:right 15px top calc(50% + 2px)}}
+select:focus-visible{border-color:var(--acc);box-shadow:var(--sel-sh-h),0 0 0 4px rgba(10,132,255,.28)}
+select:focus{background-color:var(--sel-bg-h)}
+select:active:not(:disabled){transform:scale(.985);animation:kf-sel-auf .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes kf-sel-auf{0%{box-shadow:var(--sel-sh)}45%{box-shadow:var(--sel-sh-h),0 0 0 6px rgba(10,132,255,.16)}100%{box-shadow:var(--sel-sh-h),0 0 0 0 rgba(10,132,255,0)}}
+select:disabled{cursor:default;opacity:1;color:var(--ink);background-image:none;padding-right:14px;box-shadow:none;border-color:var(--sel-edge)}
+select option,select optgroup{color:#0b1220;background:#fff;font-weight:500}
+@media (prefers-color-scheme:dark){select option,select optgroup{color:#f1f5f9;background:#1e293b}}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){select{background-color:var(--sel-solid)}select:hover:not(:disabled),select:focus{background-color:var(--sel-solid)}}
+@media (max-width:520px),(pointer:coarse){select{min-height:48px;font-size:16px;padding:12px 28px 12px 11px;background-position:right 11px center}}
+@media (max-width:520px) and (hover:hover){select:hover:not(:disabled){background-position:right 11px top calc(50% + 2px)}}
+@media (prefers-reduced-motion:reduce){select{transition:none}select:hover:not(:disabled),select:active:not(:disabled){transform:none;animation:none}}
+@media (forced-colors:active){select{border:1px solid CanvasText;background-image:none;-webkit-appearance:auto;appearance:auto}}
+.wahl-l{margin-left:4px}
+/* Schülersicht-Banner (gelb): Feld bleibt Glas, Rand warm statt weiß */
+.sv-banner select{--sel-b:rgba(245,158,11,.55);background-color:rgba(255,255,255,.72)}
+@media (prefers-color-scheme:dark){.sv-banner select{background-color:rgba(69,26,3,.55);--sel-b:rgba(252,211,77,.4)}}
