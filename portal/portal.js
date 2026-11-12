@@ -174,7 +174,7 @@
   }
   function dropSession(msg) {
     deckStop(); S.br = null;
-    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalGlocke) window.PortalGlocke.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.kop = {}; S.kopDone = false; S.bestaetigt = false; S.admin = null; S.dash = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet(""); fwSet(""); S.dashTyp = ""; S.dashThema = "";
+    clearIdentity(); S.sess = null; if (window.PortalAufgaben) window.PortalAufgaben.reset(); if (window.PortalWuensche) window.PortalWuensche.reset(); if (window.PortalGlocke) window.PortalGlocke.reset(); if (window.PortalAntworten) window.PortalAntworten.reset(); if (window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); S.seiten = []; S.kop = {}; S.kopDone = false; S.bestaetigt = false; S.admin = null; S.dash = null; S.sv = null; S.svLk = null; S.dashDetail = ""; S.dashKlasse = ""; S.dashSeite = ""; S.tab = "menue"; S.klasse = ""; S.thema = ""; sfSet(""); fwSet(""); S.dashTyp = ""; S.dashThema = "";
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     renderLogin(msg || "");
   }
@@ -256,6 +256,7 @@
   function card(s) {
     var f = fachKey(s.fach), isTest = s.art === "test", a = ART[s.art] || ART.material;
     var vor = !!(S.sess && S.sess.rolle === "lehrer" && VORSCHAU_ART[s.art] && okFolder(s.ordner));
+    if (S.sv) return svCard(s, vor);
     var setGate = function () {
       if (!(S.gates && S.gates[s.ordner])) return;
       try {
@@ -427,7 +428,7 @@
     }
     box.appendChild(h("h2", { text: "Schnellzugriff" })); box.appendChild(h("div", { class: "list haupt" }, haHauptKarte(all))); var hk = hauptKarten(all); if (hk) box.appendChild(hk);
     var fo = [], byF = {}; themen.forEach(function (t) { if (!byF[t.fach]) { byF[t.fach] = []; fo.push(t.fach); } byF[t.fach].push(t); });
-    fo.forEach(function (f) { box.appendChild(h("h2", { text: "Themen · " + FACH[f] })); box.appendChild(h("div", { class: "list" }, byF[f].map(themaKarte))); });
+    fo.forEach(function (f) { box.appendChild(h("h2", { text: "Themen · " + FACH[f] })); box.appendChild(h("div", { class: "list" }, byF[f].map(function (t) { return t.seiten.length === 1 ? card(t.seiten[0]) : themaKarte(t); }))); });   // 12.11.2026: Thema mit nur einer Seite → direkt die Seite (keine Zwischenebene)
     if (tests.length) { box.appendChild(h("h2", { text: "Tests – vom Lehrer freigegeben" })); box.appendChild(h("div", { class: "list" }, tests.map(card))); }
     if (!all.length) box.appendChild(h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für dich sind gerade keine Seiten freigeschaltet." })));
     return box;
@@ -437,6 +438,7 @@
     if (!S.sess) return false;
     if (briefingId()) return true;
     if (S.sess.rolle === "lehrer") {
+      if (S.sv) return true;
       if (S.lthema) return true;
       if (S.tab !== "menue") return true;
       if (!S.schulform) return false;
@@ -453,7 +455,7 @@
       try { history.pushState(null, "", location.pathname + location.search); } catch (e) { try { location.hash = ""; } catch (e2) {} }
     }
     if (window.KFZurueck) { try { window.KFZurueck.clear(); } catch (e) {} }
-    S.thema = ""; S.lthema = ""; S.fthema = "";
+    S.thema = ""; S.lthema = ""; S.fthema = ""; S.sv = null;
     if (S.sess.rolle === "lehrer") {
       S.tab = "menue"; sfSet(""); fwSet(""); S.klasse = ""; S.dashKlasse = ""; S.dashSeite = ""; S.dashDetail = "";
       var n = { gym: 0, sek: 0 }; S.seiten.forEach(function (s) { n[formOfPage(s)]++; });
@@ -467,6 +469,7 @@
     if (!S.sess || !canPortalBack()) return;
     if (briefingId()) { leaveBriefing(); return; }
     if (S.sess.rolle === "lehrer") {
+      if (S.sv) { if (S.thema) schliesseThema(); else svBeenden(); return; }
       if (S.lthema) { schliesseThemaT(); return; }
       if (S.tab === "freigaben" && S.admin) {   // Freigaben: Thema → Fach → Seiten-Tab
         var tf = {}; S.admin.seiten.forEach(function (s) { if (s.art === "test" && inForm(s)) tf[fachWahlOf(s)] = 1; });
@@ -487,7 +490,7 @@
           showBack ? h("button", { type: "button", class: "btn ghost small nav-back", onclick: goPortalBack, "aria-label": "Zurück", text: "← Zurück" }) : null,
           h("button", { type: "button", class: "btn ghost small nav-start", onclick: goPortalStart, "aria-label": "Start – Übersicht", text: "⌂ Start" })),
         h("div", { class: "hello angemeldet", title: "Du bleibst angemeldet, bis du auf „Abmelden“ tippst." }, h("span", { class: "als", text: "👤 Angemeldet als " }), h("b", { class: "wer", text: s.name || s.benutzer || "" }), !lehrer && s.klasse && h("span", { class: "chip", text: "Klasse " + s.klasse }), lehrer && h("span", { class: "chip", text: "Lehrkraft" })),
-        h("h1", { text: lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
+        h("h1", { text: lehrer && S.sv ? "Meine Seiten" : lehrer ? (S.schulform === "gym" ? "Gymnasium" : S.schulform === "sek" ? "Sekundarschule" : "Bereich wählen") : "Meine Seiten" })),
       h("div", { class: "acts" }, lehrer ? glockeButton() : null, wunschButton(), h("button", { class: "btn ghost", onclick: logout, "aria-label": "Abmelden", text: "Abmelden" })));
   }
   function wunschCtx() { return { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; }, info: function () { return S.sess && S.sess.wuensche; }, seiten: function () { return S.seiten.filter(kopSichtbar); }, render: function () { if (S.tab === "wuensche") render(); }, relogin: function () { dropSession("Bitte melde dich neu an."); } }; }
@@ -509,6 +512,7 @@
     app.className = (S.sess.rolle === "lehrer" && S.tab === "dash") ? "wide" : "";
     var kids = [header()];
     if (S.offline) kids.push(h("div", { class: "banner", text: "Offline – Anzeige vom letzten Mal. Zum Öffnen der Seiten brauchst du Internet." }));
+    if (S.sess.rolle === "lehrer" && S.sv) { kids.push.apply(kids, schuelersichtView()); app.replaceChildren.apply(app, kids); return; }
     if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(studentMenu(S.seiten.filter(kopSichtbar).filter(eigeneKlasse))); }
     app.replaceChildren.apply(app, kids);
   }
@@ -577,14 +581,92 @@
       h("div", { style: "margin-top:12px" }, h("button", { class: "btn ghost small", text: "↻ Aktualisieren", onclick: loadBriefings })));
   }
 
+  /* ---------- Schülersicht (12.11.2026, Paulius t81u) ----------
+     Lehrkraft sieht die Schüler-Startseite GENAU wie ein bestimmter Schüler – ohne dessen Login/Token. Nur lesen:
+     Sichtbarkeit wie im Backend (seiten_: Seite aktiv · Klasse passt oder „*“ · Freigabe @benutzer vor Klassen-Freigabe vor „Standard sichtbar“, abgelaufene Freigaben = aus),
+     Daten aus admin_uebersicht (Konten, Freigaben), admin_fortschritt (Fortschritt) und admin_luecken (Lücken 10a). Karten öffnen die Lehrer-Vorschau (?vorschau, Tests mit
+     &gruppe= der letzten Abgabe). Nichts wird an das Backend geschrieben, kein Schüler-Speicher (localStorage) wird gelesen oder geändert, keine Melde-Aufrufe. */
+  function svKonten() { return ((S.admin && S.admin.konten) || []).filter(function (k) { return k.rolle !== "lehrer" && k.rolle !== "test" && !/^test[._]/i.test(k.benutzer) && k.aktiv !== false && k.klasse; }); }
+  function svFrei(s, k) {
+    var now = Date.now(), f, fu; ((S.admin && S.admin.freigaben) || []).forEach(function (x) {
+      var kk = String(x.klasse || "").toLowerCase(), ok = !!x.aktiv && !(x.bis && now > x.bis); if (x.seite !== s.key) return;
+      if (kk === "@" + String(k.benutzer).toLowerCase()) fu = ok; else if (kk === String(k.klasse).toLowerCase()) f = ok; });
+    return fu !== undefined ? fu : (f !== undefined ? f : !!s.standardSichtbar);
+  }
+  function svSeiten() {
+    var k = S.sv, kl = String(k.klasse).toLowerCase();
+    return S.seiten.filter(function (s) { var l = (s.klassen || []).map(function (x) { return String(x).toLowerCase(); }); return (l.indexOf(kl) >= 0 || l.indexOf("*") >= 0) && svFrei(s, k); }).filter(kopSichtbar);
+  }
+  function svZelle(key) {   // Fortschritt des Schülers auf einer Seite (wie Dashboard: gesamt/ergebnis, sonst Ø der Themen)
+    var d = S.dash, z = d && d.zellen && d.zellen[S.sv.benutzer]; if (!z) return null;
+    var g = z[key + "|gesamt"] || z[key + "|ergebnis"]; if (g) return { pct: g.status === "fertig" && g.pct == null ? 100 : g.pct, note: g.note, gruppe: g.gruppe || "", test: !!z[key + "|ergebnis"] };
+    var ps = []; (d.themen || []).forEach(function (t) { var c = z[key + "|" + t.thema]; if (t.seite === key && c && c.pct != null) ps.push(c.pct); });
+    return ps.length ? { pct: ps.reduce(function (a, b) { return a + b; }, 0) / ps.length } : null;
+  }
+  function svCard(s, vor) {
+    var f = fachKey(s.fach), isTest = s.art === "test", a = ART[s.art] || ART.material, z = svZelle(s.key);
+    var href = okFolder(s.ordner) ? "../" + s.ordner + "/" + (vor ? "?vorschau" + (isTest && z && /^[A-E]$/.test(z.gruppe) ? "&gruppe=" + z.gruppe : "") : "") : "#";
+    var tags = h("div", { class: "tags" }, h("span", { class: "tag" + (isTest ? " test" : ""), text: a[0] }), s.eigenerLogin && h("span", { class: "tag lg", text: "eigener Login" }),
+      z && z.pct != null ? h("span", { class: "tag sv-pc", title: "Fortschritt laut Dashboard (nur für dich sichtbar)", text: "📊 " + Math.round(z.pct) + " %" + (z.note ? " · Note " + z.note : "") }) : null);
+    return h("a", { class: "card glass", href: href, target: "_blank", rel: "noopener" },
+      h("div", { class: "ico " + (isTest ? "test" : f), text: a[1], "aria-hidden": "true" }),
+      h("div", {}, h("div", { class: "t", text: s.titel }), s.untertitel && h("div", { class: "s", text: s.untertitel }), tags),
+      h("div", { class: "chev", text: "›", "aria-hidden": "true" }));
+  }
+  function svStart(k) {
+    S.sv = { benutzer: k.benutzer, name: k.name || k.benutzer, klasse: k.klasse }; S.thema = "";
+    if (!S.dash) loadDash(false);
+    if (String(k.klasse).toLowerCase() === "10a" && !S.svLk) { S.svLk = { busy: true }; api({ action: "admin_luecken", token: S.sess.token }).then(function (r) { S.svLk = r && r.ok ? r : { err: true }; if (S.sv) render(); }); }
+    render(); try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  function svBeenden() { S.sv = null; S.thema = ""; S.tab = "schueler"; render(); try { window.scrollTo(0, 0); } catch (e) {} }
+  function svVorname() { return String(S.sv.name || "").split(/\s+/)[0] || S.sv.benutzer; }
+  function schuelersichtView() {
+    var k = S.sv, all = svSeiten(), out = [];
+    var mitKl = svKonten().filter(function (x) { return x.klasse === k.klasse; }).sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+    out.push(h("div", { class: "sv-banner", role: "status" },
+      h("div", { class: "sv-bt" }, h("b", { text: "👁 Schülersicht: " + svVorname() + " – nur Ansicht" }), h("span", { class: "muted", text: "Klasse " + k.klasse + " · so sieht die Startseite für dieses Konto aus. Nichts wird gespeichert oder gesendet." })),
+      h("div", { class: "sv-act" }, mitKl.length > 1 ? wahlSel("Schüler", "wsel-sv", mitKl.map(function (x) { return [x.benutzer, x.name || x.benutzer]; }), k.benutzer, function (u) { var n = mitKl.filter(function (x) { return x.benutzer === u; })[0]; if (n) svStart(n); }) : null,
+        h("button", { class: "btn small", type: "button", text: "Beenden", onclick: svBeenden }))));
+    /* „Meine Vorbereitung“: Fortschritt + Lücken dieses Schülers (Lehrer-Info aus Dashboard/Lücken – im echten Portal sieht der Schüler das in den jeweiligen Seiten) */
+    var d = S.dash, info = [];
+    if (d && d.zellen) {
+      var ps = all.filter(function (s) { return s.art !== "test"; }).map(function (s) { var z = svZelle(s.key); return z && z.pct != null ? z.pct : null; }).filter(function (x) { return x !== null; });
+      info.push(h("div", { class: "sv-kpi" }, h("b", { text: ps.length ? Math.round(ps.reduce(function (a, b) { return a + b; }, 0) / ps.length) + " %" : "–" }), h("span", { text: "Ø Fortschritt auf " + ps.length + (ps.length === 1 ? " genutzter Lernseite" : " genutzten Lernseiten") })));
+    } else info.push(h("div", { class: "sv-kpi" }, h("b", { text: "…" }), h("span", { text: S.dashErr || "Fortschritt wird geladen" })));
+    if (S.svLk && S.svLk.schueler && String(k.klasse).toLowerCase() === "10a") {
+      var me = S.svLk.schueler.filter(function (x) { return x.benutzer === k.benutzer; })[0], T = {}; (S.svLk.themen || []).forEach(function (t) { T[t.id] = t.titel; });
+      var off = me ? Object.keys(me.zellen || {}).filter(function (t) { return me.zellen[t].status === "offen"; }).sort(function (a, b) { return (me.zellen[a].rang || 99) - (me.zellen[b].rang || 99); }) : [];
+      info.push(h("div", { class: "sv-kpi" }, h("b", { text: String(off.length) }), h("span", { text: off.length ? "offene Lücken: " + off.slice(0, 4).map(function (t) { return T[t] || t; }).join(", ") : "keine offene Lücke" })));
+      if (me && window.PortalLuecken && window.PortalLuecken.state) { window.PortalLuecken.state.d = window.PortalLuecken.state.d || S.svLk;
+        info.push(h("button", { class: "btn ghost small", type: "button", text: "🕸️ Spinnennetz", onclick: function () { window.PortalLuecken._detail(h, k.benutzer); } })); }
+    }
+    out.push(h("details", { class: "glass sv-info", open: true }, h("summary", { text: "📊 Meine Vorbereitung (Lehrer-Info)" }), h("div", { class: "sv-kpis" }, info)));
+    out.push(studentMenu(all));
+    return out;
+  }
+  function teacherSchuelersicht() {
+    if (!S.admin) { loadAdminOnce(); return h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Konten werden geladen …" })); }
+    var ks = svKonten().filter(function (x) { return !S.schulform || (isGymKl(x.klasse) ? "gym" : "sek") === S.schulform; });
+    var kls = {}; ks.forEach(function (x) { kls[x.klasse] = 1; });
+    var namen = Object.keys(kls).sort(klSort); if (S.svKlasse && !kls[S.svKlasse]) S.svKlasse = "";
+    var inK = ks.filter(function (x) { return x.klasse === S.svKlasse; }).sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+    return h("div", { class: "svwahl" },
+      wahlLeiste(bereichSel(), wahlSel("Klasse", "wsel-svkl", [["", "Klasse wählen …"]].concat(namen.map(function (x) { return [x, x]; })), S.svKlasse || "", function (v) { S.svKlasse = v; render(); }),
+        S.svKlasse ? wahlSel("Schüler", "wsel-sv", [["", "Schüler wählen …"]].concat(inK.map(function (x) { return [x.benutzer, x.name || x.benutzer]; })), "", function (u) { var n = inK.filter(function (x) { return x.benutzer === u; })[0]; if (n) svStart(n); }) : null),
+      h("p", { class: "note", text: "Zeigt die Portal-Startseite genau so, wie dieses Konto sie sieht (sichtbare Seiten, Freigaben, Hausaufgaben, Meine Lücken/Prüfungsfit). Kein Login als Schüler, nichts wird gespeichert oder gesendet. Karten öffnen die Lehrer-Vorschau." }));
+  }
+  var adminLaedt = false;
+  function loadAdminOnce() { if (adminLaedt) return; adminLaedt = true; api({ action: "admin_uebersicht", token: S.sess.token }).then(function (r) { adminLaedt = false; if (r.ok) { S.admin = r; render(); } else if (r.relogin) dropSession("Bitte melde dich neu an."); }); }
+
   /* ---------- Lehrer ---------- */
   function teacherTabs() {
-    var tabs = [["menue", "Seiten"], ["ha", "Hausaufgaben"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
+    var tabs = [["menue", "Seiten"], ["ha", "Hausaufgaben"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["schueler", "Schülersicht"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
     var bar = h("div", { class: "tabs glass", role: "tablist" }, tabs.map(function (t) {
-      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "meldungen" && window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
+      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "schueler") { loadAdminOnce(); loadDash(false); } if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "meldungen" && window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
     }));
     var body = h("div", {});
-    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "ha") body = teacherHA(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
+    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "ha") body = teacherHA(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "schueler") body = teacherSchuelersicht(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
     return h("div", {}, h("div", { class: "tabs-wrap" }, bar), body);
   }
   function klSort(a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }
@@ -599,7 +681,7 @@
     var sel = h("select", { class: "wsel " + cls, "aria-label": lab, disabled: dis ? true : null });
     opts.forEach(function (o) { var op = h("option", { value: o[0], text: o[1] }); if (o[0] === cur) op.selected = true; sel.appendChild(op); });
     sel.value = cur; sel.addEventListener("change", function () { onpick(sel.value); });
-    return h("label", { class: "wahl-f" }, h("span", { class: "wahl-l", text: lab }), sel);
+    return h("label", { class: "wahl-f f-" + cls }, h("span", { class: "wahl-l", text: lab }), sel);
   }
   function wahlLeiste() { return h("div", { class: "wahl", role: "group", "aria-label": "Auswahl" }, Array.prototype.slice.call(arguments)); }
   function bereichSel() {
@@ -795,7 +877,7 @@
       if (r.ok) { S.dash = r; S.dashAt = Date.now(); S.dashErr = ""; }
       else if (r.relogin) return dropSession("Bitte melde dich neu an.");
       else S.dashErr = r.error || "Daten konnten nicht geladen werden.";
-      if (S.tab === "dash") render();
+      if (S.tab === "dash" || S.sv) render();
     });
   }
   /* portal-7: Detail je Schüler (Verlauf, Meldungen) – lädt nach; ältere Backends antworten ohne Daten -> Abschnitt bleibt still weg */

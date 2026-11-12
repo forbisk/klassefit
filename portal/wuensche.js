@@ -122,14 +122,18 @@
     if (!L.list) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: L.busy || !L.err ? "Wünsche werden geladen …" : L.err }), L.err ? h("div", { style: "margin-top:12px" }, h("button", { class: "btn small", text: "Erneut versuchen", onclick: function () { load(ctx); } })) : null);
     var all = L.list, kls = {}; all.forEach(function (x) { if (x.klasse) kls[x.klasse] = 1; });
     var list = all.filter(function (x) { return (!L.st || x.status === L.st) && (!L.typ || x.typ === L.typ) && (!L.kl || (L.kl === "-" ? !x.klasse : x.klasse === L.kl)); });
-    var chips = function (opts, cur, pick) { return h("div", { class: "chips" }, opts.map(function (o) { return h("button", { "aria-pressed": cur === o[0] ? "true" : "false", text: o[1], onclick: function () { pick(o[0]); ctx.render(); } }); })); };
+    /* 12.11.2026: Filter als Drop-downs (wie Dashboard, „überall Drop-downs“) statt Chip-Reihen; Werte L.st/L.typ/L.kl unverändert */
+    var chips = function (opts, cur, pick, lab, cls) { var sel = h("select", { class: "wsel " + cls, "aria-label": lab });
+      opts.forEach(function (o) { var op = h("option", { value: o[0], text: o[1] }); if (o[0] === cur) op.selected = true; sel.appendChild(op); });
+      sel.value = cur; sel.addEventListener("change", function () { pick(sel.value); ctx.render(); });
+      return h("label", { class: "wahl-f f-" + cls }, h("span", { class: "wahl-l", text: lab }), sel); };
     var cntSt = function (s) { return all.filter(function (x) { return x.status === s; }).length; };
     return h("div", { class: "wu-list" },
       h("div", { class: "src" }, all.length + " Einträge · Blatt „Wünsche“ · getrennt von den ⚑-Meldungen je Aufgabe ", h("button", { class: "btn ghost small", disabled: L.busy ? true : null, text: L.busy ? "Lädt …" : "↻ Aktualisieren", onclick: function () { load(ctx); } })),
       L.err ? h("div", { class: "banner", text: L.err }) : null,
-      chips([["", "Alle Status"], ["neu", "neu (" + cntSt("neu") + ")"], ["in Arbeit", "in Arbeit (" + cntSt("in Arbeit") + ")"], ["erledigt", "erledigt"], ["abgelehnt", "abgelehnt"]], L.st, function (v) { L.st = v; }),
-      chips([["", "Alle Typen"], ["Fehler", "🐞 Fehler"], ["Wunsch", "✨ Wunsch"]], L.typ, function (v) { L.typ = v; }),
-      chips([["", "Alle Klassen"]].concat(Object.keys(kls).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }).map(function (k) { return [k, k]; })).concat([["-", "Lehrkraft"]]), L.kl, function (v) { L.kl = v; }),
+      h("div", { class: "wahl", role: "group", "aria-label": "Filter" }, chips([["", "Alle Status"], ["neu", "neu (" + cntSt("neu") + ")"], ["in Arbeit", "in Arbeit (" + cntSt("in Arbeit") + ")"], ["erledigt", "erledigt"], ["abgelehnt", "abgelehnt"]], L.st, function (v) { L.st = v; }, "Status", "wsel-wust"),
+      chips([["", "Alle Typen"], ["Fehler", "🐞 Fehler"], ["Wunsch", "✨ Wunsch"]], L.typ, function (v) { L.typ = v; }, "Typ", "wsel-wutyp"),
+      chips([["", "Alle Klassen"]].concat(Object.keys(kls).sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }).map(function (k) { return [k, k]; })).concat([["-", "Lehrkraft"]]), L.kl, function (v) { L.kl = v; }, "Klasse", "wsel-wukl")),
       list.length ? h("div", { class: "list" }, list.map(function (x) {
         var note = h("textarea", { class: "wu-note", rows: "2", placeholder: "Notiz (nur für dich)" }); note.value = x.notiz || "";
         var saved = h("span", { class: "muted small" });

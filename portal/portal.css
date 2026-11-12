@@ -327,3 +327,16 @@ main.deckmode{max-width:none;padding:0}
 .lk-bar{height:8px;border-radius:99px;background:rgba(127,127,127,.18);overflow:hidden}.lk-bar i{display:block;height:100%;border-radius:99px}
 .lk-pc{font-weight:700;font-size:13px;text-align:right}
 @media (max-width:520px){.lk-row{grid-template-columns:1fr 64px 40px}}
+/* 12.11.2026: Bereich-Feld auf dem Handy volle Breite (390 px: „🏫 Sekundarschule“ wurde abgeschnitten) */
+@media (max-width:520px){.wahl-f.f-wsel-sf{flex-basis:100%}}
+/* Schülersicht (12.11.2026): Lehrkraft sieht die Startseite eines Schülers, nur Ansicht */
+.sv-banner{position:sticky;top:0;z-index:12;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin:8px 0 10px;padding:10px 14px;border-radius:14px;background:#fef3c7;color:#78350f;border:2px solid #f59e0b;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.sv-banner .muted{color:#92400e;display:block;font-size:12.5px}
+.sv-bt{min-width:0;flex:1 1 220px}
+.sv-act{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.sv-act .wahl-f{min-width:150px}.sv-act .wahl-l{color:#92400e}
+.sv-info{margin:0 0 10px;padding:8px 14px}.sv-info summary{cursor:pointer;font-weight:700}
+.sv-kpis{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:8px 0 4px}
+.sv-kpi{display:flex;gap:8px;align-items:baseline}.sv-kpi b{font-size:20px}
+.tag.sv-pc{background:#ede9fe;color:#5b21b6}
+@media (prefers-color-scheme:dark){.sv-banner{background:#451a03;color:#fde68a}.sv-banner .muted,.sv-act .wahl-l{color:#fcd34d}.tag.sv-pc{background:#3b0764;color:#ddd6fe}}
