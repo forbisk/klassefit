@@ -1,4 +1,4 @@
-/* KlasseFit – „Neue Antwort von Herrn Kurlavičius“ (gemeinsam: Portal, Selbstlernen 10a, Wiederholung 10a).
+/* KlasseFit – „Neue Antwort von Herrn Kurlavičius“ (gemeinsam: Portal, Selbstlernen 10a, Wiederholung 10a, Fit für die KA 7a über kf-fragen.js).
    Quelle: Selbstlern-Backend Aktion myQuestions (Frage/Antwort je Aufgabe). Gelesen-Status:
    - serverseitig, wenn das Backend Feld "gelesen" liefert + Aktion markRead kennt (Code.gs ab 03.11.2026 „Antworten gelesen“),
    - sonst / zusätzlich lokal je Benutzer (localStorage kf-antw-gelesen:<user>).
@@ -17,7 +17,8 @@ var ANDERE = {   /* Präfix der Aufgaben-ID bzw. Seite -> [Ordner, Anzeigename] 
   trig:["mathe10-trigonometrie-selbst","Trigonometrie – Selbstlernen"], "trigonometrie-selbst":["mathe10-trigonometrie-selbst","Trigonometrie – Selbstlernen"],
   aehn:["mathe10-aehnlichkeit-abschluss","Ähnlichkeit – Abschluss"], "aehnlichkeit-abschluss":["mathe10-aehnlichkeit-abschluss","Ähnlichkeit – Abschluss"],
   tbk:["mathe10-testberichtigung-aehnlichkeit","Testberichtigung Ähnlichkeit"], "mathe10a-testberichtigung-aehnlichkeit":["mathe10-testberichtigung-aehnlichkeit","Testberichtigung Ähnlichkeit"],
-  kk:["mathe10-karteikarten","Karteikarten"]
+  kk:["mathe10-karteikarten","Karteikarten"],
+  sa7:["mathe7-selbstarbeit","Mathe 7a – Fit für die KA"], "mathe7-selbstarbeit":["mathe7-selbstarbeit","Mathe 7a – Fit für die KA"]
 };
 function ziel(q){
   var id = String(q.taskId||""), seite = String(q.seite||""), pre = id.split(":")[0];

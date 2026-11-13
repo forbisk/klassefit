@@ -1,4 +1,4 @@
-/* Portal: „Neue Antwort von Herrn Kurlavičius“ für Schüler (10a + Testkonten).
+/* Portal: „Neue Antwort von Herrn Kurlavičius“ für Schüler (10a, 7a + Testkonten).
    Identität kommt aus der Portal-Sitzung – keine zweite Anmeldung: vorhandene Selbstlern-Sitzung (sl10a_sess) desselben Benutzers wird
    nur gelesen; sonst holt das Portal per Aktion "sso" (Portal-Token, serverseitig geprüft) ein eigenes Selbstlern-Token und merkt es unter
    kf_antw_sess (nie in sl10a_sess, damit Fortschrittsdaten der Seiten unberührt bleiben). Liste: myQuestions; gelesen: kf-antworten.js. */
@@ -11,7 +11,9 @@
   function api(o) { return fetch(URL, { method: "POST", body: JSON.stringify(o), redirect: "follow" }).then(function (r) { return r.json(); }); }
   function passt(slUser, benutzer) { slUser = String(slUser || "").toLowerCase(); benutzer = String(benutzer || "").toLowerCase();
     return !!slUser && (slUser === benutzer || slUser === benutzer.replace(/\.10a$/, "") || slUser === benutzer.replace(/[^a-z0-9._-]/g, "").slice(0, 40)); }
-  function berechtigt(s) { return !!s && s.rolle !== "lehrer" && (String(s.klasse || "").toLowerCase() === "10a" || s.rolle === "test" || /^test\./.test(String(s.benutzer || ""))); }
+  /* Klassen mit Fragen-Knopf: 10a (Selbstlernseiten) und 7a (Fit für die KA, kf-fragen.js). Lehnt das Backend ab, bleibt die Liste still leer. */
+  var KLASSEN = { "10a": 1, "7a": 1 };
+  function berechtigt(s) { return !!s && s.rolle !== "lehrer" && (KLASSEN[String(s.klasse || "").toLowerCase()] === 1 || s.rolle === "test" || /^test\./.test(String(s.benutzer || ""))); }
   function kandidaten(s) {
     var out = [], sl = j("sl10a_sess"), own = j(OWN);
     if (sl && sl.token && passt(sl.user, s.benutzer)) out.push({ user: sl.user, token: sl.token });
