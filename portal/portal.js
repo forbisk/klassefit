@@ -410,6 +410,54 @@
     ks.forEach(function (k) { box.appendChild(h("h2", { text: "Klasse " + k })); box.appendChild(h("div", { class: "list" }, haListe(kl[k]).map(haKarte))); });
     return box;
   }
+  /* ---------- Klassenstufen-Wahl (13.11.2026) ----------
+     Nur für Schüler, deren sichtbare Seiten zu MEHR als einer Jahrgangsstufe gehören (z. B. 7a mit persönlich freigeschalteten 10a-Materialien):
+     oben ein Drop-down „Klasse 7 / Klasse 10“, darunter nur die Seiten dieser Stufe (Themen, Folien, Übungen, Hausaufgaben, Tests, Prüfungsfit/Lücken).
+     Alle anderen Schüler (eine Stufe): kein Drop-down, Menü genau wie vorher.
+     Zuordnungsregel je Seite (Stufe = führende Zahl der Klasse, „10a“ → 10; eigene Klasse K mit Stufe g):
+       1. Stehen in „Klassen“ nur Klassen der Stufe g (oder „*“/leer) → Stufe g.
+       2. Teilt K die Seite mit einer anderen Klasse derselben Stufe g (z. B. 6a+6b) → Stufe g (echte gemeinsame Seite).
+       3. Sonst Zahl im Key-Präfix (mathe10-… → 10, mathe7-… → 7, mathe8g-… → 8): ist sie HÖHER als g und steht eine Klasse dieser Stufe
+          in der Liste, gehört die Seite zu dieser Stufe (K steht dort nur technisch für die Sichtbarkeit, Freigabe läuft über @benutzer).
+          Präfix = g oder niedriger → Stufe g (z. B. informatik6-… für 7b bleibt bei 7).
+       4. Ohne Zahl im Key (z. B. Prüfungsfit): genau EINE andere, höhere Stufe in der Liste UND diese Stufe ist schon über Regel 3 belegt → diese Stufe; sonst g.
+     Seiten mit „unsichtbar für Schüler“ (nur Testkonten) bleiben immer bei Stufe g – Testkonten zeigen das normale Klassenmenü.
+     Die Sichtbarkeit selbst kommt unverändert vom Server; hier wird nur sortiert. Gemerkt wird die zuletzt gewählte Stufe im NEUEN Schlüssel
+     „kf_portal_stufe_v1“ ({u: benutzer, s: stufe}); bestehende Schlüssel bleiben unberührt. Lehrer-Schülersicht: gleiche Regel, nichts gespeichert. */
+  var LS_STUFE = "kf_portal_stufe_v1";
+  function stufeVon(k) { var m = /^(\d{1,2})/.exec(String(k || "")); return m ? +m[1] : 0; }
+  function seitenStufen(all, eigene) {   // → { key: stufe }
+    var g = stufeVon(eigene), ek = String(eigene || "").toLowerCase(), out = {}, offen = [], belegt = {};
+    all.forEach(function (s) {
+      out[s.key] = g; if (!g || s.unsichtbarFuerSchueler) return;   // Testkonten: für die Klasse gesperrte Seiten bleiben bei der eigenen Stufe (Testkonto = normales Klassenmitglied)
+      var kl = (s.klassen || []).map(function (x) { return String(x).toLowerCase(); }).filter(function (x) { return x && x !== "*"; });
+      var andere = kl.filter(function (x) { return stufeVon(x) !== g; });
+      if (!andere.length || kl.indexOf(ek) < 0 || kl.filter(function (x) { return stufeVon(x) === g; }).length !== 1) return;
+      var m = /^[a-zäöü]+?(\d{1,2})(?=[a-z]?(?:-|$))/i.exec(String(s.key || "")), n = m ? +m[1] : 0;
+      if (n) { if (n > g && andere.some(function (x) { return stufeVon(x) === n; })) { out[s.key] = n; belegt[n] = 1; } return; }
+      var hs = {}; andere.forEach(function (x) { hs[stufeVon(x)] = 1; }); hs = Object.keys(hs).map(Number);
+      if (hs.length === 1 && hs[0] > g) offen.push([s.key, hs[0]]);
+    });
+    offen.forEach(function (x) { if (belegt[x[1]]) out[x[0]] = x[1]; });
+    return out;
+  }
+  /* all = sichtbare Seiten, eigene = Klasse des Kontos; get/set = gewählte Stufe (Schüler: localStorage, Schülersicht: nur Speicher) */
+  function stufenMenu(all, eigene, get, set) {
+    var map = seitenStufen(all, eigene), g = stufeVon(eigene), st = {};
+    all.forEach(function (s) { st[map[s.key]] = 1; });
+    var stufen = Object.keys(st).map(Number).filter(Boolean).sort(function (a, b) { return a - b; });
+    if (stufen.length < 2) return studentMenu(all);
+    var cur = +get() || g; if (stufen.indexOf(cur) < 0) cur = stufen.indexOf(g) >= 0 ? g : stufen[0];
+    var box = studentMenu(all.filter(function (s) { return map[s.key] === cur; }));
+    var wahl = wahlLeiste(wahlSel("Klasse", "wsel-stufe", stufen.map(function (n) { return [String(n), "Klasse " + n]; }), String(cur), function (v) {
+      if (+v === cur) return; set(+v);
+      if (S.thema) { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.thema = ""; }
+      render(); try { window.scrollTo(0, 0); } catch (e) {} }));
+    wahl.classList.add("stufenwahl"); box.insertBefore(wahl, box.firstChild);
+    return box;
+  }
+  function eigeneStufeGet() { var v = lsGet(LS_STUFE); return v && S.sess && String(v.u || "").toLowerCase() === String(S.sess.benutzer || "").toLowerCase() ? v.s : 0; }
+  function eigeneStufeSet(n) { if (S.sess) lsSet(LS_STUFE, { u: S.sess.benutzer, s: n }); }
   function studentMenu(all) {
     var box = h("div", { class: "smenu" });
     if (S.thema === "__ha") { var hb = haAnsicht(all, "‹ Zurück"); immerDabei(all).forEach(function (x) { hb.appendChild(x); }); return hb; }
@@ -513,7 +561,7 @@
     var kids = [header()];
     if (S.offline) kids.push(h("div", { class: "banner", text: "Offline – Anzeige vom letzten Mal. Zum Öffnen der Seiten brauchst du Internet." }));
     if (S.sess.rolle === "lehrer" && S.sv) { kids.push.apply(kids, schuelersichtView()); app.replaceChildren.apply(app, kids); return; }
-    if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(studentMenu(S.seiten.filter(kopSichtbar).filter(eigeneKlasse))); }
+    if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(stufenMenu(S.seiten.filter(kopSichtbar).filter(eigeneKlasse), S.sess.klasse, eigeneStufeGet, eigeneStufeSet)); }
     app.replaceChildren.apply(app, kids);
   }
 
@@ -614,7 +662,7 @@
       h("div", { class: "chev", text: "›", "aria-hidden": "true" }));
   }
   function svStart(k) {
-    S.sv = { benutzer: k.benutzer, name: k.name || k.benutzer, klasse: k.klasse }; S.thema = "";
+    S.sv = { benutzer: k.benutzer, name: k.name || k.benutzer, klasse: k.klasse }; S.thema = ""; S.svStufe = 0;
     if (!S.dash) loadDash(false);
     if (String(k.klasse).toLowerCase() === "10a" && !S.svLk) { S.svLk = { busy: true }; api({ action: "admin_luecken", token: S.sess.token }).then(function (r) { S.svLk = r && r.ok ? r : { err: true }; if (S.sv) render(); }); }
     render(); try { window.scrollTo(0, 0); } catch (e) {}
@@ -642,7 +690,7 @@
         info.push(h("button", { class: "btn ghost small", type: "button", text: "🕸️ Spinnennetz", onclick: function () { window.PortalLuecken._detail(h, k.benutzer); } })); }
     }
     out.push(h("details", { class: "glass sv-info", open: true }, h("summary", { text: "📊 Meine Vorbereitung (Lehrer-Info)" }), h("div", { class: "sv-kpis" }, info)));
-    out.push(studentMenu(all));
+    out.push(stufenMenu(all, k.klasse, function () { return S.svStufe; }, function (n) { S.svStufe = n; }));
     return out;
   }
   function teacherSchuelersicht() {
