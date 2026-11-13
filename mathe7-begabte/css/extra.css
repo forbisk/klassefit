@@ -1,0 +1,53 @@
+/* Zusätze für Für-Profis (Brüche, Koordinaten, Navigation, Figuren) auf Prüfungsfit-Basis */
+.tstat{display:flex;gap:8px;flex-wrap:wrap;font-size:.8rem;color:var(--mut)}
+.tstat span{padding:3px 8px;border-radius:99px;background:rgba(var(--w),0.071)}
+.warn{margin:8px 0;padding:10px 14px;border-radius:14px;background:#ffd23f22;border:1px solid var(--acc);font-size:.92rem}
+.warn.info{background:#7c5cff22;border-color:var(--pri)}
+.warn a{color:inherit}
+.chips3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 4px}
+@media(max-width:640px){.chips3{grid-template-columns:1fr}.tstat{display:none}}
+.ap-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:space-around;background:color-mix(in srgb,var(--bg) 86%, transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--cb);padding:.35rem .3rem calc(.35rem + env(safe-area-inset-bottom))}
+.ap-nav a{flex:1;max-width:140px;display:flex;flex-direction:column;align-items:center;text-decoration:none;color:var(--mut);font:600 .8rem Fredoka,sans-serif;border-radius:14px;padding:.25rem}
+.ap-nav a span{font-size:1.25rem}.ap-nav a.on{color:var(--acct);background:rgba(var(--w),0.078)}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.9em;line-height:1.1;margin:0 .12em}
+.fr>span:first-child{border-bottom:2px solid currentColor;padding:0 .15em}
+.kfb{display:inline-flex;align-items:center;gap:.35rem;vertical-align:middle;margin:.25rem .4rem .25rem 0}
+.kfb-fr{display:inline-flex;flex-direction:column;align-items:stretch}
+.kfb input,.kfk input,.fld input{width:4.4rem;text-align:center;font:700 1.1rem Nunito,sans-serif;padding:.35rem;border-radius:10px;border:2px solid var(--cb);background:rgba(var(--w),0.078);color:var(--tx)}
+.kfb input.kfb-s{width:2.6rem;font-weight:800}
+.kfb-bar{display:block;border-top:3px solid currentColor;margin:.22rem 0;min-width:4.4rem}
+.kfk{display:inline-flex;align-items:center;gap:.25rem;white-space:nowrap;margin:.25rem .8rem .25rem 0}
+.kfk b{font-size:1.15rem}.kfk i{font-style:normal;font-size:1.6rem;line-height:1}
+.kfk input{width:3.8rem}
+.fld{display:inline-flex;align-items:center;gap:.35rem;margin:.25rem .5rem .25rem 0}
+.fld input{width:7.5rem;text-align:left;padding:.45rem .7rem}
+.opts{display:flex;flex-direction:column;gap:.45rem;margin:8px 0}
+.opt{text-align:left;background:rgba(var(--w),0.063);color:var(--tx);border:2px solid var(--cb);border-radius:12px;padding:.55rem .9rem;font:700 1rem Nunito,sans-serif;cursor:pointer}
+.opt.sel{background:#7c5cff33;border-color:var(--pri);color:var(--tx)}
+.chl{display:block;margin:8px 0 4px;color:var(--mut);font-size:.9rem}
+.task header.th{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.task .lab{font:600 1.15rem Fredoka,sans-serif}
+.okb{color:var(--ok);font-size:.85rem}
+.ans{margin:12px 0}
+.sfig{margin:10px 0;overflow:auto}
+.crumbs{margin:8px 0}.crumbs a{color:var(--mut);text-decoration:none}
+.pager{display:flex;justify-content:space-between;gap:8px;margin:18px 0 40px;flex-wrap:wrap}
+.sync{font-size:.85rem;color:var(--mut);min-height:1.2em;margin:8px 0 20px}
+.sync.ok{color:var(--ok)}.sync.fehler,.sync.offline,.sync.relogin{color:var(--bad)}
+.pill{display:inline-block;margin:4px 6px 4px 0;padding:6px 10px;border-radius:99px;background:rgba(var(--w),0.071);color:var(--tx);text-decoration:none;font-size:.85rem}
+.rings{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
+.rc{text-decoration:none;color:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.gbar{display:flex;align-items:center;gap:10px}.gbar .bar{flex:1}
+/* Koordinatensystem */
+svg.ks{width:100%;max-width:360px;height:auto;background:rgba(var(--w),0.031);border-radius:16px}
+svg.ks .gr{stroke:rgba(var(--w),0.12);stroke-width:1}
+svg.ks .ax{stroke:var(--fig);stroke-width:1.8}
+svg.ks .axf{fill:var(--fig)}
+svg.ks .axl,svg.ks .tk,svg.ks .pl{fill:var(--fig);font:700 11px Nunito,sans-serif}
+svg.ks .pt{fill:var(--pk);stroke:#fff;stroke-width:1}
+/* Magisches Quadrat */
+.msq{display:grid;grid-template-columns:repeat(3,3.4rem);gap:4px;margin:8px 0;width:max-content}
+.msq div{width:3.4rem;height:3.4rem;display:grid;place-items:center;border-radius:10px;background:rgba(var(--w),0.078);border:2px solid var(--cb);font:700 1.15rem Fredoka,sans-serif}
+.msq .miss{background:#ffd23f22;border-style:dashed;color:var(--acct)}
+.task.solved{border-color:var(--ok)}
+.rp-flag{margin-left:auto}
