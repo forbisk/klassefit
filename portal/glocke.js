@@ -5,11 +5,13 @@
    kf_lehrer_glocke_v1 (seen) wird gelesen (Startwert) und weiter gepflegt. Erstes Öffnen auf einem Gerät: älter als 3 Tage = gelesen.
    ⚑ von Portal-Seiten: Aufgabentext aus den Aufgaben-Daten der Seite (lazy: Seite holen, mit dem gespeicherten Seiten-Schlüssel tfgs_sc_<ordner>
    im Browser entschlüsseln, Daten-Literal ohne eval parsen, HTML → Text), „Zur Aufgabe ›“ öffnet die Lehrer-Vorschau direkt an der Aufgabe.
-   Alles als Text (textContent), keine Daten in Logs. */
+   Alles als Text (textContent), keine Daten in Logs.
+   14.11.2026 (Backend sl-webhook): Fragen mit Status „missbrauch“ erscheinen als „🚫 Frage · Missbrauch“ (nicht offen). Oben im Panel: gesperrte
+   Frage-Funktion (ab 2 Missbrauch-Markierungen) als Drop-down + „Entsperren“ (listLocked/unlock per Portal-Token). Altes Backend: Bereich fehlt einfach. */
 (function () {
   "use strict";
   var SL = window.PORTAL_SL_API || "", LS = "kf_lehrer_glocke_v1", LS2 = "kf_lehrer_glocke_v2", EVERY = 120000, D3 = 3 * 86400e3;
-  var G = { ctx: null, q: null, r: null, p: null, err: "", busy: false, last: 0, toast: false, timer: null, panel: null, tok: "", shown: {}, known: null, openOld: false };
+  var G = { ctx: null, q: null, r: null, p: null, zu: null, err: "", busy: false, last: 0, toast: false, timer: null, panel: null, tok: "", shown: {}, known: null, openOld: false };
   function jget(k) { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } }
   function jset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   /* ---- Gelesen-Status ---- */
@@ -39,7 +41,7 @@
   /* ---- Einträge ---- */
   function alle() {
     var out = [];
-    (G.q || []).forEach(function (q) { out.push({ art: "frage", id: "frage:" + q.id, z: ms(q.zeit), offen: !q.antwort, q: q }); });
+    (G.q || []).forEach(function (q) { out.push({ art: "frage", id: "frage:" + q.id, z: ms(q.zeit), offen: !q.antwort && q.status !== "missbrauch", q: q }); });
     (G.r || []).forEach(function (r) { out.push({ art: "meldung", id: "meldung:" + r.report_id, z: ms(r.created_at), offen: r.status === "new", r: r }); });
     (G.p || []).forEach(function (m) { out.push({ art: "pmeldung", id: "pmeldung:" + (m.rid || (m.seite + "|" + m.item + "|" + m.z)), z: ms(m.z), offen: false, m: m }); });
     out.forEach(function (x) { x.gel = istGelesen(x); });
@@ -75,7 +77,9 @@
     var a = SL ? post(SL, { action: "listQuestions", ptoken: tok }) : Promise.resolve({ ok: false });
     var b = SL ? post(SL, { action: "listReports", ptoken: tok }) : Promise.resolve({ ok: false });
     var c = G.ctx.api({ action: "admin_hinweise", token: tok });
-    return Promise.all([a, b, c]).then(function (r) {
+    var d = SL ? post(SL, { action: "listLocked", ptoken: tok }) : Promise.resolve({ ok: false });
+    return Promise.all([a, b, c, d]).then(function (r) {
+      G.zu = r[3] && r[3].ok ? (r[3].gesperrt || []) : null;   // altes Backend (bis sl-7a): „unbekannte Aktion“ → kein Sperr-Bereich
       G.busy = false; G.last = Date.now(); G.err = "";
       if (r[0] && r[0].ok) G.q = r[0].questions || []; else if (!G.q) G.err = "Fragen nicht ladbar";
       if (r[1] && r[1].ok) G.r = r[1].reports || [];
@@ -204,12 +208,13 @@
   }
   function frageRow(x) {
     var q = x.q, K = window.KFAntworten, row = el("div", "kfg-it" + (x.offen ? " offen" : ""));
-    row.appendChild(kopf(x, x.offen ? "❓ Frage · offen" : "❓ Frage · beantwortet", (q.name ? q.name + " · " : "") + fdt(x.z)));
+    var miss = q.status === "missbrauch";
+    row.appendChild(kopf(x, miss ? "🚫 Frage · Missbrauch" : x.offen ? "❓ Frage · offen" : "❓ Frage · beantwortet", (q.name ? q.name + " · " : "") + fdt(x.z)));
     row.appendChild(el("div", "kfg-auf", K ? K.aufgabe(q) : String(q.taskId || "")));
     row.appendChild(el("div", "kfg-txt", "„" + kurz(q.frage, 400) + "“"));
     var acts = el("div", "kfg-acts");
     if (K) acts.appendChild(linkBtn(x, "Zur Aufgabe ›", K.link(q, "portal"), true));
-    if (q.antwort) { row.appendChild(el("div", "kfg-ans", "Antwort: " + String(q.antwort).replace(/^'/, ""))); row.appendChild(acts); return row; }
+    if (q.antwort || miss) { if (q.antwort) row.appendChild(el("div", "kfg-ans", "Antwort: " + String(q.antwort).replace(/^'/, ""))); row.appendChild(acts); return row; }
     var ta = el("textarea", "kfg-ta"); ta.rows = 3; ta.maxLength = 8000; ta.placeholder = "Antwort an die Schülerin / den Schüler …";
     if (G.draft && G.draft[q.id]) ta.value = G.draft[q.id];
     ta.oninput = function () { (G.draft = G.draft || {})[q.id] = ta.value; };
@@ -252,12 +257,33 @@
     var b = el("button", "btn ghost small", "Im Dashboard ansehen"); b.type = "button"; b.onclick = function () { markiere([x.id]); closePanel(); G.ctx.openTab("dash"); }; acts.appendChild(b);
     row.appendChild(acts); return row;
   }
+  /* Gesperrte Frage-Funktion: Drop-down + „Entsperren“ (nur sichtbar, wenn jemand gesperrt ist) */
+  function sperrBox() {
+    var l = G.zu || []; if (!l.length) return null;
+    var box = el("div", "kfg-it kfg-zu");
+    box.appendChild(el("div", "kfg-auf", "🔒 Frage-Funktion gesperrt (" + l.length + ")"));
+    box.appendChild(el("div", "kfg-txt muted", "Nach 2 Fragen ohne Bezug zur Aufgabe ist der Frage-Knopf gesperrt, bis du ihn wieder freigibst."));
+    var acts = el("div", "kfg-acts"), sel = el("select", "kfg-sel"); sel.setAttribute("aria-label", "Gesperrter Schüler");
+    l.forEach(function (u) { var o = el("option", "", (u.name || u.user) + " · " + u.n + "×"); o.value = u.user; sel.appendChild(o); });
+    var b = el("button", "btn small", "Entsperren"), msg = el("span", "muted"); b.type = "button";
+    b.onclick = function () {
+      var u = sel.value; if (!u) return; b.disabled = true; msg.textContent = "…";
+      post(SL, { action: "unlock", ptoken: G.ctx.token(), user: u }).then(function (r) {
+        b.disabled = false;
+        if (r && r.ok) { G.zu = (G.zu || []).filter(function (x) { return x.user !== u; }); msg.textContent = "✓ entsperrt"; paint(); }
+        else msg.textContent = "⚠ " + ((r && r.error) || "nicht entsperrt");
+      });
+    };
+    acts.appendChild(sel); acts.appendChild(b); acts.appendChild(msg); box.appendChild(acts);
+    return box;
+  }
   function row(x) { return x.art === "frage" ? frageRow(x) : x.art === "meldung" ? meldRow(x) : pmeldRow(x); }
   function fillPanel() {
     var body = G.panel.querySelector(".kfg-body"); if (!body) return;
     var keep = document.activeElement && body.contains(document.activeElement) && document.activeElement.tagName === "TEXTAREA";
     if (keep) return;   // nicht neu zeichnen, während getippt wird
     body.textContent = "";
+    var sp = sperrBox(); if (sp) body.appendChild(sp);
     var L = listen(), neu = L.neu.slice(0, 60);
     if (!neu.length) body.appendChild(el("p", "muted kfg-leer", G.busy && !G.q ? "Lädt …" : (G.err || "Keine neuen Fragen oder Meldungen. 👍")));
     neu.forEach(function (x) { body.appendChild(row(x)); });
@@ -303,7 +329,7 @@
       setTimeout(function () { paint(); load(false); startPoll(); }, 0);
       return b;
     },
-    reset: function () { G.q = G.r = G.p = null; G.last = 0; G.toast = false; G.tok = ""; G.draft = null; G.known = null; G.st = null; if (G.panel) { try { G.panel.remove(); } catch (e) {} G.panel = null; } },
+    reset: function () { G.q = G.r = G.p = G.zu = null; G.last = 0; G.toast = false; G.tok = ""; G.draft = null; G.known = null; G.st = null; if (G.panel) { try { G.panel.remove(); } catch (e) {} G.panel = null; } },
     _state: G, _items: function () { return listen(); }, _aufloesen: aufloesen, _daten: seitenDaten, _literal: literal, load: load, open: openPanel
   };
 })();
