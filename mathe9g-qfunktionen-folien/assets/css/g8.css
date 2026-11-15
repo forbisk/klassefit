@@ -1,8 +1,9 @@
 
 .tm{white-space:nowrap;font-family:"Nunito",sans-serif;font-weight:800}.tm sup{font-size:.62em;line-height:0}
-.g8 .task-i,.g8 .task-a .q{font-size:29px;line-height:1.25}.g8 .task-a .a{font-size:24px}.g8 .task-i,.g8 .task-a{margin-bottom:6px}.g8 .res{color:#15803d;font-weight:900}.g8 .why{font-size:22px;color:#334155}
+.g8{--gfs:1}.g8 .task-i,.g8 .task-a .q{font-size:calc(29px*var(--gfs));line-height:1.25}.g8 .task-a .a{font-size:calc(24px*var(--gfs))}.g8 .task-i,.g8 .task-a{margin-bottom:6px}.g8 .res{color:#15803d;font-weight:900}.g8 .why{font-size:calc(22px*var(--gfs));color:#334155}
 .g8 .tcol .bigline{font-size:40px}.g8 .tm{white-space:normal}
-.g8.dn .task-a .q{font-size:25px}.g8.dn .task-a .a{font-size:20px}.g8.dn .why{font-size:19px}.g8.dn .task-i{font-size:27px}
+.g8.dn .task-a .q{font-size:calc(25px*var(--gfs))}.g8.dn .task-a .a{font-size:calc(20px*var(--gfs))}.g8.dn .why{font-size:calc(19px*var(--gfs))}.g8.dn .task-i{font-size:calc(27px*var(--gfs))}
+html.kf-mobil .g8{--gfs:1.15!important}
 .sopts{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:26px;margin-top:4px}
 .bigline{font-size:44px;font-weight:800;margin:8px 0}.bigemo{font-size:170px;line-height:1;margin-top:20px}
 .g8art{display:flex;flex-direction:column;align-items:center;gap:18px;position:absolute;right:70px;top:200px;width:auto}.g8art .swap{font-size:58px;background:#fff;border-radius:24px;padding:12px 30px;box-shadow:0 8px 24px rgba(0,0,0,.12)}.g8art .swaparrow{font-size:80px;color:#be123c;font-weight:900}
@@ -12,5 +13,29 @@ table.mt{border-collapse:collapse;margin:10px auto;font-size:44px}table.mt th,ta
 .ffig{margin:4px 0}.ffig svg{height:250px;width:auto;max-width:100%}
 .figwrap{display:flex;justify-content:center;align-items:center}.figwrap svg{max-height:560px;width:auto}
 table.wt{border-collapse:collapse;margin:10px auto;font-size:34px}table.wt th,table.wt td{border:3px solid #1e3a8a;padding:6px 18px;text-align:center;min-width:70px}table.wt th{background:#e0e7ff}
-.merk{font-size:34px;line-height:1.35}.merk b{color:#6d28d9}
+.merk{font-size:40px;line-height:1.45}.merk b{color:#6d28d9}
 .opc{color:#7c3aed;font-weight:700;margin-left:.4em;font-size:.9em}
+/* echte Brüche (.fr aus slides.css) in Formeln + Über-Kreuz-Pfeile (Gym 8 Gleichungen, Kap. Verhältnisgleichungen) */
+.tm .fr>span{white-space:nowrap}.bigline .tm .fr{margin:0 .12em}
+.k1{color:#ea580c}.k2{color:#2563eb}.k6{color:#7c3aed;font-weight:900}
+.kzline{display:flex;align-items:center;flex-wrap:wrap;gap:6px 28px}
+.kz{position:relative;display:inline-grid;grid-template-columns:2.3em 2.1em 2.3em;align-items:center;justify-items:center;font-size:1.3em;padding:.05em 0}
+.kz .fr{font-size:1em;top:0;margin:0}.kz .fr .nu,.kz .fr .de{padding:.02em .35em}
+.kz .kzeq{position:relative;z-index:1;font-weight:900;text-shadow:0 0 6px #fff,0 0 6px #fff,0 0 10px #fff}
+.kzpf{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.kzhint{font-size:24px;color:#64748b;font-weight:700}.kzwhy{font-size:22px;color:#64748b;font-weight:700}
+.hnhint{font-size:26px;font-weight:700;color:#475569;margin:-4px 0 6px}.hnhint .tm{font-size:1.05em}
+.kreuzfolie .bigline{margin:4px 0}.kreuzfolie .bigline .tm .fr{font-size:.9em}.bigline .hnhint{display:inline-block;margin:0 0 0 .6em;vertical-align:middle;font-size:24px}
+.kreuzfolie .kz{font-size:1.45em}.kreuzfolie .kzhint{font-size:27px}.kreuzfolie .kzwhy{font-size:25px}.kreuzfolie .hnhint{font-size:28px}
+.two.drei{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
+.g8 .tm .fr{font-size:.92em}.g8 .why .tm .fr{font-size:1em;margin:.1em .1em}.g8 .why:has(.fr){line-height:1.45}
+
+/* Abbildungen passen in die Karte (sonst schob die Grafik die Karte über den Merksatz) */
+.two>.card{display:flex;flex-direction:column;min-height:0}.two>.card>.figwrap{flex:1 1 0;min-height:0}.figwrap svg{max-height:100%;height:auto;max-width:100%}
+html.kf-mobil #stage .two>.card>.figwrap{flex:none}html.kf-mobil #stage .figwrap svg{max-height:640px}
+.g8 .sopts{font-size:1em}
+.frw{white-space:nowrap}
+/* Schritt-für-Schritt-Hinweise auf Theoriefolien */
+.g8 .schritte,.schritte{font-size:32px;line-height:1.4;margin:10px 0 6px;color:#1e293b}.schritte>div{margin:4px 0}
+html.kf-mobil .schritte{font-size:30px}
+.hint{font:600 .62em/1.2 var(--font-body,Nunito),sans-serif;color:#475569;margin-left:.4em}
