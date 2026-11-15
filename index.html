@@ -194,6 +194,7 @@
       startBtn.hidden = hide;
       startBtn.setAttribute("aria-label", "Start – zum Portal");
     }
+    planFit();
   }
   function ensure() {
     if (nav && document.body && document.body.contains(nav)) { update(); return; }
@@ -212,7 +213,12 @@
       /* Tests: Warte-Sperre der Test-Engine blendet body>* aus – Navigation bleibt trotzdem sichtbar (09.11.2026) */
       + "html.testgesperrt body>#kfNav#kfNav:not([hidden]){display:inline-flex!important}"
       + "#kfZurueck:active,#kfStart:active{transform:scale(.97)}"
-      + "#kfZurueckPad{height:52px;pointer-events:none;flex-shrink:0}"
+      + "#kfZurueckPad{height:calc(52px + env(safe-area-inset-top,0px));pointer-events:none;flex-shrink:0}"
+      /* Kopfleiste der Seite (sticky/fixed oben) lässt links Platz für die Knöpfe (15.11.2026): kein Überdecken des Titels */
+      + ".kf-navpad.kf-navpad{padding-left:calc(var(--kfnav-w,0px) + 16px)!important;min-height:calc(var(--kfnav-h,44px) + 16px);box-sizing:border-box}"
+      + "html.kf-nav-kompakt #kfZurueck,html.kf-nav-kompakt #kfStart{min-width:40px;min-height:40px;width:40px;height:40px;padding:0;justify-content:center;font-size:18px}"
+      + "html.kf-nav-kompakt #kfZurueck span+span,html.kf-nav-kompakt #kfStart span+span{display:none}"
+      + "html.kf-nav-kompakt #kfNav{gap:5px}"
       + "@media print{#kfNav,#kfZurueckPad{display:none!important}}";
     (document.head || document.documentElement).appendChild(st);
     spacer = document.createElement("div");
@@ -249,6 +255,56 @@
     window.addEventListener("popstate", function () { setTimeout(update, 0); });
   }
 
+  /* Kopfleiste finden: sticky/fixed, oben (top <= 12px), breit, flach. Liegt sie unter den Knöpfen, bekommt sie links Platz
+     (Klasse kf-navpad) und der Platzhalter entfällt; die Knöpfe werden auf schmalen Bildschirmen kompakt (nur Symbole). */
+  var fitT = 0, lastHead = null;
+  function zOf(e) { var z = parseInt(getComputedStyle(e).zIndex, 10); return isNaN(z) ? 0 : z; }
+  function topBars() {
+    var out = [], seen = [], vw = window.innerWidth || 0, q = [document.body], depth = 0;
+    while (q.length && depth < 4) {
+      var nx = [];
+      for (var i = 0; i < q.length; i++) {
+        var ch = q[i] && q[i].children || [];
+        for (var j = 0; j < ch.length; j++) {
+          var e = ch[j];
+          if (e === nav || e === spacer || /^(SCRIPT|STYLE|LINK|TEMPLATE)$/.test(e.tagName)) continue;
+          var cs = getComputedStyle(e);
+          if (cs.display === "none" || cs.visibility === "hidden") continue;
+          if ((cs.position === "sticky" || cs.position === "fixed") && parseFloat(cs.top) <= 12 && cs.bottom !== "0px") {
+            var r = e.getBoundingClientRect();
+            if (r.width >= vw * 0.6 && r.height > 20 && r.height < 260 && r.top < 140) { out.push(e); continue; }
+          }
+          if (depth < 3 && seen.length < 400) { nx.push(e); seen.push(e); }
+        }
+      }
+      q = nx; depth++;
+    }
+    return out;
+  }
+  function fitHead() {
+    fitT = 0;
+    if (!nav || !document.body) return;
+    var de = document.documentElement;
+    if (nav.hidden) { if (lastHead) lastHead.classList.remove("kf-navpad"); lastHead = null; de.classList.remove("kf-nav-kompakt"); if (spacer) spacer.hidden = nav.hidden; return; }
+    var bars = topBars(), nz = zOf(nav), above = 0, head = null;
+    for (var i = 0; i < bars.length; i++) {
+      if (zOf(bars[i]) > nz) { above = Math.max(above, bars[i].getBoundingClientRect().bottom); continue; }   /* z. B. Vorschau-Banner liegt über den Knöpfen */
+      if (!head) head = bars[i];
+    }
+    nav.style.top = above > 0 ? Math.round(above + 6) + "px" : "";
+    if (lastHead && lastHead !== head) lastHead.classList.remove("kf-navpad");
+    lastHead = head;
+    de.classList.toggle("kf-nav-kompakt", !!head && (window.innerWidth || 0) < 600);
+    if (head) {
+      var r = nav.getBoundingClientRect();
+      de.style.setProperty("--kfnav-w", Math.ceil(r.width) + "px");
+      de.style.setProperty("--kfnav-h", Math.ceil(r.height) + "px");
+      head.classList.add("kf-navpad");
+      if (spacer) spacer.hidden = true;
+    } else if (spacer) spacer.hidden = false;
+  }
+  function planFit() { if (!fitT) fitT = setTimeout(fitHead, 30); }
+
   function remount() {
     nav = document.getElementById("kfNav");
     btn = document.getElementById("kfZurueck");
@@ -273,6 +329,7 @@
   ensure();
   document.addEventListener("staticrypt-decrypted", remount);
   window.addEventListener("pageshow", function () { setTimeout(remount, 0); });
+  window.addEventListener("resize", planFit);
   /* StatiCrypt ersetzt oft body ohne Event – kurz nachladen prüfen */
   setTimeout(remount, 50);
   setTimeout(remount, 400);
@@ -280,6 +337,7 @@
   try {
     var mo = new MutationObserver(function () {
       if (!document.getElementById("kfNav") || (nav && document.body && !document.body.contains(nav))) remount();
+      else planFit();
     });
     mo.observe(document.documentElement, { childList: true, subtree: true });
   } catch (e) {}

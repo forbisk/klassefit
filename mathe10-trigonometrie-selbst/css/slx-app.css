@@ -57,3 +57,12 @@ body>header.site-header,body>footer.site-footer,.site-footer{display:none!import
 @media(min-width:900px){#awayBadge{left:12px!important;transform:none;bottom:14px!important}}
 @media(max-width:700px){.top{gap:.4rem .8rem;padding:.5rem .8rem}.top .ov span{font-size:.8rem}.top .tr button{padding:.35rem .8rem;font-size:.9rem}.minbar{font-size:.8rem}.ap-hero{padding:14px}.ap-hero h1{font-size:1.45rem}}
 html body #awayBadge{position:static;display:table;margin:.4rem auto 96px;font-family:"Nunito",system-ui,sans-serif;border-color:var(--cb);color:var(--mut)}
+/* 15.11.2026: Einheitlicher Kopf (kfa-top aus _lib/kf-app.css) – Konto-/Abgabe-Leiste als helle Karte darunter, Abschnitts-Chips nur auf Abschnittsseiten */
+.top.slx-konto{position:static;background:#fff;color:var(--tx);border:1px solid var(--cb);box-shadow:var(--sh);border-radius:18px;margin:.6rem auto 0;max-width:820px;width:calc(100% - 2rem);padding:.5rem .8rem;gap:.4rem .8rem}
+.top.slx-konto .who{font-size:.9rem}.top.slx-konto .pbar{background:#6d4aff1f}.top.slx-konto .ov span{color:var(--mut)}
+.top.slx-konto .jump input{border:2px solid #6d4aff40;background:#fbfaff}.top.slx-konto .jump button{background:var(--pri);color:#fff}
+.top.slx-konto button.ghost{background:#fff;color:var(--pri);border:2px solid #6d4aff55}
+.kfa-top{z-index:60}
+body:has(main.slx-home) .nav{display:none}
+main.slx-home{padding-top:.2rem}
+.kfa-tstat .ap-m{background:#ffffff33}
