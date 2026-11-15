@@ -16,3 +16,5 @@ table.mt{border-collapse:collapse;margin:10px auto;font-size:34px}table.mt th,ta
 .kd{display:flex;flex-direction:column;gap:18px;flex:1;min-height:0}.kd svg{background:#fff;border-radius:26px;box-shadow:var(--shadow);width:100%;flex:1;min-height:0}
 .kd-ctrl{display:flex;align-items:center;gap:26px;font-size:34px;font-weight:800}.kd-ctrl input[type=range]{flex:1;height:40px;accent-color:#be123c}
 .kd-info{font-size:36px;font-weight:800;background:#fff;border-radius:20px;padding:14px 26px;box-shadow:var(--shadow)}.kd-info .ok{color:#15803d}.kd-info .hl2{color:#be123c}
+.slide.chapter .goals .fr::before,.slide.chapter .goals .fr span::before{content:none}.slide.chapter .goals .fr{font-size:.85em}
+.why .fr{font-size:1.1em;margin:0 .1em}

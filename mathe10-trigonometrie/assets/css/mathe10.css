@@ -54,4 +54,20 @@ html.lehrer::after{content:'Lehrermodus (L)';position:fixed;left:10px;top:8px;z-
 .teachernote h3{color:#7a5b00}
 .zt td{padding:6px 16px!important}.zt td:first-child{font-size:30px!important;width:150px!important}.zt .small{font-size:22px;color:#6c757d}
 .teachernote .takeaway{font-size:28px}
-.selblink{position:fixed;top:14px;right:84px;z-index:50;font:600 14px/1 system-ui,sans-serif;background:#fff;border:1px solid #cfd8dc;border-radius:999px;padding:8px 12px;color:#0b6e63;text-decoration:none;opacity:.85}.selblink:hover{opacity:1}@media print{.selblink{display:none}}
+/* Knopf „Selbstarbeit“: am Beamer/Desktop unten rechts in der Fußzeile (zwischen Schulzeile und Folien-Navi), damit er das Etikett
+   (ÜBEN/LÖSUNG …) oben rechts nicht verdeckt. Position folgt der 1920×1080-Bühne (Skalierung wie deck.js: min(vw/1920, vh/1080)). Handy: wie bisher oben. */
+.selblink{--kfW:min(100vw,177.78vh);--kfH:min(100vh,56.25vw);position:fixed;bottom:calc((100vh - var(--kfH))/2 + var(--kfH)*.052 - 16px);right:calc((100vw - var(--kfW))/2 + var(--kfW)*.198);z-index:50;font:600 14px/1 system-ui,sans-serif;background:#fff;border:1px solid #cfd8dc;border-radius:999px;padding:8px 12px;color:#0b6e63;text-decoration:none;opacity:.85}.selblink:hover{opacity:1}@media print{.selblink{display:none}}
+html.kf-mobil .selblink{bottom:auto;top:14px;right:84px}
+/* Sek-Check: Ankreuz-Optionen zweispaltig, Brüche in Lösungszeilen kompakter, RSA-Etikett in schmalen Spalten über dem Text */
+.slx-opts{column-count:2;column-gap:32px}
+.slx-opts li{break-inside:avoid}
+.task-a .fr{font-size:.76em}
+.pa-row .tasks:not(.c1) .task-i:has(.rsa-tag){flex-wrap:wrap;row-gap:6px}
+.pa-row .tasks:not(.c1) .task-i:has(.rsa-tag)>span:last-child{flex:1 1 100%;min-width:0}
+.pa-row .tasks:not(.c1) .task-i:has(.rsa-tag) .rsa-tag{margin-left:0}
+.task-a .q .fr{font-size:.72em}
+.pa-row .tasks.txt:not(.c1):not(.c2) .task-i{flex-wrap:wrap;row-gap:4px}
+.pa-row .tasks.txt:not(.c1):not(.c2) .task-i>span:last-child{flex:1 1 100%;min-width:0}
+.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a .q{font-size:31px;line-height:1.2}.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a .a{font-size:28px;line-height:1.25}.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a{padding-bottom:6px}
+.slide.chapter .goals .fr::before,.slide.chapter .goals .fr span::before{content:none}.slide.chapter .goals .fr{font-size:.85em}
+html.kf-mobil .cl{font-size:.76em}

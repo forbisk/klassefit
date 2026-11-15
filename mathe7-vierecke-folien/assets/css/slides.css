@@ -591,3 +591,15 @@ svg .grid{display:inline}
 /* Periodenstrich (periodische Dezimalbrüche): Strich über den Periodenziffern, ohne die Zeilenhöhe zu ändern */
 .per{display:inline-block;position:relative;line-height:1}
 .per::before{content:"";position:absolute;left:.05em;right:.05em;top:-.07em;border-top:.075em solid currentColor}
+/* Handy-Ansicht (15.11.): Folien mit festen Breiten im Hochformat einspaltig (Umkehr-Maschine, Schiffe versenken, Temperatur-Nacht, Schluss-Grafik) */
+html.kf-mobil .uk-row{flex-direction:column;align-items:stretch;gap:22px}
+html.kf-mobil .uk-card{min-width:0}
+html.kf-mobil .ks-split{grid-template-columns:1fr;gap:24px}
+html.kf-mobil .ks-wrap{height:auto;justify-content:center}
+html.kf-mobil .ks-wrap svg{height:auto;width:100%;max-height:none}
+html.kf-mobil .tempkurve{grid-template-columns:1fr;gap:24px}
+html.kf-mobil #stage .slide .end-art{position:relative!important;right:auto!important;top:auto!important;left:auto!important;width:100%!important;height:auto!important;max-height:520px;margin:20px auto 0}
+/* Theorie-Folien (kfz): echte Brüche etwas größer, damit Zähler/Nenner am Beamer gut lesbar sind */
+.kfz .fr{font-size:.95em;margin:0 .12em}
+/* lange Kapitelnamen (Theorie-Kapitel) nicht in die Schulzeile unten laufen lassen */
+#chapterlabel{max-width:440px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15}

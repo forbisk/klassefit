@@ -119,3 +119,7 @@
 .nivgrid.long .niv{padding:14px 22px 16px}
 .gfig{height:250px}.gfig svg{max-height:205px}
 .flatgrid.gal .tl li{font-size:32px}
+/* 15.11.: echte Brüche in den kleinen Rechenweg-Hinweisen gut lesbar */
+.why .fr{font-size:1.15em;margin:0 .1em}
+.slide .m .fr{font-size:1em;margin:0 .1em}
+.slide .fr{font-size:.95em}.slide .m .fr{font-size:1em}

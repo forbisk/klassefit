@@ -8,4 +8,6 @@ html.kf-mobil .g8{--gfs:1.15!important}
 .frw{white-space:nowrap}.tm .fr{font-size:.92em}
 .bigline{font-size:44px;font-weight:800;margin:8px 0}.bigemo{font-size:170px;line-height:1;margin-top:20px}
 .g8art{display:flex;flex-direction:column;align-items:center;gap:18px;position:absolute;right:70px;top:200px;width:auto}.g8art .swap{font-size:58px;background:#fff;border-radius:24px;padding:12px 30px;box-shadow:0 8px 24px rgba(0,0,0,.12)}.g8art .swaparrow{font-size:80px;color:#be123c;font-weight:900}
+
+.weg{color:#c2255c;text-decoration:line-through;text-decoration-thickness:3px}
 table.mt{border-collapse:collapse;margin:10px auto;font-size:44px}table.mt th,table.mt td{border:3px solid #1e3a8a;padding:10px 26px;text-align:center;min-width:120px}table.mt th{background:#e0e7ff}table.mt td.hi{background:#fde68a}
