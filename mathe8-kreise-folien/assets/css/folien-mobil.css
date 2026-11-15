@@ -28,6 +28,9 @@ html.kf-mobil #stage .slide[data-teacher]{display:none}
 html.kf-mobil.lehrer #stage .slide[data-teacher]{display:flex}
 html.kf-mobil #stage .slide.past{transform:none}
 
+/* Hochformat-Fix: in der Handy-Ansicht nichts unter die Inhaltshöhe schrumpfen lassen (16:9 nutzt min-height:0 zum Einpassen) */
+html.kf-mobil #stage .slide *{min-height:auto}
+
 /* Schritte: alles sichtbar, nur Abdeck-Karten (cover/flip) bleiben zum Antippen */
 html.kf-mobil #stage .step:not(.visible):not(.cover):not(.flip){opacity:1;transform:none;pointer-events:auto;filter:none}
 html.kf-mobil #stage .step.marker{display:none}
@@ -38,9 +41,10 @@ html.kf-mobil .kf-mnum b{display:inline-grid;place-items:center;min-width:46px;h
 html.kf-mobil .slide.chapter .kf-mnum{color:rgba(255,255,255,.85)}
 html.kf-mobil .slide.chapter .kf-mnum b{background:rgba(255,255,255,.25)}
 html.kf-mobil #stage .slide .chip{position:static;margin:0 0 10px}
+html.kf-mobil #stage .slide>.tagbar{position:relative;inset:auto;align-self:flex-start;flex-wrap:wrap;max-width:100%;margin:0 0 12px;transform:none}
 html.kf-mobil #stage .slide>.badge{position:static;align-self:flex-start;margin:0 0 16px;transform:none}
 html.kf-mobil #stage .slide .title-foot,html.kf-mobil #stage .slide .heft-hint,html.kf-mobil #stage .slide .holes,
-html.kf-mobil #stage .slide .pencil,html.kf-mobil #stage .slide.chapter .bigicon,html.kf-mobil #stage .twidget{display:none!important}
+html.kf-mobil #stage .slide .pencil,html.kf-mobil #stage .slide.chapter .bigicon,html.kf-mobil #stage .slide.chapter .bigsym,html.kf-mobil #stage .twidget{display:none!important}
 html.kf-mobil #stage .slide.title{padding-left:34px}
 html.kf-mobil #stage .slide.title h1{font-size:92px}
 html.kf-mobil #stage .slide.title .art{position:relative;right:auto;top:auto;left:auto;width:100%;height:auto;max-height:520px;margin-top:20px}
@@ -55,6 +59,8 @@ html.kf-mobil #stage .slide.heft::before{background:linear-gradient(90deg,transp
 html.kf-mobil #stage .g2,html.kf-mobil #stage .two,html.kf-mobil #stage .two.w6040,html.kf-mobil #stage .two.w4060,html.kf-mobil #stage .rgrid,
 html.kf-mobil #stage .an-body,html.kf-mobil #stage .hb.two2,html.kf-mobil #stage .waage,html.kf-mobil #stage .pa-row{grid-template-columns:minmax(0,1fr)}
 html.kf-mobil #stage .pa-row{flex-direction:column}
+/* Quiz-Antworten (A–D) einspaltig, sonst rechts abgeschnitten */
+html.kf-mobil #stage .opts{grid-template-columns:minmax(0,1fr)}
 html.kf-mobil #stage .pa-row>*{width:auto!important;max-width:none!important}
 html.kf-mobil #stage .g3,html.kf-mobil #stage .g4,html.kf-mobil #stage .tasks,html.kf-mobil #stage .flips,html.kf-mobil #stage .flips.c3,
 html.kf-mobil #stage .roadmap,html.kf-mobil #stage .rcards{grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
