@@ -1,4 +1,4 @@
-/* KlasseFit – „Neue Antwort von Herrn Kurlavičius“ (gemeinsam: Portal, Selbstlernen 10a, Wiederholung 10a, Fit für die KA 7a über kf-fragen.js).
+/* KlasseFit – „Neue Antwort von Herrn Kurlavičius“ (gemeinsam: Portal, Selbstlernen 10a, Wiederholung 10a, Fit für die KA 7a über kf-fragen.js, alle Selbstarbeits-/Missions-Apps über kf-fragen-auto.js).
    Quelle: Selbstlern-Backend Aktion myQuestions (Frage/Antwort je Aufgabe). Gelesen-Status:
    - serverseitig, wenn das Backend Feld "gelesen" liefert + Aktion markRead kennt (Code.gs ab 03.11.2026 „Antworten gelesen“),
    - sonst / zusätzlich lokal je Benutzer (localStorage kf-antw-gelesen:<user>).
@@ -24,6 +24,8 @@ function ziel(q){
   var id = String(q.taskId||""), seite = String(q.seite||""), pre = id.split(":")[0];
   if(SL_SEITEN[seite]) return {ordner:"mathe10-selbstlernen", datei:seite+".html", name:SL_SEITEN[seite], sprung:true};
   if(ANDERE[seite] || ANDERE[pre]){ var a = ANDERE[seite] || ANDERE[pre]; return {ordner:a[0], datei:"", name:a[1], sprung:a[0]==="mathe10-wiederholung"}; }
+  /* 16.11.2026: Selbstarbeits-/Missions-Apps mit kf-fragen-auto.js: Seite = Ordner = Präfix der Aufgaben-ID (z. B. mathe8-gleichungen-selbst:T1-3a) */
+  if(pre && pre===seite && /^[a-z0-9]+(-[a-z0-9]+)+$/.test(seite)) return {ordner:seite, datei:"", name:String(q.task||"").split(" | ")[0] || seite, sprung:true};
   if(SL_SEITEN[pre]) return {ordner:"mathe10-selbstlernen", datei:pre+".html", name:SL_SEITEN[pre], sprung:true};
   var m = /^([a-z]{1,2}\d?)-/.exec(id); if(m && MOD[m[1]]) return {ordner:"mathe10-selbstlernen", datei:MOD[m[1]]+".html", name:SL_SEITEN[MOD[m[1]]], sprung:true};
   return {ordner:"mathe10-selbstlernen", datei:"", name:"Mathe 10a – Selbstlernen", sprung:false};
