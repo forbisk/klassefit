@@ -1070,6 +1070,21 @@
   function chipRow(list, cur, onpick, lab, cls) {
     return wahlSel(lab || "Auswahl", cls || "", list, cur || "", onpick);
   }
+
+  function reopenAbgabe(benutzer, seite, titel) {
+    if (!S.sess || S.reopenBusy) return;
+    if (!window.confirm("Abgabe für „" + (titel || "diesen Test") + "“ wieder öffnen?\n\nDie alte Abgabe bleibt gespeichert. Der Schüler kann auf dem Gerät, auf dem er abgegeben hat, weiterarbeiten und erneut abgeben. Gewertet wird die letzte Abgabe.")) return;
+    S.reopenBusy = true; S.reopenErr = ""; render();
+    api({ action: "admin_reopen", token: S.sess.token, benutzer: benutzer, seite: seite }).then(function (r) {
+      S.reopenBusy = false;
+      if (r && r.ok) {
+        S.dash = S.dash || {}; S.dash.reopen = S.dash.reopen || {};
+        S.dash.reopen[benutzer] = S.dash.reopen[benutzer] || {};
+        S.dash.reopen[benutzer][seite] = { status: "offen", z: r.z || Date.now(), verbraucht: 0, label: "geoeffnet" };
+      } else S.reopenErr = (r && r.error) || "Nachfreigabe nicht gespeichert. Bitte später erneut versuchen.";
+      render();
+    });
+  }
   function detailSheet(v) {
     var d = S.dash, st = null; d.schueler.forEach(function (s) { if (s.id === S.dashDetail) st = s; }); if (!st) return null;
     var z = d.zellen[st.id] || {}, inf = d.info[st.id] || {}, body = [];
@@ -1091,8 +1106,25 @@
         INFO.forEach(function (k) { if (i[k[0]] != null && i[k[0]] !== "") kv.push([k[1], String(i[k[0]])]); });
         if (kv.length) box.appendChild(h("div", { class: "kv" }, kv.map(function (x) { return h("span", {}, h("em", { text: x[0] }), " " + x[1]); })));
       }
+
       rows.forEach(function (t) { var c = z[p.key + "|" + t.thema]; if (c && c.abgaben && c.abgaben.length) box.appendChild(h("div", { class: "abg" }, h("em", { text: "Abgaben" }),
         c.abgaben.slice().reverse().map(function (a) { return h("span", { class: "ab" }, fdt(a.z) + " · " + (a.gruppe ? "Version " + a.gruppe + " · " : "") + (a.p != null ? r1(a.p) + "/" + r1(a.mx) + " P." : "") + (a.pc != null ? " (" + r1(a.pc) + " %)" : "") + (a.note ? " · Note " + a.note : "")); }))); });
+      if (p.art === "test") {
+        var rg = d.reopen && d.reopen[st.id] && d.reopen[st.id][p.key], abgs = [], fertig = false, lastAb = 0;
+        rows.forEach(function (t) { var c = z[p.key + "|" + t.thema]; if (!c) return;
+          if (c.status === "fertig" || (c.abgaben && c.abgaben.length)) fertig = true;
+          (c.abgaben || []).forEach(function (a) { abgs.push(a); if (a.z > lastAb) lastAb = a.z; }); });
+        var stLabel = "";
+        if (rg && rg.status === "offen") stLabel = "geöffnet – der Schüler kann auf seinem Gerät weiterarbeiten (Seite neu laden oder kurz warten).";
+        else if (rg && rg.status === "verbraucht" && lastAb && rg.verbraucht && lastAb >= rg.verbraucht - 5000) stLabel = "wieder abgegeben";
+        else if (rg && rg.status === "verbraucht") stLabel = "geöffnet (vom Schüler übernommen)";
+        if (fertig || (rg && rg.status === "offen")) {
+          box.appendChild(h("div", { class: "reopen-box" },
+            stLabel ? h("p", { class: "muted reopen-st", text: stLabel }) : null,
+            (fertig && (!rg || rg.status !== "offen")) ? h("button", { class: "btn small", type: "button", disabled: S.reopenBusy ? true : null, text: S.reopenBusy ? "Wird geöffnet …" : "Abgabe wieder öffnen", onclick: function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); reopenAbgabe(st.id, p.key, p.titel); } }) : null,
+            S.reopenErr ? h("p", { class: "muted", text: S.reopenErr }) : null));
+        }
+      }
       body.push(box);
     });
     if (!body.length) body.push(h("p", { class: "muted", text: "Keine Daten vorhanden." }));

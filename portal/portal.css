@@ -377,3 +377,8 @@ select option,select optgroup{color:#0b1220;background:#fff;font-weight:500}
 @media (prefers-color-scheme:dark){.sv-banner select{background-color:rgba(69,26,3,.55);--sel-b:rgba(252,211,77,.4)}}
 .kfg-zu{border-color:#94a3b8;box-shadow:inset 3px 0 0 #94a3b8}.kfg-sel{flex:1 1 200px;min-width:0}
 .kfg-zu .kfg-txt{font-size:13px}
+
+/* portal-7u: Abgabe wieder öffnen (Lehrer-Detail) */
+.reopen-box{margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.reopen-box .reopen-st{margin:0;flex:1 1 16rem}
+.reopen-box .btn{flex:0 0 auto}
