@@ -1,7 +1,11 @@
 /* Test-Zusätze (_lib/test-extra.css): Schreibaufgaben, Bonus, Selbstkontrolle, ⚑, Einfüge-Hinweis, Recherche-Fenster */
 .task .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .task .meta .pts{margin-left:auto}
-.task .meta .rp-flag{margin-left:4px}
+.task .meta .rp-flag{order:2;margin-left:4px}
+/* Frage-Knopf in der Meta-Zeile neben ⚑, Formular darunter (display:contents, überschreibt html.kfq-an .kfq{display:block}) */
+html.kfq-an .task .meta > .kfq{display:contents}
+.task .meta .kfq-open{order:3;flex:0 0 auto;margin:0}
+.task .meta .kfq-form,.task .meta .kfq-list,.task .meta .kfq-sperre{flex:1 0 100%;order:10;margin-top:.35rem}
 .schreiben .feld{margin:10px 0}
 .schreiben .term{display:block;font-weight:600;margin:0 0 4px}
 textarea.ans.txt{width:100%;box-sizing:border-box;font:inherit;font-size:17px;line-height:1.45;padding:10px 12px;border:2px solid #cbd5e1;border-radius:10px;resize:vertical;min-height:3.2em;background:#fff;color:inherit}
