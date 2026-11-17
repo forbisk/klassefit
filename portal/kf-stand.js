@@ -70,9 +70,36 @@ function areaOf(id, hint) {
   for (var i = 0; i < AREAS.length; i++) if (AREAS[i].re && AREAS[i].re.test(s)) return AREAS[i];
   return null;
 }
-function areaName(id) {
-  for (var i = 0; i < AREAS.length; i++) if (AREAS[i].id === id) return AREAS[i].name;
-  return id;
+/* Portal-Themen kommen als fach|slug (z. B. mathe|pythagoras) – auf Bereichs-IDs (pyth) abbilden. */
+var SLUG_NAME = {
+  pruefungswissen: "Prüfungswissen", werkzeuge: "Werkzeuge", aehnlichkeit: "Ähnlichkeit",
+  pythagoras: "Satz des Pythagoras", trigonometrie: "Trigonometrie",
+  terme: "Terme & binomische Formeln", quadratisch: "Quadratische Funktionen",
+  gleichungen: "Gleichungen lösen", rationale: "Rationale Zahlen", kommutativ: "Kommutativgesetz",
+  daten: "Bits, Bytes & Sicherheit", binaer: "Binärcode, Pixel & Speicher",
+  ordner: "Ordner und Dateien", medien: "Informationen und Medien", klasse: "Klasse & Lernen",
+  studium: "Studium"
+};
+function areaIdOf(id, hint) {
+  var a = areaOf(id, hint);
+  if (a) return a.id;
+  var s = String(id || "");
+  var i = s.indexOf("|");
+  if (i >= 0) {
+    var rest = s.slice(i + 1);
+    a = areaOf(rest, hint);
+    if (a) return a.id;
+    return rest.slice(0, 40) || s.slice(0, 40);
+  }
+  return s.slice(0, 40);
+}
+function areaName(id, hint) {
+  var canon = areaIdOf(id, hint);
+  for (var i = 0; i < AREAS.length; i++) if (AREAS[i].id === canon) return AREAS[i].name;
+  if (hint) return String(hint);
+  if (SLUG_NAME[canon]) return SLUG_NAME[canon];
+  if (SLUG_NAME[id]) return SLUG_NAME[id];
+  return canon || id;
 }
 
 /* Aufgabenstände aus bekannten (unveränderten) Schlüsseln sammeln. */
@@ -237,19 +264,23 @@ function cleanState(s) {
   s = s || {};
   var o = { v: 1, z: +s.z || Date.now(), ampel: {}, sterne: {} };
   if (s.ziel && typeof s.ziel === "object") {
-    o.ziel = { kw: String(s.ziel.kw || "").slice(0, 16), typ: String(s.ziel.typ || "").slice(0, 20), n: +s.ziel.n || 0, thema: String(s.ziel.thema || "").slice(0, 40), label: String(s.ziel.label || "").slice(0, 160), z: +s.ziel.z || 0 };
+    o.ziel = { kw: String(s.ziel.kw || "").slice(0, 16), typ: String(s.ziel.typ || "").slice(0, 20), n: +s.ziel.n || 0, thema: areaIdOf(s.ziel.thema || "") || "", label: String(s.ziel.label || "").slice(0, 160), z: +s.ziel.z || 0 };
   } else o.ziel = null;
   if (s.ampel && typeof s.ampel === "object") {
     Object.keys(s.ampel).slice(0, 80).forEach(function (k) {
       var a = s.ampel[k]; if (!a || typeof a !== "object") return;
       var w = String(a.w || ""); if (w !== "kann" && w !== "unsicher" && w !== "nicht") return;
-      o.ampel[String(k).slice(0, 40)] = { w: w, z: +a.z || 0 };
+      var id = areaIdOf(k);
+      var rec = { w: w, z: +a.z || 0 };
+      if (!o.ampel[id] || rec.z >= (+o.ampel[id].z || 0)) o.ampel[id] = rec;
     });
   }
   if (s.sterne && typeof s.sterne === "object") {
     Object.keys(s.sterne).slice(0, 80).forEach(function (k) {
       var a = s.sterne[k]; if (!a || typeof a !== "object") return;
-      o.sterne[String(k).slice(0, 40)] = { s: Math.max(0, Math.min(5, +a.s || 0)), n: +a.n || 0, sauber: +a.sauber || 0, z: +a.z || 0 };
+      var id = areaIdOf(k);
+      var rec = { s: Math.max(0, Math.min(5, +a.s || 0)), n: +a.n || 0, sauber: +a.sauber || 0, z: +a.z || 0 };
+      if (!o.sterne[id] || rec.z >= (+o.sterne[id].z || 0)) o.sterne[id] = rec;
     });
   }
   if (s.gesamt && typeof s.gesamt === "object") o.gesamt = { pct: s.gesamt.pct == null ? null : +s.gesamt.pct, sterne: +s.gesamt.sterne || 0, n: +s.gesamt.n || 0 };
@@ -356,13 +387,58 @@ function stampSterne(state, col) {
   state.z = Date.now();
   return state;
 }
+var loadState = "idle"; /* idle | loading | ready */
+var queuedSave = false;
+
+function configure(opts) {
+  opts = opts || {};
+  if (opts.api) apiFn = opts.api;
+  if (opts.token) tokenFn = opts.token;
+  if (opts.user) userFn = opts.user;
+}
+function resetSync() {
+  loadState = "idle";
+  queuedSave = false;
+  lastState = null;
+  lastCol = null;
+  apiFn = tokenFn = userFn = null;
+}
+function beginStandLoad() { loadState = "loading"; queuedSave = false; }
+function localIsNewer(local, remote, remoteZ) {
+  local = cleanState(local || blank());
+  var has = !!(local.ziel || Object.keys(local.ampel || {}).length);
+  if (!remote) return has;
+  remote = cleanState(remote);
+  if (local.ziel && (!remote.ziel || (+local.ziel.z || 0) > (+remote.ziel.z || 0))) return true;
+  var keys = Object.keys(local.ampel || {}), i, k;
+  for (i = 0; i < keys.length; i++) {
+    k = keys[i];
+    if (!remote.ampel[k] || (+local.ampel[k].z || 0) > (+remote.ampel[k].z || 0)) return true;
+  }
+  return false;
+}
+function pushStand(state) {
+  if (!apiFn || !tokenFn) return;
+  var tok = tokenFn(); if (!tok) return;
+  apiFn({ action: "stand_save", token: tok, state: cleanState(state) }).then(function () {}, function () {});
+}
+function standLoadFinished(remote, updated) {
+  var local = lastState || loadLocal(ctxUser());
+  var merged = mergeState(local, remote, updated);
+  lastState = merged;
+  saveLocal(ctxUser(), merged);
+  var shouldPush = queuedSave || localIsNewer(local, remote, updated);
+  queuedSave = false;
+  loadState = "ready";
+  if (shouldPush) pushStand(merged);
+  return merged;
+}
 function persist(state, push) {
   lastState = cleanState(state);
   saveLocal(ctxUser(), lastState);
   if (push === false) return;
-  if (!apiFn || !tokenFn) return;
-  var tok = tokenFn(); if (!tok) return;
-  apiFn({ action: "stand_save", token: tok, state: lastState }).then(function () {}, function () {});
+  if (loadState === "loading") { queuedSave = true; return; }
+  pushStand(lastState);
 }
 
 function sheetHtml(state, col, opts) {
@@ -390,7 +466,7 @@ function sheetHtml(state, col, opts) {
   var ids = Object.keys(col.areas).sort(function (a, b) { return (col.areas[b].n || 0) - (col.areas[a].n || 0); });
   if (!ids.length) {
     /* Ampel trotzdem anbieten, falls Themenliste bekannt */
-    var extra = (opts.themen || []).map(function (t) { return t.id; });
+    var extra = (opts.themen || []).map(function (t) { return areaIdOf(t.id, t.name || t.titel); });
     ids = extra.length ? extra : AREAS.map(function (A) { return A.id; }).slice(0, 0);
   }
   /* Union: areas with data + ampel + themen opts */
@@ -410,7 +486,10 @@ function sheetHtml(state, col, opts) {
   var rows = "";
   ids.forEach(function (id) { rows += row(id, col.areas[id]); });
   Object.keys(state.ampel || {}).forEach(function (id) { rows += row(id, col.areas[id]); });
-  (opts.themen || []).forEach(function (t) { rows += row(t.id, col.areas[t.id] || { s: 0, n: 0, name: t.name || t.titel }); });
+  (opts.themen || []).forEach(function (t) {
+    var id = areaIdOf(t.id, t.name || t.titel);
+    rows += row(id, col.areas[id] || { s: 0, n: 0, name: areaName(id, t.name || t.titel) });
+  });
   h += (rows || '<p class="kf-st-meta">Sobald du Aufgaben löst, erscheinen hier Sterne je Thema.</p>') + "</section></div>";
   return h;
 }
@@ -493,17 +572,16 @@ function mountPortal(el, opts) {
     var b = el.querySelector(".kf-st-open");
     if (b) b.onclick = function () { openSheet({ klasse: klasse, themen: opts.themen }); };
   }
-  paint();
   var tok = tokenFn && tokenFn();
+  if (apiFn && tok) beginStandLoad();
+  paint();
   if (apiFn && tok) {
     apiFn({ action: "stand_load", token: tok }).then(function (r) {
-      if (r && r.ok) {
-        lastState = mergeState(loadLocal(ctxUser()), r.state, r.updated);
-        saveLocal(ctxUser(), lastState);
-        paint();
-      }
-    }, function () {});
-  }
+      if (r && r.ok) standLoadFinished(r.state, r.updated);
+      else standLoadFinished(null, 0);
+      paint();
+    }, function () { standLoadFinished(null, 0); paint(); });
+  } else loadState = "ready";
   return { refresh: paint, open: function () { openSheet({ klasse: klasse, themen: opts.themen }); } };
 }
 
@@ -519,7 +597,7 @@ function teacherHtml(entry, ctx) {
     var w = (ampel[id] || {}).w || "";
     var pct = null;
     if (ctx.zellen && ctx.themen) {
-      ctx.themen.forEach(function (t) { if (t.thema === id || (t.label && areaOf(t.thema, t.label) && areaOf(t.thema, t.label).id === id)) {
+      ctx.themen.forEach(function (t) { if (areaIdOf(t.thema, t.label) === id || t.thema === id) {
         var c = ctx.zellen[t.seite + "|" + t.thema]; if (c && c.pct != null) pct = c.pct;
       } });
     }
@@ -595,6 +673,9 @@ var KFStand = {
   KEY: KEY, weekKey: weekKey, quality: quality, starsOf: starsOf, starsForArea: starsForArea,
   collect: collect, overall: overall, defaultGoals: defaultGoals, goalProgress: goalProgress,
   cleanState: cleanState, mergeState: mergeState, deviation: deviation, loadLocal: loadLocal, saveLocal: saveLocal,
+  areaOf: areaOf, areaIdOf: areaIdOf, areaName: areaName,
+  persist: persist, beginStandLoad: beginStandLoad, standLoadFinished: standLoadFinished,
+  localIsNewer: localIsNewer, resetSync: resetSync, configure: configure,
   gaugeSvg: gaugeSvg, starsHtml: starsHtml, cardHtml: cardHtml, sheetHtml: sheetHtml, teacherHtml: teacherHtml,
   mountPortal: mountPortal, mountTeacher: mountTeacher, openSheet: openSheet, enhanceVorbereitung: enhanceVorbereitung,
   boot: boot, AMP: AMP, AREAS: AREAS
