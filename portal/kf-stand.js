@@ -80,24 +80,40 @@ var SLUG_NAME = {
   ordner: "Ordner und Dateien", medien: "Informationen und Medien", klasse: "Klasse & Lernen",
   studium: "Studium"
 };
+/* Nur bekannte Bereiche/Themen — keine Speicher-Schlüssel (kf_sync_meta_v1, kf_*, *_meta, …). */
+var EXTRA_NAME = { kreis: "Kreise", komm: "Kommutativgesetz", mathe7: "Mathematik 7", inf: "Informatik" };
+function topicSlug(id) {
+  var s = String(id || "").trim();
+  var i = s.indexOf("|");
+  return i >= 0 ? s.slice(i + 1) : s;
+}
+function isKnownArea(id, hint) {
+  if (areaOf(id, hint)) return true;
+  var raw = String(id || "").trim(), slug = topicSlug(raw);
+  if (!slug) return false;
+  if (areaOf(slug, hint)) return true;
+  if (SLUG_NAME[slug] || EXTRA_NAME[slug]) return true;
+  for (var i = 0; i < AREAS.length; i++) if (AREAS[i].id === slug) return true;
+  /* Offizielles Portal-Thema fach|slug mit lesbarem Namen, das noch nicht in der Liste steht. */
+  var h = String(hint || "").trim();
+  if (h && /\|/.test(raw) && /^[a-z][a-z0-9]+$/i.test(raw.split("|")[0]) && /^[a-z][a-z0-9_-]+$/i.test(slug) && h !== raw && h !== slug) return true;
+  return false;
+}
 function areaIdOf(id, hint) {
+  if (!isKnownArea(id, hint)) return "";
   var a = areaOf(id, hint);
   if (a) return a.id;
-  var s = String(id || "");
-  var i = s.indexOf("|");
-  if (i >= 0) {
-    var rest = s.slice(i + 1);
-    a = areaOf(rest, hint);
-    if (a) return a.id;
-    return rest.slice(0, 40) || s.slice(0, 40);
-  }
-  return s.slice(0, 40);
+  var slug = topicSlug(id);
+  a = areaOf(slug, hint);
+  if (a) return a.id;
+  return slug.slice(0, 40);
 }
 function areaName(id, hint) {
   var canon = areaIdOf(id, hint);
   for (var i = 0; i < AREAS.length; i++) if (AREAS[i].id === canon) return AREAS[i].name;
-  if (hint) return String(hint);
   if (SLUG_NAME[canon]) return SLUG_NAME[canon];
+  if (EXTRA_NAME[canon]) return EXTRA_NAME[canon];
+  if (hint) return String(hint);
   if (SLUG_NAME[id]) return SLUG_NAME[id];
   return canon || id;
 }
@@ -116,6 +132,7 @@ function collect(store) {
   }
   var by = {}, out = [];
   function add(area, rec, meta) {
+    area = isKnownArea(area) ? (areaIdOf(area) || area) : "";
     if (!area) return;
     rec = rec || {};
     var ts = 0, cands = [rec.z, rec.t, rec.s, rec.ok, rec.rk];
@@ -143,7 +160,7 @@ function collect(store) {
   }
   /* sl10a-* (Selbstarbeit 10a, PF, Selbstlernen) – Schlüssel unverändert, nur lesen */
   names.forEach(function (k) {
-    if (!k) return;
+    if (!k || k === KEY) return;
     var val = get(k);
     if (!val || typeof val !== "object") return;
     if (k.indexOf("sl10a-") === 0) {
@@ -161,18 +178,22 @@ function collect(store) {
     } else if (k === "m9g-st" || k === "m9g-st-vorschau") {
       walkSl(val);
     } else if (val.t && typeof val.t === "object" && !val.seite) {
-      /* app.js-Familien: gl8b-*, kr8-*, kg5-*, sa7-*, bg7-*, gt8-*, Prefix+Benutzer */
-      var looks = false, sample = null;
-      Object.keys(val.t).some(function (id) { sample = val.t[id]; return !!(sample && (sample.ok || sample.n || sample.h || sample.f1)); });
-      if (sample) {
-        looks = true;
+      /* app.js-Familien: gl8b-*, kr8-*, kg5-*, sa7-*, bg7-*, gt8-*, Prefix+Benutzer.
+         Keine Meta-/Sync-Schlüssel (kf_sync_meta_v1 hat ebenfalls ein Feld t). */
+      var looks = false;
+      Object.keys(val.t).some(function (id) {
+        var sample = val.t[id];
+        looks = !!(sample && typeof sample === "object" && (sample.ok || sample.n || sample.h || sample.f1 || sample.ok1 || sample.c));
+        return looks;
+      });
+      if (looks) {
         var hint = k;
         Object.keys(val.t).forEach(function (id) {
-          var ar = (areaOf(id, hint) || areaOf(k) || {}).id || guessPageArea(k) || k.split("-")[0];
-          add(ar, val.t[id], { id: id, kern: !!(val.t[id] && val.t[id].kern) });
+          var rec = val.t[id];
+          var ar = (areaOf(id, hint) || areaOf(k) || {}).id || guessPageArea(k) || areaIdOf(id, hint);
+          add(ar, rec, { id: id, kern: !!(rec && rec.kern) });
         });
       }
-      void looks;
     }
   });
   var areas = {};
@@ -209,8 +230,9 @@ function defaultGoals(col, opts) {
     { typ: "sauber", n: 10, label: "10 Aufgaben sauber lösen" }
   ];
   Object.keys(col.areas || {}).sort().forEach(function (id) {
+    if (!isKnownArea(id)) return;
     var a = col.areas[id];
-    list.push({ typ: "thema", thema: id, n: 4, label: a.name + " sicher machen (mindestens 4 von 5 Sternen)" });
+    list.push({ typ: "thema", thema: id, n: 4, label: (a.name || areaName(id)) + " sicher machen (mindestens 4 von 5 Sternen)" });
   });
   if ((opts.klasse || "").toLowerCase() === "10a" || opts.luecken) {
     list.push({ typ: "luecken", n: 1, label: "1 offene Lücke schließen" });
@@ -264,13 +286,16 @@ function cleanState(s) {
   s = s || {};
   var o = { v: 1, z: +s.z || Date.now(), ampel: {}, sterne: {} };
   if (s.ziel && typeof s.ziel === "object") {
-    o.ziel = { kw: String(s.ziel.kw || "").slice(0, 16), typ: String(s.ziel.typ || "").slice(0, 20), n: +s.ziel.n || 0, thema: areaIdOf(s.ziel.thema || "") || "", label: String(s.ziel.label || "").slice(0, 160), z: +s.ziel.z || 0 };
+    var thema = areaIdOf(s.ziel.thema || "", s.ziel.label);
+    o.ziel = { kw: String(s.ziel.kw || "").slice(0, 16), typ: String(s.ziel.typ || "").slice(0, 20), n: +s.ziel.n || 0, thema: thema, label: String(s.ziel.label || "").slice(0, 160), z: +s.ziel.z || 0 };
+    if (o.ziel.typ === "thema" && !thema) o.ziel = null;
   } else o.ziel = null;
   if (s.ampel && typeof s.ampel === "object") {
     Object.keys(s.ampel).slice(0, 80).forEach(function (k) {
       var a = s.ampel[k]; if (!a || typeof a !== "object") return;
       var w = String(a.w || ""); if (w !== "kann" && w !== "unsicher" && w !== "nicht") return;
       var id = areaIdOf(k);
+      if (!id) return;
       var rec = { w: w, z: +a.z || 0 };
       if (!o.ampel[id] || rec.z >= (+o.ampel[id].z || 0)) o.ampel[id] = rec;
     });
@@ -279,6 +304,7 @@ function cleanState(s) {
     Object.keys(s.sterne).slice(0, 80).forEach(function (k) {
       var a = s.sterne[k]; if (!a || typeof a !== "object") return;
       var id = areaIdOf(k);
+      if (!id) return;
       var rec = { s: Math.max(0, Math.min(5, +a.s || 0)), n: +a.n || 0, sauber: +a.sauber || 0, z: +a.z || 0 };
       if (!o.sterne[id] || rec.z >= (+o.sterne[id].z || 0)) o.sterne[id] = rec;
     });
@@ -380,6 +406,7 @@ function stampSterne(state, col) {
   state = cleanState(state);
   state.sterne = {};
   Object.keys(col.areas).forEach(function (id) {
+    if (!isKnownArea(id)) return;
     var a = col.areas[id];
     state.sterne[id] = { s: a.s, n: a.n, sauber: a.sauber, z: Date.now() };
   });
@@ -463,16 +490,17 @@ function sheetHtml(state, col, opts) {
   }
   h += "</section>";
   h += '<section class="kf-st-block"><h3>Bereiche</h3><p class="kf-st-meta">Sterne: wie viel Hilfe du gebraucht hast. Ampel: wie sicher du dich fühlst. Wenn beides nicht zusammenpasst, lohnt sich ein Blick in die Aufgaben.</p>';
-  var ids = Object.keys(col.areas).sort(function (a, b) { return (col.areas[b].n || 0) - (col.areas[a].n || 0); });
+  var ids = Object.keys(col.areas).filter(isKnownArea).sort(function (a, b) { return (col.areas[b].n || 0) - (col.areas[a].n || 0); });
   if (!ids.length) {
     /* Ampel trotzdem anbieten, falls Themenliste bekannt */
-    var extra = (opts.themen || []).map(function (t) { return areaIdOf(t.id, t.name || t.titel); });
-    ids = extra.length ? extra : AREAS.map(function (A) { return A.id; }).slice(0, 0);
+    var extra = (opts.themen || []).map(function (t) { return areaIdOf(t.id, t.name || t.titel); }).filter(Boolean);
+    ids = extra.length ? extra : [];
   }
   /* Union: areas with data + ampel + themen opts */
   var seen = {};
   function row(id, a) {
-    if (seen[id]) return "";
+    id = areaIdOf(id, a && a.name);
+    if (!id || seen[id]) return "";
     seen[id] = 1;
     a = a || { s: 0, n: 0, sauber: 0, name: areaName(id) };
     var w = (state.ampel[id] || {}).w || "";
@@ -590,8 +618,8 @@ function teacherHtml(entry, ctx) {
   var st = cleanState((entry && entry.state) || entry || {});
   var sterne = st.sterne || {}, ampel = st.ampel || {};
   var ids = {};
-  Object.keys(sterne).forEach(function (k) { ids[k] = 1; });
-  Object.keys(ampel).forEach(function (k) { ids[k] = 1; });
+  Object.keys(sterne).forEach(function (k) { var id = areaIdOf(k); if (id) ids[id] = 1; });
+  Object.keys(ampel).forEach(function (k) { var id = areaIdOf(k); if (id) ids[id] = 1; });
   var rows = Object.keys(ids).map(function (id) {
     var s = sterne[id] || { s: 0, n: 0 };
     var w = (ampel[id] || {}).w || "";
@@ -673,7 +701,7 @@ var KFStand = {
   KEY: KEY, weekKey: weekKey, quality: quality, starsOf: starsOf, starsForArea: starsForArea,
   collect: collect, overall: overall, defaultGoals: defaultGoals, goalProgress: goalProgress,
   cleanState: cleanState, mergeState: mergeState, deviation: deviation, loadLocal: loadLocal, saveLocal: saveLocal,
-  areaOf: areaOf, areaIdOf: areaIdOf, areaName: areaName,
+  areaOf: areaOf, areaIdOf: areaIdOf, areaName: areaName, isKnownArea: isKnownArea,
   persist: persist, beginStandLoad: beginStandLoad, standLoadFinished: standLoadFinished,
   localIsNewer: localIsNewer, resetSync: resetSync, configure: configure,
   gaugeSvg: gaugeSvg, starsHtml: starsHtml, cardHtml: cardHtml, sheetHtml: sheetHtml, teacherHtml: teacherHtml,
