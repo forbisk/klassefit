@@ -233,6 +233,17 @@ var PRINT_CSS = CSS
 
 window.THEMEN = {merged:merged, home:home, homeHtml:homeHtml, LIST:LIST, compute:compute, fromStorage:fromStorage, fromText:fromText, fromRing:fromRing, teacherTable:teacherTable, detailHtml:detailHtml, wayHtml:wayHtml, ringSvg:ringSvg, bar:bar, studentViewHtml:studentViewHtml, poolHtml:poolHtml, CSS:CSS, PRINT_CSS:PRINT_CSS, T_ROT:T_ROT, T_GELB:T_GELB, noteOf:noteOf, cls:cls, taskTip:function(id){ return window.KFTip ? KFTip.text(id) : ""; }, tipHtml:function(id, inner){ return window.KFTip ? KFTip.html(id, inner) : String(id==null?"":id); }};
 /* Knopf nur auf Schülerseiten mit Anmeldung */
+
+/* Mein Stand (17.11.2026): benachbartes kf-stand.js nachladen – nicht im Portal (liegt schon in index.html). */
+var THEMEN_SRC = (document.currentScript && document.currentScript.src) || "";
+function loadMeinStand(){
+  if(window.KFStand || document.documentElement.getAttribute("data-kf")==="portal" || /\/portal(\/|$)/.test(location.pathname)) return;
+  if(document.querySelector("script[data-kf-stand]")) return;
+  var src = THEMEN_SRC ? THEMEN_SRC.replace(/themen\.js[^\/]*$/, "kf-stand.js") : "kf-stand.js";
+  var s = document.createElement("script"); s.src = src; s.setAttribute("data-kf-stand","1");
+  document.head.appendChild(s);
+}
+loadMeinStand();
 function boot(){ if(document.documentElement.getAttribute("data-kf")==="portal" || /\/portal(\/|$)/.test(location.pathname)) return; home(); var s; try{ s = JSON.parse(localStorage.getItem("sl10a_sess")); }catch(e){} if(s && s.token && !/lehrer/.test(location.pathname) && !document.getElementById("thBtn")) ui(); }
 if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

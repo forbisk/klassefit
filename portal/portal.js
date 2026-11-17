@@ -474,6 +474,11 @@
       immerDabei(all).forEach(function (x) { box.appendChild(x); });
       return box;
     }
+    if (S.sess && S.sess.rolle !== "lehrer" && window.KFStand) {
+      var standWrap = h("div", { id: "kfStandPortal" });
+      box.appendChild(standWrap);
+      try { KFStand.mountPortal(standWrap, { api: api, token: function () { return S.sess && S.sess.token; }, sess: S.sess, themen: themen.map(function (t) { return { id: t.id, name: t.titel }; }) }); } catch (e) {}
+    }
     box.appendChild(h("h2", { text: "Schnellzugriff" })); box.appendChild(h("div", { class: "list haupt" }, haHauptKarte(all))); var hk = hauptKarten(all); if (hk) box.appendChild(hk);
     var fo = [], byF = {}; themen.forEach(function (t) { if (!byF[t.fach]) { byF[t.fach] = []; fo.push(t.fach); } byF[t.fach].push(t); });
     fo.forEach(function (f) { box.appendChild(h("h2", { text: "Themen · " + FACH[f] })); box.appendChild(h("div", { class: "list" }, byF[f].map(function (t) { return t.seiten.length === 1 ? card(t.seiten[0]) : themaKarte(t); }))); });   // 12.11.2026: Thema mit nur einer Seite → direkt die Seite (keine Zwischenebene)
@@ -1138,6 +1143,11 @@
     var sc = 0, n = 0; v.sch.forEach(function (x) { if (x.id === st.id) { sc = x._score; n = 1; } });
     var top = h("div", { class: "tiles dt" }, [[n ? Math.round(sc) + " %" : "–", "Ø Fortschritt"], [ak ? String(ak.tage7 || 0) : "–", "aktive Tage (7)"], [ak ? String(ak.n7 || 0) : "–", "Aktionen (7 Tage)"], mo ? [String(mo.offen) + (mo.gesamt > mo.offen ? " / " + mo.gesamt : ""), "⚑ Meldungen offen"] : null].filter(Boolean).map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: t[0] }), h("span", { text: t[1] })); }));
     body.unshift(top);
+    if (window.KFStand && d.stand && d.stand[st.id]) {
+      var stBox = h("div", { class: "dsec", id: "kfStandDash" });
+      try { KFStand.mountTeacher(stBox, d.stand[st.id], { zellen: z, seiten: d.seiten, themen: d.themen }); } catch (e) {}
+      body.splice(1, 0, stBox);
+    }
     if (dd && dd.loading) body.push(h("p", { class: "muted", text: "Verlauf wird geladen …" }));
     else if (dd && dd.verlauf) {
       var ml = dd.meldungen || [];
