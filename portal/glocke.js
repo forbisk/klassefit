@@ -7,7 +7,9 @@
    im Browser entschlüsseln, Daten-Literal ohne eval parsen, HTML → Text), „Zur Aufgabe ›“ öffnet die Lehrer-Vorschau direkt an der Aufgabe.
    Alles als Text (textContent), keine Daten in Logs.
    14.11.2026 (Backend sl-webhook): Fragen mit Status „missbrauch“ erscheinen als „🚫 Frage · Missbrauch“ (nicht offen). Oben im Panel: gesperrte
-   Frage-Funktion (ab 2 Missbrauch-Markierungen) als Drop-down + „Entsperren“ (listLocked/unlock per Portal-Token). Altes Backend: Bereich fehlt einfach. */
+   Frage-Funktion (ab 2 Missbrauch-Markierungen) als Drop-down + „Entsperren“ (listLocked/unlock per Portal-Token). Altes Backend: Bereich fehlt einfach.
+   19.11.2026: Badge, Toast und Liste nur noch echt offene Fragen (status „offen“). Schon beantwortete, erledigte oder Missbrauch-Fragen zählen nicht mehr
+   (vorher zählte jede ungelesene Frage, der Gelesen-Stand lag nur in localStorage – nach Gerätewechsel/Domainwechsel klingelte die Glocke erneut). */
 (function () {
   "use strict";
   var SL = window.PORTAL_SL_API || "", LS = "kf_lehrer_glocke_v1", LS2 = "kf_lehrer_glocke_v2", EVERY = 120000, D3 = 3 * 86400e3;
@@ -41,7 +43,7 @@
   /* ---- Einträge ---- */
   function alle() {
     var out = [];
-    (G.q || []).forEach(function (q) { out.push({ art: "frage", id: "frage:" + q.id, z: ms(q.zeit), offen: !q.antwort && q.status !== "missbrauch", q: q }); });
+    (G.q || []).forEach(function (q) { out.push({ art: "frage", id: "frage:" + q.id, z: ms(q.zeit), offen: q.status ? q.status === "offen" : (!q.antwort && q.status !== "missbrauch"), q: q }); });
     (G.r || []).forEach(function (r) { out.push({ art: "meldung", id: "meldung:" + r.report_id, z: ms(r.created_at), offen: r.status === "new", r: r }); });
     (G.p || []).forEach(function (m) { out.push({ art: "pmeldung", id: "pmeldung:" + (m.rid || (m.seite + "|" + m.item + "|" + m.z)), z: ms(m.z), offen: false, m: m }); });
     out.forEach(function (x) { x.gel = istGelesen(x); });
@@ -50,10 +52,10 @@
   function sortiert(l) { return l.sort(function (a, b) { return (b.offen && b.art === "frage") - (a.offen && a.art === "frage") || (b.z - a.z); }); }
   function listen() {
     var l = alle(), neu = [], alt = [];
-    l.forEach(function (x) { if (!x.gel || G.shown[x.id]) neu.push(x); else if (x.art === "frage" && x.offen) alt.push(x); });
+    l.forEach(function (x) { if (x.art === "frage" && !x.offen) return; if (!x.gel || G.shown[x.id]) neu.push(x); else if (x.art === "frage" && x.offen) alt.push(x); });
     return { neu: sortiert(neu), alt: sortiert(alt) };
   }
-  function counts() { var c = { n: 0, fragen: 0, meld: 0 }; alle().forEach(function (x) { if (x.gel) return; c.n++; if (x.art === "frage") c.fragen++; else c.meld++; }); return c; }
+  function counts() { var c = { n: 0, fragen: 0, meld: 0 }; alle().forEach(function (x) { if (x.gel) return; if (x.art === "frage" && !x.offen) return; c.n++; if (x.art === "frage") c.fragen++; else c.meld++; }); return c; }
   function paintBadge() {
     var c = counts(), btns = document.querySelectorAll(".kfg-btn");
     for (var i = 0; i < btns.length; i++) {
@@ -86,7 +88,7 @@
       if (r[2] && r[2].ok) G.p = r[2].meldungen || [];   // altes Backend (bis portal-7m): „unbekannte Aktion“ → ohne Portal-Meldungen
       if (r[2] && r[2].relogin && G.ctx.relogin) G.ctx.relogin();
       /* Toast nur für NEUE ungelesene (nicht bei jedem Abruf dieselben) */
-      var un = alle().filter(function (x) { return !x.gel; }), frisch = un.filter(function (x) { return !G.known || !G.known[x.id]; });
+      var un = alle().filter(function (x) { return !x.gel && (x.art !== "frage" || x.offen); }), frisch = un.filter(function (x) { return !G.known || !G.known[x.id]; });
       G.known = G.known || {}; un.forEach(function (x) { G.known[x.id] = 1; });
       if (frisch.length && !G.panel) toast("🔔 " + frisch.length + (frisch.length === 1 ? " neue Frage/Meldung" : " neue Fragen/Meldungen") + " – tippen zum Ansehen");
       paint();
