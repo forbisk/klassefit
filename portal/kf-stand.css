@@ -50,3 +50,8 @@
   .kf-st-ov { align-items: center; }
   .kf-st-sheet { border-radius: 18px; }
 }
+/* Selbstarbeit-Seiten (kf-stand-seite.js): Block oben in „📊 Fortschritt“ */
+.kf-st-seite h2 { margin: 0 0 .4rem; }
+.kf-st-seite .kf-st-seitetxt p { margin: .2rem 0; }
+.kf-st-seite .kf-st-gauge text[fill="#212529"] { fill: currentColor; }
+.kf-st-seite .kf-st-meta, .kf-st-seite .kf-st-zline { color: inherit; opacity: .85; }

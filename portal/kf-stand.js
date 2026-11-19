@@ -81,7 +81,7 @@ var SLUG_NAME = {
   studium: "Studium"
 };
 /* Nur bekannte Bereiche/Themen — keine Speicher-Schlüssel (kf_sync_meta_v1, kf_*, *_meta, …). */
-var EXTRA_NAME = { kreis: "Kreise", komm: "Kommutativgesetz", mathe7: "Mathematik 7", inf: "Informatik" };
+var EXTRA_NAME = { kreis: "Kreise", komm: "Kommutativgesetz", mathe7: "Mathematik 7", inf: "Informatik", qgl: "Quadratische Gleichungen" };
 function topicSlug(id) {
   var s = String(id || "").trim();
   var i = s.indexOf("|");
@@ -124,6 +124,8 @@ function collect(store) {
   if (!store) {
     get = function (k) { return jget(k); };
     if (root.localStorage) try { for (var i = 0; i < localStorage.length; i++) names.push(localStorage.key(i)); } catch (e) {}
+    /* Lehrer-Vorschau (vorschau.js): Speicher liegt unter vs~…, key() ist nicht umgeleitet → nur Vorschau-Schlüssel, ohne Präfix */
+    if (root.TFGS_VORSCHAU && root.TFGS_VORSCHAU.an) names = names.filter(function (k) { return k && k.indexOf("vs~") === 0; }).map(function (k) { return k.slice(3); });
   } else if (typeof store === "function") {
     get = store;
   } else {
@@ -176,7 +178,7 @@ function collect(store) {
       walkSl(val);
       if (val.e || val.ev) (val.e || val.ev || []).forEach(function (e) { add(e.t, e, { id: e.a }); });
     } else if (k === "m9g-st" || k === "m9g-st-vorschau") {
-      walkSl(val);
+      walkSl(val, "qgl");
     } else if (val.t && typeof val.t === "object" && !val.seite) {
       /* app.js-Familien: gl8b-*, kr8-*, kg5-*, sa7-*, bg7-*, gt8-*, Prefix+Benutzer.
          Keine Meta-/Sync-Schlüssel (kf_sync_meta_v1 hat ebenfalls ein Feld t). */
@@ -186,11 +188,15 @@ function collect(store) {
         looks = !!(sample && typeof sample === "object" && (sample.ok || sample.n || sample.h || sample.f1 || sample.ok1 || sample.c));
         return looks;
       });
+      /* Selbstarbeit-Seite (kf-stand-seite.js): nur Schlüssel des angemeldeten Benutzers (Prefix+Benutzer), Benutzername nicht als Themen-Hinweis */
+      if (looks && userFilter) {
+        if (k.length <= userFilter.length || k.slice(-userFilter.length) !== userFilter || !/[-_]$/.test(k.slice(0, -userFilter.length))) looks = false;
+      }
       if (looks) {
-        var hint = k;
+        var hint = userFilter ? k.slice(0, -userFilter.length) : k;
         Object.keys(val.t).forEach(function (id) {
           var rec = val.t[id];
-          var ar = (areaOf(id, hint) || areaOf(k) || {}).id || guessPageArea(k) || areaIdOf(id, hint);
+          var ar = (areaOf(id, hint) || areaOf(hint) || {}).id || guessPageArea(hint) || areaIdOf(id, hint);
           add(ar, rec, { id: id, kern: !!(rec && rec.kern) });
         });
       }
@@ -202,6 +208,11 @@ function collect(store) {
 }
 function guessPageArea(k) {
   k = String(k || "");
+  /* Gym 8/9 (GT8-Familie, Schlüssel MT.key + Benutzer) */
+  if (/^g8lf-/.test(k)) return "fkt";
+  if (/^g8gl-/.test(k)) return "term";
+  if (/^g9pl-/.test(k)) return "pot";
+  if (/^g9qf-/.test(k)) return "qfk";
   if (/gl8|gleich/.test(k)) return "term";
   if (/kr8|kreis/.test(k)) return "kreis";
   if (/kg5|komm/.test(k)) return "komm";
@@ -392,7 +403,7 @@ function ensureCss() {
   document.head.appendChild(l);
 }
 
-var apiFn = null, tokenFn = null, userFn = null, onChange = null, lastCol = null, lastState = null;
+var apiFn = null, tokenFn = null, userFn = null, onChange = null, lastCol = null, lastState = null, userFilter = "";
 
 function ctxUser() { try { return userFn && userFn(); } catch (e) { return ""; } }
 function refreshCol() {
@@ -422,6 +433,7 @@ function configure(opts) {
   if (opts.api) apiFn = opts.api;
   if (opts.token) tokenFn = opts.token;
   if (opts.user) userFn = opts.user;
+  if (opts.nurBenutzer != null) userFilter = String(opts.nurBenutzer || "");
 }
 function resetSync() {
   loadState = "idle";
@@ -429,6 +441,7 @@ function resetSync() {
   lastState = null;
   lastCol = null;
   apiFn = tokenFn = userFn = null;
+  userFilter = "";
 }
 function beginStandLoad() { loadState = "loading"; queuedSave = false; }
 function localIsNewer(local, remote, remoteZ) {
