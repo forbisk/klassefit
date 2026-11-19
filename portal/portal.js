@@ -556,6 +556,58 @@
   }
   function wunschButton() { return window.PortalWuensche ? window.PortalWuensche.button(h, wunschCtx()) : null;
   }
+
+  /* Hinweis 6b: neue Grundlagen-Missionen (20.11.–21.11.2026, nur Schüler 6b, frontend-only). */
+  var KF_GRUND_POP = { from: "2026-11-20", until: "2026-11-21", href: "/informatik6-missionen-grundlagen/", ls: "kf_popup_6b_grundlagen_tag", ss: "kf_popup_6b_grundlagen_shown" };
+  function kfBerlinYmd(override) {
+    if (override) return String(override);
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
+    catch (e) { var d = new Date(); var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), da = String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+da; }
+  }
+  function kfGrundlagenPopupShouldShow(opts) {
+    opts = opts || {};
+    var sess = opts.sess, today = kfBerlinYmd(opts.today || (typeof window !== "undefined" && window.KF_POPUP_TODAY) || null);
+    if (!sess || sess.rolle === "lehrer") return false;
+    if (String(sess.klasse || "").toLowerCase() !== "6b") return false;
+    if (today < KF_GRUND_POP.from || today > KF_GRUND_POP.until) return false;
+    try { if (localStorage.getItem(KF_GRUND_POP.ls) === today) return false; } catch (e) {}
+    try { if (sessionStorage.getItem(KF_GRUND_POP.ss) === today) return false; } catch (e2) {}
+    return true;
+  }
+  function kfGrundlagenPopupDismiss(foreverToday) {
+    var today = kfBerlinYmd((typeof window !== "undefined" && window.KF_POPUP_TODAY) || null);
+    try { sessionStorage.setItem(KF_GRUND_POP.ss, today); } catch (e) {}
+    if (foreverToday) { try { localStorage.setItem(KF_GRUND_POP.ls, today); } catch (e2) {} }
+    var el = document.getElementById("kfGrundPop"); if (el) el.remove();
+  }
+  function maybe6bGrundlagenPopup() {
+    if (document.getElementById("kfGrundPop")) return;
+    if (!kfGrundlagenPopupShouldShow({ sess: S.sess })) return;
+    var today = kfBerlinYmd((typeof window !== "undefined" && window.KF_POPUP_TODAY) || null);
+    try { sessionStorage.setItem(KF_GRUND_POP.ss, today); } catch (e) {}
+    var wrap = document.createElement("div");
+    wrap.id = "kfGrundPop";
+    wrap.className = "kf-grund-pop";
+    wrap.setAttribute("role", "dialog");
+    wrap.setAttribute("aria-modal", "true");
+    wrap.setAttribute("aria-labelledby", "kfGrundPopTitel");
+    wrap.innerHTML = '<div class="kf-grund-pop-card">'
+      + '<button type="button" class="kf-grund-pop-x" aria-label="Schließen">×</button>'
+      + '<h2 id="kfGrundPopTitel">Neue Missionen für den 20.11.</h2>'
+      + '<p>Für Informatik 6b gibt es neue Missionen: <b>Ordner und Dateien – Grundlagen</b>. Dort übst du Ordner, Pfade, Kopieren und Verschieben.</p>'
+      + '<p>Engagement und aktive Mitarbeit fließen in die Mitarbeitsnote ein. Dinge, die nichts mit dem Unterricht zu tun haben (zum Beispiel Spielen oder ständiges Fensterwechseln), wirken sich negativ aus.</p>'
+      + '<div class="kf-grund-pop-btns">'
+      + '<a class="kf-grund-pop-go" href="' + KF_GRUND_POP.href + '">Zu den Missionen</a>'
+      + '<button type="button" class="kf-grund-pop-ok">Verstanden</button>'
+      + '</div></div>';
+    document.body.appendChild(wrap);
+    wrap.querySelector(".kf-grund-pop-x").addEventListener("click", function () { kfGrundlagenPopupDismiss(false); });
+    wrap.querySelector(".kf-grund-pop-ok").addEventListener("click", function () { kfGrundlagenPopupDismiss(true); });
+    wrap.querySelector(".kf-grund-pop-go").addEventListener("click", function () { kfGrundlagenPopupDismiss(true); });
+  }
+  window.kfGrundlagenPopupShouldShow = kfGrundlagenPopupShouldShow;
+  window.kfBerlinYmd = kfBerlinYmd;
+
   function render() {
     if (!S.sess) return renderLogin("");
     tabFromHash();
@@ -568,6 +620,7 @@
     if (S.sess.rolle === "lehrer" && S.sv) { kids.push.apply(kids, schuelersichtView()); app.replaceChildren.apply(app, kids); return; }
     if (S.sess.rolle === "lehrer" && !S.schulform) kids.push(schulformWahl()); else if (S.sess.rolle === "lehrer") kids.push(teacherTabs()); else { var antw = window.PortalAntworten ? window.PortalAntworten.view(h, S.sess, function () { if (S.sess && S.sess.rolle !== "lehrer") render(); }) : null; if (antw) kids.push(antw); kids.push(stufenMenu(S.seiten.filter(kopSichtbar).filter(eigeneKlasse), S.sess.klasse, eigeneStufeGet, eigeneStufeSet)); }
     app.replaceChildren.apply(app, kids);
+    maybe6bGrundlagenPopup();
   }
 
 /* ---------- Briefings als Lernfolien (nur Lehrkraft) ----------

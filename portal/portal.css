@@ -394,3 +394,18 @@ select option,select optgroup{color:#0b1220;background:#fff;font-weight:500}
 .sztable th.l,.sztable td.l{text-align:left;white-space:normal}
 @media (max-width:640px){.szbox{padding:12px}.sztable{font-size:12px;min-width:22rem}.sztable th,.sztable td{padding:6px}}
 @media (prefers-color-scheme:dark){.szhint{color:#94a3b8}.sztable th,.sztable td{border-bottom-color:rgba(255,255,255,.08)}}
+
+/* Hinweis-Dialog 6b Grundlagen-Missionen (20.–21.11.2026) */
+.kf-grund-pop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.45);pointer-events:auto}
+.kf-grund-pop-card{position:relative;background:#fff;color:#0f172a;border-radius:18px;padding:22px 22px 18px;max-width:420px;width:100%;box-shadow:0 16px 40px rgba(15,23,42,.25);font-size:16px;line-height:1.45}
+.kf-grund-pop-card h2{margin:0 28px 10px 0;font-size:22px;color:#0f766e}
+.kf-grund-pop-card p{margin:0 0 10px}
+.kf-grund-pop-x{position:absolute;top:10px;right:10px;width:40px;height:40px;border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:#475569;border-radius:10px}
+.kf-grund-pop-x:hover,.kf-grund-pop-x:focus{background:#f1f5f9;color:#0f172a}
+.kf-grund-pop-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.kf-grund-pop-go{display:inline-block;font:inherit;font-weight:700;padding:10px 16px;border-radius:12px;background:#0f766e;color:#fff;text-decoration:none}
+.kf-grund-pop-ok{font:inherit;font-weight:700;padding:10px 16px;border-radius:12px;border:2px solid #0f766e;background:#fff;color:#0f766e;cursor:pointer}
+@media (max-width:420px){
+  .kf-grund-pop{align-items:flex-end;padding:10px}
+  .kf-grund-pop-card{padding:18px 16px 16px;max-width:none}
+}
