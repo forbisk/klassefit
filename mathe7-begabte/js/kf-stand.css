@@ -55,3 +55,6 @@
 .kf-st-seite .kf-st-seitetxt p { margin: .2rem 0; }
 .kf-st-seite .kf-st-gauge text[fill="#212529"] { fill: currentColor; }
 .kf-st-seite .kf-st-meta, .kf-st-seite .kf-st-zline { color: inherit; opacity: .85; }
+
+.kf-st-zeit { font-size: 12px; line-height: 1.4; color: #64748b; margin: 10px 0 0; font-weight: 400; }
+@media (prefers-color-scheme: dark) { .kf-st-zeit { color: #94a3b8; } }

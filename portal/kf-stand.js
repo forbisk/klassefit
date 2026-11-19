@@ -531,7 +531,9 @@ function sheetHtml(state, col, opts) {
     var id = areaIdOf(t.id, t.name || t.titel);
     rows += row(id, col.areas[id] || { s: 0, n: 0, name: areaName(id, t.name || t.titel) });
   });
-  h += (rows || '<p class="kf-st-meta">Sobald du Aufgaben löst, erscheinen hier Sterne je Thema.</p>') + "</section></div>";
+  h += (rows || '<p class="kf-st-meta">Sobald du Aufgaben löst, erscheinen hier Sterne je Thema.</p>') + "</section>";
+  h += '<p class="kf-st-zeit">KlasseFit misst, wie lange du auf einer Seite aktiv bist, damit dein Lehrer sehen kann, wo du Hilfe brauchst.</p>';
+  h += "</div>";
   return h;
 }
 function cardHtml(state, col, opts) {
@@ -547,7 +549,8 @@ function cardHtml(state, col, opts) {
     + '<div class="kf-st-cardtxt"><h2>Mein Stand</h2><p>' + ov.pct + " % · " + (nst ? starsHtml(mean) : "noch keine Sterne") + "</p>"
     + (ziel ? '<p class="kf-st-zline">Diese Woche: ' + esc(ziel.label) + "</p>" + bar(gp.pct) + '<p class="kf-st-meta">' + esc(gp.text) + (gp.done ? " ✔" : "") + "</p>"
       : '<p class="kf-st-zline">Wochenziel festlegen – damit du siehst, woran du diese Woche arbeitest.</p>')
-    + '<p><button type="button" class="kf-st-open">Mein Stand öffnen</button></p></div></div></section>';
+    + '<p><button type="button" class="kf-st-open">Mein Stand öffnen</button></p>'
+    + '<p class="kf-st-zeit">KlasseFit misst, wie lange du auf einer Seite aktiv bist, damit dein Lehrer sehen kann, wo du Hilfe brauchst.</p>' + '</div></div></section>';
 }
 
 function bindSheet(box, opts) {
@@ -677,7 +680,8 @@ function enhanceVorbereitung(rootEl) {
   box.className = "kf-st-prep";
   box.innerHTML = '<h3>Mein Stand</h3><div class="kf-st-prepgrid">' + gaugeSvg(ov.pct, 130)
     + '<div>' + (ziel ? "<p>" + esc(ziel.label) + "</p>" + bar(gp.pct) + '<p class="kf-st-meta">' + esc(gp.text) + "</p>" : "<p>Wochenziel festlegen</p>")
-    + '<p><button type="button" class="kf-st-open">Mein Stand öffnen</button></p></div></div>';
+    + '<p><button type="button" class="kf-st-open">Mein Stand öffnen</button></p>'
+    + '<p class="kf-st-zeit">KlasseFit misst, wie lange du auf einer Seite aktiv bist, damit dein Lehrer sehen kann, wo du Hilfe brauchst.</p>' + '</div></div>';
   var host = rootEl.querySelector(".thbox") || rootEl;
   var h2 = host.querySelector("h2");
   if (h2 && h2.nextSibling) host.insertBefore(box, h2.nextSibling); else host.insertBefore(box, host.firstChild);

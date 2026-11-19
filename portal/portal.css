@@ -382,3 +382,15 @@ select option,select optgroup{color:#0b1220;background:#fff;font-weight:500}
 .reopen-box{margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .reopen-box .reopen-st{margin:0;flex:1 1 16rem}
 .reopen-box .btn{flex:0 0 auto}
+
+/* Seitenzeit (19.11.2026): Lernzeit je Mission/Selbstlernseite im Lehrer-Dashboard */
+.szbox{margin:14px 0;padding:14px 16px}
+.szbox h3{font-size:15px;margin:0 0 6px;font-weight:650}
+.szhint{font-size:12px;line-height:1.4;color:#64748b;margin:0 0 10px}
+.szbox,.szscroll{max-width:100%;box-sizing:border-box}
+.szscroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sztable{width:100%;border-collapse:collapse;font-size:13px;min-width:28rem}
+.sztable th,.sztable td{padding:6px 8px;text-align:right;border-bottom:1px solid rgba(15,23,42,.08);white-space:nowrap;vertical-align:top}
+.sztable th.l,.sztable td.l{text-align:left;white-space:normal}
+@media (max-width:640px){.szbox{padding:12px}.sztable{font-size:12px;min-width:22rem}.sztable th,.sztable td{padding:6px}}
+@media (prefers-color-scheme:dark){.szhint{color:#94a3b8}.sztable th,.sztable td{border-bottom-color:rgba(255,255,255,.08)}}
