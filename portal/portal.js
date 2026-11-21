@@ -1273,6 +1273,7 @@
       body.splice(1, 0, stBox);
     }
     body.splice((window.KFStand && d.stand && d.stand[st.id]) ? 2 : 1, 0, szStudentBox(d, st.id));
+    if (window.KFHefterFotos && S.sess) body.push(KFHefterFotos.box(st.id, S.sess.token));   /* 21.11.2026 Hefter-Fotos (hefter-fotos.js) */
     if (dd && dd.loading) body.push(h("p", { class: "muted", text: "Verlauf wird geladen …" }));
     else if (dd && dd.verlauf) {
       var ml = dd.meldungen || [];
