@@ -203,10 +203,18 @@
   }
   function boot() {
     var s = lsGet(LS);
+    if ((!s || !s.token) && elternSitzung()) { location.replace("/eltern/"); return; }   // 21.11.2026: Eltern-Zugang auf diesem Gerät -> Elternbereich
     if (!s || !s.token) { lsDel(LSC); return renderLogin(""); }
     S.sess = s; S.seiten = []; S.kop = {}; S.bestaetigt = false;
     renderLaden();
     refresh();
+  }
+  /* 21.11.2026 Elternbereich: Eltern melden sich mit ihrer E-Mail-Adresse an (Schüler-Benutzernamen enthalten nie „@“) und landen unter /eltern/.
+     Eigene Sitzung (localStorage kf_eltern_v1), Schüler-Sitzung/-Speicher bleiben unberührt. Nur auf klassefit.de (Backend /api/kf/konto). */
+  function elternSitzung() { var e = lsGet("kf_eltern_v1"); return !!(e && e.token); }
+  function elternLogin(mail, pw) {
+    return fetch("/api/kf/konto", { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "eltern_login", login: mail, passwort: pw, geraet: (navigator.userAgent || "").replace(/\(.*?\)/g, "").slice(0, 50) }) })
+      .then(function (r) { return r.json(); }).catch(function () { return { ok: false, error: "Der Elternbereich ist nur auf klassefit.de erreichbar." }; });
   }
   function refresh() {
     if (!S.sess) return;
@@ -237,6 +245,9 @@
     var btn = h("button", { class: "btn", type: "submit", text: "Anmelden" });
     var form = h("form", { class: "glass login", onsubmit: function (e) {
       e.preventDefault(); if (!user.value.trim() || !code.value.trim()) return;
+      if (user.value.indexOf("@") >= 0) { btn.disabled = true; err.textContent = ""; elternLogin(user.value.trim(), code.value).then(function (r) {
+          if (r && r.ok && r.token) { lsSet("kf_eltern_v1", { token: r.token, login: r.profil && r.profil.login }); location.replace("/eltern/"); }
+          else { btn.disabled = false; err.textContent = (r && r.error) || "Anmeldung fehlgeschlagen."; code.value = ""; code.focus(); } }); return; }
       btn.disabled = true; err.textContent = ""; S.seiten = []; S.kop = {}; S.kopDone = false; S.thema = ""; S.bestaetigt = false; lsDel(LSC);
       api({ action: "login", user: user.value.trim(), code: code.value, geraet: (navigator.userAgent || "").replace(/\(.*?\)/g, "").slice(0, 50) }).then(function (r) {
         if (r.ok) { sfSet(""); fwSet(""); takePayload(r); S.tab = "menue"; if (gehWeiter()) return; render(); kopPruefen(); }
@@ -248,7 +259,8 @@
       h("label", { class: "field" }, h("span", { text: "Benutzername" }), user),
       h("label", { class: "field" }, h("span", { text: "Code" }), code),
       btn, err,
-      h("p", { class: "note", text: "Benutzername und Code stehen auf deinem Zettel von Herrn Kurlavičius. Auf fremden Geräten bitte danach abmelden." }));
+      h("p", { class: "note", text: "Benutzername und Code stehen auf deinem Zettel von Herrn Kurlavičius. Auf fremden Geräten bitte danach abmelden." }),
+      h("p", { class: "note", style: "margin-top:6px" }, h("a", { href: "/eltern/", text: "Für Eltern: Elternbereich" })));
     app.replaceChildren(form); user.focus();
   }
 
@@ -767,12 +779,12 @@
 
   /* ---------- Lehrer ---------- */
   function teacherTabs() {
-    var tabs = [["menue", "Seiten"], ["ha", "Hausaufgaben"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["dash", "Dashboard"], ["schueler", "Schülersicht"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
+    var tabs = [["menue", "Seiten"], ["ha", "Hausaufgaben"], ["freigaben", "Freigaben"], ["konten", "Sitzungen"], ["eltern", "Eltern"], ["dash", "Dashboard"], ["schueler", "Schülersicht"], ["briefings", "Briefings"], ["meldungen", "Meldungen"], ["wuensche", "Wünsche"], ["luecken", "Lücken"]];
     var bar = h("div", { class: "tabs glass", role: "tablist" }, tabs.map(function (t) {
-      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "schueler") { loadAdminOnce(); loadDash(false); } if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "meldungen" && window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
+      return h("button", { role: "tab", "aria-selected": S.tab === t[0] ? "true" : "false", text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === "freigaben" || t[0] === "konten") loadAdmin(); if (t[0] === "dash") loadDash(false); if (t[0] === "schueler") { loadAdminOnce(); loadDash(false); } if (t[0] === "wuensche" && window.PortalWuensche) window.PortalWuensche.reset(); if (t[0] === "luecken" && window.PortalLuecken) window.PortalLuecken.reset(); if (t[0] === "eltern" && window.PortalEltern) window.PortalEltern.reset(); if (t[0] === "meldungen" && window.PortalMeldungen && window.PortalMeldungen.reset) window.PortalMeldungen.reset(); if (t[0] === "briefings") { loadBriefings(); if (window.PortalAufgaben) window.PortalAufgaben.reset(); } render(); } });
     }));
     var body = h("div", {});
-    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "ha") body = teacherHA(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "schueler") body = teacherSchuelersicht(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
+    if (S.tab === "menue") body = teacherMenu(); else if (S.tab === "ha") body = teacherHA(); else if (S.tab === "freigaben") body = teacherFreigaben(); else if (S.tab === "konten") body = teacherKonten(); else if (S.tab === "briefings") body = teacherBriefings(); else if (S.tab === "schueler") body = teacherSchuelersicht(); else if (S.tab === "wuensche") body = window.PortalWuensche ? window.PortalWuensche.view(h, wunschCtx()) : h("p", { text: "Wünsche-Modul fehlt." }); else if (S.tab === "luecken") body = window.PortalLuecken ? window.PortalLuecken.view(h, { api: api, token: function () { return S.sess && S.sess.token; } }, render) : h("p", { text: "Lücken-Modul fehlt." }); else if (S.tab === "eltern") body = window.PortalEltern ? window.PortalEltern.view(h, render, { token: function () { return S.sess && S.sess.token; }, schulform: function () { return S.schulform; } }) : h("p", { text: "Eltern-Modul fehlt." }); else if (S.tab === "meldungen") body = window.PortalMeldungen ? window.PortalMeldungen.view(h, render, { api: api, token: function () { return S.sess && S.sess.token; }, sess: function () { return S.sess; } }) : h("p", { text: "Meldungen-Modul fehlt." }); else body = teacherDash();
     return h("div", {}, h("div", { class: "tabs-wrap" }, bar), body);
   }
   function klSort(a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); }
