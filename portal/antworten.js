@@ -59,7 +59,8 @@
     return h("section", { class: "glass kfa", role: "status" },
       h("div", { class: "kfa-h" }, h("h2", {}, "💬 Neue Antwort von Herrn Kurlavičius ", h("span", { class: "kfa-n", text: String(n.length) })),
         n.length > 1 && h("button", { class: "btn ghost", type: "button", text: "Alle als gelesen", onclick: function () { gelesen(n.map(function (q) { return q.id; }), render); } })),
-      items);
+      items,
+      h("p", { class: "kf-ki", style: "color:var(--ink2,#6c757d);font-size:12px;margin:.4rem 0 0", text: "Antworten mit Hilfe von KI erstellt, von der Lehrkraft überprüft." }));
   }
   function reset() { A.list = null; A.user = ""; A.token = ""; A.pu = ""; try { localStorage.removeItem(OWN); } catch (e) {} }
   window.PortalAntworten = { view: view, reset: reset, _state: A };
