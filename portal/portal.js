@@ -994,11 +994,27 @@
     S.dashLoading = true; S.dashErr = ""; if (S.tab === "dash") render();
     api({ action: "admin_fortschritt", token: S.sess.token, frisch: !!frisch }).then(function (r) {
       S.dashLoading = false;
-      if (r.ok) { S.dash = r; S.dashAt = Date.now(); S.dashErr = ""; }
+      if (r.ok) { S.dash = r; S.dashAt = Date.now(); S.dashErr = ""; loadHilfe(); }
       else if (r.relogin) return dropSession("Bitte melde dich neu an.");
       else S.dashErr = r.error || "Daten konnten nicht geladen werden.";
       if (S.tab === "dash" || S.sv) render();
     });
+  }
+  /* 21.11.2026: „Wie gelöst?“ – Hilfe-Status je Aufgabe (admin_hilfe, Backend portal-8b, nur lesend). Ältere Backends: S.hilfe bleibt leer, nichts wird angezeigt. */
+  function loadHilfe() {
+    if (!S.sess || !window.KFHilfe || S.hilfeLoading) return;
+    S.hilfeLoading = true;
+    api({ action: "admin_hilfe", token: S.sess.token }).then(function (r) {
+      S.hilfeLoading = false; S.hilfe = r && r.ok && r.seiten ? r.seiten : null;
+      if (S.hilfe && (S.tab === "dash" || S.dashDetail)) render();
+    });
+  }
+  function hilfeBoxes(d, v) {
+    if (!window.KFHilfe || !S.hilfe) return null;
+    var pg = v.pages.filter(function (p) { return S.hilfe[p.key]; });
+    if (!pg.length) return null;
+    if (pg.length > 3) return h("div", { class: "glass kfh-box" }, h("p", { class: "muted", text: "„Wie gelöst?“ (sofort / nach Versuchen / mit Tipp / Lösung) gibt es für " + pg.length + " der sichtbaren Seiten – oben eine Seite oder einen Typ wählen." }));
+    return pg.map(function (p) { return KFHilfe.klassenBox(h, S.hilfe, p.key, p.titel, v.sch, { rerender: render, open: function (id, seite) { openDetail(id, seite); } }); });
   }
   /* portal-7: Detail je Schüler (Verlauf, Meldungen) – lädt nach; ältere Backends antworten ohne Daten -> Abschnitt bleibt still weg */
   function loadDetail(id, frisch) {
@@ -1009,7 +1025,7 @@
       S.dd[id] = r && r.ok && r.verlauf ? r : { none: true }; if (S.dashDetail === id) render();
     });
   }
-  function openDetail(id) { S.dashDetail = id; loadDetail(id); render();
+  function openDetail(id, fokus) { S.dashDetail = id; S.dashFokus = typeof fokus === "string" ? fokus : ""; loadDetail(id); render();
     if (window.KFZurueck) window.KFZurueck.push(function () { S.dashDetail = ""; render(); }); }
   function meldOf(id) { var m = S.dash && S.dash.meldungen; return m ? (m[id] || { gesamt: 0, offen: 0 }) : null; }
   var MST = { "new": "neu", confirmed: "bestätigt", rejected: "abgelehnt", fixed: "behoben" };
@@ -1254,6 +1270,7 @@
             S.reopenErr ? h("p", { class: "muted", text: S.reopenErr }) : null));
         }
       }
+      if (window.KFHilfe && S.hilfe) { var hd = KFHilfe.detail(h, S.hilfe, p.key, st.id); if (hd) box.appendChild(hd); }
       body.push(box);
     });
     if (!body.length) body.push(h("p", { class: "muted", text: "Keine Daten vorhanden." }));
@@ -1290,6 +1307,7 @@
             h("span", { class: "tv", text: e.typ === "fertig" ? "✓ fertig" : e.wert != null ? (e.max ? e.wert + "/" + e.max : String(e.wert)) : e.typ })); }), byDay[k].length > 12 ? h("div", { class: "muted", text: "… " + (byDay[k].length - 12) + " weitere" }) : null); })
         : h("p", { class: "muted", text: "Noch keine Einträge auf den neuen Portal-Seiten (Altdaten siehe oben)." })));
     }
+    if (S.dashFokus) { var fk = S.dashFokus; setTimeout(function () { var el = document.querySelector('.sheet .kfh-det[data-seite="' + fk + '"]'); if (el && el.scrollIntoView) el.scrollIntoView({ block: "start" }); }, 30); }
     function close() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.dashDetail = ""; render(); }
     return h("div", { class: "sheet-bg", onclick: function (e) { if (e.target === e.currentTarget) close(); } },
       h("div", { class: "sheet glass", role: "dialog", "aria-modal": "true", "aria-label": "Details " + st.anzeige },
@@ -1315,13 +1333,15 @@
     var head1 = [h("th", { class: "l", rowspan: "2", title: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · Pfeil = Trend gegen die 7 Tage davor · x/7 = aktive Tage" }, "Schüler ", h("span", { class: "akh", text: "· Ø min/Tag" }))], head2 = [];
     v.pages.forEach(function (p) { var n = v.th.filter(function (t) { return t.seite === p.key; }).length; if (n) head1.push(h("th", { class: "pg", colspan: String(n), text: p.titel, title: p.key })); });
     v.th.forEach(function (t) { head2.push(h("th", { text: t.label, title: (v.byKey[t.seite] ? v.byKey[t.seite].titel + " · " : "") + t.label })); });
+    var firstTh = {}; v.th.forEach(function (t) { if (!firstTh[t.seite]) firstTh[t.seite] = t; });
     var hasM = !!d.meldungen; head1.push(h("th", { rowspan: "2", text: "Ø", title: "Durchschnitt der sichtbaren Seiten" })); if (hasM) head1.push(h("th", { rowspan: "2", text: "⚑", title: "Fehler-Meldungen offen" }));
     head1.push(h("th", { rowspan: "2", text: "Zuletzt" }));
     var tbl = h("table", {}, h("thead", {}, h("tr", {}, head1), h("tr", {}, head2)),
       h("tbody", {}, v.sch.map(function (s) {
         var z = d.zellen[s.id] || {};
         return h("tr", { class: "rw", onclick: function () { openDetail(s.id); } }, h("th", { class: "l" }, h("div", { class: "nmrow" }, h("button", { class: "nm", type: "button", text: s.anzeige, title: "Klasse " + s.klasse + " – Details" }), !S.dashKlasse && h("small", { text: " " + s.klasse }), akChip(d, s.id))),
-          v.th.map(function (t) { var c = z[t.seite + "|" + t.thema]; return h("td", { class: cls(c), text: ctext(c), title: t.label + ": " + cdesc(c) + (c && c.zuletzt ? " · " + fdt(c.zuletzt) : "") }); }),
+          v.th.map(function (t) { var c = z[t.seite + "|" + t.thema], hb = firstTh[t.seite] === t && window.KFHilfe && S.hilfe ? KFHilfe.zelle(h, S.hilfe, t.seite, s.id) : null;
+            return h("td", { class: cls(c), title: t.label + ": " + cdesc(c) + (c && c.zuletzt ? " · " + fdt(c.zuletzt) : "") + (hb ? " · " + hb.title : "") }, ctext(c), hb); }),
           h("td", { class: "avg " + (s._any ? cls({ pct: s._score, skala: "pct" }) : "c0"), text: s._any ? String(Math.round(s._score)) : "–", title: "Ø " + r1(s._score) + " %" }),
           hasM ? (function () { var m = meldOf(s.id); return h("td", { class: m.offen ? "mh" : "c0", text: m.gesamt ? String(m.offen) : "", title: m.gesamt ? m.offen + " offen von " + m.gesamt : "keine Meldungen" }); })() : null,
           h("td", { class: "lt", text: ago(s._last), title: s._last ? fdt(s._last) : "keine Aktivität" }));
@@ -1339,6 +1359,7 @@
         h("span", { class: "akbar" }), h("span", { text: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · ↑↓ Trend zu den 7 Tagen davor · x/7 aktive Tage" + (d.aktivMin && d.aktivMin.seit ? " · Messung seit " + akFmtDay(d.aktivMin.seit) : " · noch keine Daten") })),
       v.sch.length && v.th.length ? h("div", { class: "heat glass" }, tbl) : h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für diese Auswahl gibt es keine Schüler oder Spalten." })),
       szClassBox(d, v),
+      hilfeBoxes(d, v),
       h("div", { class: "legend" }, [["c0", "nicht begonnen"], ["c1", "< 33 %"], ["c2", "33–66 %"], ["c3", "> 66 %"], ["c4", "fertig / Test ≥ 85 %"], ["cz", "Test nur begonnen"], ["cn", "Anzahl (ohne Prozent)"]].map(function (l) { return h("span", {}, h("i", { class: l[0] }), l[1]); })),
       h("p", { class: "note", text: "Zahl = Prozent bzw. Aufgaben; ✓ = fertig. Test-Spalten zeigen das Ergebnis in Prozent (Tooltip: Punkte, Note). Altdaten stammen aus den bisherigen Seiten (Missionen, Selbstlernen/Wiederholung 10a, Tests) und werden nur gelesen. Klick auf einen Namen öffnet die Details." }),
       S.dashDetail ? detailSheet(v) : null);
