@@ -12,10 +12,12 @@
   var app = document.getElementById("app");
   var S = { kop: {}, br: null, brErr: "", brLoading: false, deckId: "", deckCtl: null, sess: null, seiten: [], offline: false, tab: "menue", klasse: "", admin: null, dash: null, dashKlasse: "", dashSeite: "", dashSort: "name", dashDetail: "", dashLoading: false, dashErr: "", dashAt: 0, busy: false, schulform: "", thema: "", fach: "", lthema: "", fthema: "", dauerWahl: "", dashTyp: "", dashThema: "" };
   /* Lehrkraft: Bereich Gymnasium / Sekundarschule (07.11.2026). Gymnasium = Klassen mit Endung "g" (8g, 9g). Wahl gilt nur in diesem Tab (sessionStorage),
-     nach jeder neuen Anmeldung wird neu gefragt. Schüler-Logins sind davon nicht betroffen. */
+     nach jeder neuen Anmeldung wird neu gefragt. Schüler-Logins sind davon nicht betroffen.
+     21.11.2026: Demo-Klasse "play" (Store-Prüfung) zählt nicht für die Bereichszuordnung – sonst erscheinen Gym-Seiten mit „8g, play“ fälschlich unter Sekundarschule. */
   var SF_KEY = "kf_lehrer_schulform";
   function isGymKl(k) { return /^\d+g$/i.test(String(k || "")); }
-  function formOfPage(s) { var kl = (s.klassen || []).filter(function (k) { return k && k !== "*"; }); return kl.length && kl.every(isGymKl) ? "gym" : "sek"; }
+  function isBereichKl(k) { k = String(k || ""); return !!k && k !== "*" && !/^play$/i.test(k); }
+  function formOfPage(s) { var kl = (s.klassen || []).filter(isBereichKl); return kl.length && kl.every(isGymKl) ? "gym" : "sek"; }
   function sfGet() { try { var v = sessionStorage.getItem(SF_KEY); return v === "gym" || v === "sek" ? v : ""; } catch (e) { return ""; } }
   function sfSet(v) { S.schulform = v; try { if (v) sessionStorage.setItem(SF_KEY, v); else sessionStorage.removeItem(SF_KEY); } catch (e) {} }
   S.schulform = sfGet();
@@ -852,7 +854,7 @@
   function schliesseThemaT() { if (window.KFZurueck) { try { window.KFZurueck.pop(); } catch (e) {} } S.lthema = ""; render(); }
   function themaKarteT(t) {
     var n = {}; t.seiten.forEach(function (s) { var r = rolleT(s); n[r[0]] = n[r[0]] || [r[1], 0]; n[r[0]][1]++; });
-    var kl = {}; t.seiten.forEach(function (s) { (s.klassen || []).forEach(function (x) { if (x && x !== "*") kl[x] = 1; }); });
+    var kl = {}; t.seiten.forEach(function (s) { (s.klassen || []).forEach(function (x) { if (isBereichKl(x)) kl[x] = 1; }); });
     var parts = Object.keys(n).sort().map(function (k) { var lab = n[k][0].replace(/^\S+\s/, "").replace(/\s*\(.*\)$/, ""); return n[k][1] + " " + lab; });
     return h("a", { class: "card glass themacard", href: "#", "data-lthema": t.id, onclick: function (e) { e.preventDefault(); oeffneThemaT(t.id); } },
       h("div", { class: "ico " + (S.fach === "informatik" ? "informatik" : S.fach === "mathe" ? "mathe" : "klasse"), text: t.ico, "aria-hidden": "true" }),
@@ -868,7 +870,7 @@
     if (!S.fach && keys.length) fwSet(keys[0]);   // 12.11.2026: keine Fach-Karten mehr – erstes Fach vorgewählt, Wechsel über die Liste „Fach“
     if (!S.fach) return h("div", {}, wahlLeiste(bereichSel()), h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Keine Seiten in diesem Bereich." })));
     var inF = seitenForm().filter(function (s) { return fachWahlOf(s) === S.fach; });
-    var kls = {}; inF.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (k && k !== "*") kls[k] = 1; }); });
+    var kls = {}; inF.forEach(function (s) { (s.klassen || []).forEach(function (k) { if (isBereichKl(k)) kls[k] = 1; }); });
     if (S.klasse && !kls[S.klasse]) S.klasse = "";
     var list = inF.filter(function (s) { return !S.klasse || (s.klassen || []).indexOf(S.klasse) >= 0; });
     var kchips = klasseSel(Object.keys(kls).sort(klSort), S.klasse, function (k) { S.klasse = k; S.lthema = ""; render(); });
