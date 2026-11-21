@@ -181,8 +181,12 @@
     renderLogin(msg || "");
   }
   function logout() {
-    var tok = S.sess && S.sess.token; if (tok) api({ action: "logout", token: tok });   // best effort
-    dropSession("Du bist abgemeldet.");
+    /* SEC-20261121 M4: erst die Sitzung auf dem Server beenden (max. 4 s warten), dann lokal abmelden */
+    var tok = S.sess && S.sess.token, fertig = false;
+    var weiter = function () { if (fertig) return; fertig = true; dropSession("Du bist abgemeldet."); };
+    if (!tok) return weiter();
+    setTimeout(weiter, 4000);
+    try { Promise.resolve(api({ action: "logout", token: tok })).then(weiter, weiter); } catch (e) { weiter(); }
   }
   /* Rücksprung von einer verschlüsselten Seite: ?weiter=<ordner>/<datei> -> nach der Anmeldung dorthin (Schlüssel liegen dann schon im Speicher). */
   function weiterZiel() {
