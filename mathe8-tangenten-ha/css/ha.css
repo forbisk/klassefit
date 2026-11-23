@@ -1,0 +1,22 @@
+/* Hausaufgabe Tangenten 8b – Ergänzungen zu app.css/sa.css/kb.css */
+.task header{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem}
+.niv{display:inline-block;font-weight:800;font-size:.78rem;border-radius:999px;padding:.12rem .55rem;margin-left:.2rem}
+.niv.muss{background:#e7f5ff;color:#1864ab}.niv.soll{background:#fff4e6;color:#d9480f}.niv.kann{background:#f3f0ff;color:#5f3dc4}
+.fsec{margin:1.3rem 0 .4rem;font-family:Fredoka,sans-serif;font-size:1.15rem;color:#3b2a8f}
+.fsec small{display:block;font-family:Nunito,sans-serif;font-weight:600;color:#64748b;font-size:.85rem}
+.kontr{margin:.55rem 0 .2rem;border:1px solid #e2e8f0;border-radius:12px;padding:.35rem .65rem;background:#fff}
+.kontr summary{cursor:pointer;font-weight:700;color:#4c2fd6;min-height:36px;display:flex;align-items:center}
+.kontr .frow{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem}
+.konstr{background:#fff9db;border-left:4px solid #f59f00;border-radius:8px;padding:.45rem .65rem;margin:.5rem 0;font-size:.92rem}
+.task .q .tfig svg{display:block;max-width:360px;width:100%;height:auto;margin:.5rem auto}
+.ich{font-size:.82rem;color:#475569;margin:.1rem 0 .4rem}
+/* Lehreransicht */
+.lv-sum{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0 .8rem}.lv-sum span{background:#f1f3f5;border-radius:999px;padding:.25rem .7rem;font-weight:700;font-size:.88rem}
+.lv-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.3rem 0 .7rem}.lv-chips button{min-height:38px;border-radius:999px;border:1.5px solid #6d4aff;background:#fff;color:#4c2fd6;font-weight:700;padding:.25rem .8rem;cursor:pointer}
+.lv-chips button.sel{background:#6d4aff;color:#fff}
+.lv-tab{width:100%;border-collapse:collapse;font-size:.9rem;background:#fff;border-radius:12px;overflow:hidden}
+.lv-tab th,.lv-tab td{padding:.4rem .35rem;border-bottom:1px solid #e9ecef;text-align:center}.lv-tab th:first-child,.lv-tab td:first-child{text-align:left}
+.lv-tab td.c1{background:#ebfbee;color:#2b8a3e;font-weight:800}.lv-tab td.c0{color:#adb5bd}
+.lv-tab tr.lv-row{cursor:pointer}.lv-tab tr.lv-row:hover{background:#f8f9ff}.lv-tab tr.null td:first-child{color:#c92a2a;font-weight:700}
+.lv-det td{background:#f8fafc;text-align:left}.lv-a{display:flex;flex-wrap:wrap;gap:.45rem;align-items:flex-start;margin:.3rem 0}.lv-a b{min-width:3.2rem;padding-top:.2rem}
+.lv-wrap{overflow-x:auto}
