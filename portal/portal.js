@@ -1071,7 +1071,7 @@
     var A = d && d.aktivMin; if (!A || !A.seit || !A.heute) return { st: "none" };
     var lauf = akDays(A.seit, A.heute) + 1; if (!(lauf >= 1)) return { st: "none" };
     var cov = Math.min(7, lauf), covP = Math.max(0, Math.min(7, lauf - 7)), x = (A.u || {})[id] || { m7: 0, m14: 0, t7: 0, letzte: "" };
-    var avg = x.m7 / cov, o = { st: cov >= 3 ? "ok" : "warm", avg: avg, cov: cov, t7: x.t7 || 0, letzte: x.letzte || "", seit: A.seit, heute: A.heute, arrow: "" };
+    var avg = x.m7 / cov, o = { id: id, st: cov >= 3 ? "ok" : "warm", avg: avg, cov: cov, t7: x.t7 || 0, letzte: x.letzte || "", seit: A.seit, heute: A.heute, arrow: "" };
     if (covP >= 3) { var pv = x.m14 / covP, df = avg - pv; o.prev = pv;
       o.arrow = (Math.abs(df) >= 2 && (pv === 0 ? avg >= 2 : Math.abs(df) / pv >= 0.2)) ? (df > 0 ? "up" : "down") : "eq"; }
     return o;
@@ -1083,6 +1083,7 @@
     var l = ["Ø " + (Math.round(o.avg * 10) / 10).toString().replace(".", ",") + " min pro Tag, letzte " + (o.cov < 7 ? o.cov + " Tage (Messung seit " + akFmtDay(o.seit) + ")" : "7 Tage") + ", Ziel " + AK_ZIEL];
     l.push("aktive Tage: " + o.t7 + "/" + o.cov);
     if (o.letzte) { var n = akDays(o.letzte, o.heute); l.push("zuletzt aktiv " + (n <= 0 ? "heute" : n === 1 ? "gestern" : "vor " + n + " Tagen")); } else l.push("seit Messbeginn nicht aktiv");
+    if (lzOk(S.dash) && o.id) { var lt = KFLernzeit.summe(lzTage(S.dash, o.id).slice(-7)); if (lt.a) l.push("7 Tage: Schule " + KFLernzeit.dauer(lt.s) + ", Zuhause " + KFLernzeit.dauer(lt.z) + (lt.o ? ", ohne Zuordnung " + KFLernzeit.dauer(lt.o) : "")); }
     if (o.prev != null) l.push("davor: Ø " + (Math.round(o.prev * 10) / 10).toString().replace(".", ",") + " min/Tag");
     else l.push("Trend: noch kein Vergleichszeitraum");
     if (o.st === "warm") l.push("noch wenig Daten – aussagekräftig ab " + akFmtDay(new Date(Date.parse(o.seit + "T12:00:00") + 2 * 86400e3).toISOString().slice(0, 10)));
@@ -1128,7 +1129,7 @@
       return { key: k, aktiv: p.aktiv || 0, weg: p.weg || 0, offen: p.offen || 0, n: p.n || 0 };
     });
   }
-  function szClassBox(d, v) {
+  function szClassBox(d, v, eingebettet) {
     var sz = d && d.seitenzeit;
     var ids = {}; (v && v.sch || []).forEach(function (s) { ids[s.id] = 1; });
     var agg = {}, seen = {};
@@ -1141,18 +1142,70 @@
         var sk = k + "|" + uid; if (!seen[sk]) { seen[sk] = 1; g.n++; }
       });
     });
-    return h("div", { class: "szbox glass" },
-      h("h3", { text: "Lernzeit je Mission / Selbstlernseite" }),
+    return h("div", { class: eingebettet ? "szbox lzk-in" : "szbox glass" },
+      eingebettet ? null : h("h3", { text: "Lernzeit je Mission / Selbstlernseite" }),
       h("p", { class: "szhint", text: SZ_HINWEIS + (sz && sz.seit ? " Erste Messung: " + akFmtDay(sz.seit) : "") }),
       szTable(d, szEntries(agg), true));
   }
-  function szStudentBox(d, id) {
+  function szStudentBox(d, id, eingebettet) {
     var sz = d && d.seitenzeit, u = sz && sz.u && sz.u[id], pages = u && u.s || {}, sum = u && u.sum;
-    return h("div", { class: "dsec szbox" },
-      h("div", { class: "dh" }, h("b", { text: "Lernzeit je Seite" })),
+    return h("div", { class: eingebettet ? "szbox lzk-in" : "dsec szbox" },
+      eingebettet ? null : h("div", { class: "dh" }, h("b", { text: "Lernzeit je Seite" })),
       h("p", { class: "szhint", text: SZ_HINWEIS + (sz && sz.seit ? " Erste Messung: " + akFmtDay(sz.seit) : "") }),
       sum && (sum.offen || sum.aktiv) ? h("p", { class: "muted", text: "Summe: " + szMin(sum.offen) + " Gesamt · " + szMin(sum.aktiv) + " aktiv · " + szPct(sum.aktiv, sum.offen) }) : null,
       szTable(d, szEntries(pages), false));
+  }
+
+  /* 24.11.2026 (portal-8d): Klassenüberblick + Lernzeit „in der Schule“ / „zu Hause“ (Daten d.lernzeit aus lzDash_, Diagramme kf-lernzeit.js).
+     Ersetzt die vier Kacheln + die Aktivitäts-Zeile über der Tabelle und die Kacheln im Schüler-Detail. Ältere Backends (ohne d.lernzeit): alte Ansicht. */
+  function lzOk(d) { return !!(window.KFLernzeit && d && d.lernzeit && d.lernzeit.tage && d.lernzeit.u); }
+  function lzTage(d, id) { return KFLernzeit.tageFuer(d.lernzeit, [id], false); }
+  function aktiv7(d, s) {   // EINE Definition von „aktiv (7 Tage)“: ≥ 1 aktive Lernminute in den letzten 7 Tagen (ohne Lernzeit-Daten: letzte Aktivität)
+    if (lzOk(d)) { var u = d.lernzeit.u[s.id]; return !!(u && u.a.slice(-7).some(function (m) { return m >= 1; })); }
+    return !!(s._last && Date.now() - s._last < 7 * 86400e3);
+  }
+  function seitenWert(d, z, key) { var g = z[key + "|gesamt"] || z[key + "|ergebnis"];   // wie dashView/classCards
+    if (g) return g.status === "fertig" && g.pct == null ? 100 : g.pct;
+    var ps = []; d.themen.forEach(function (t) { var c = z[key + "|" + t.thema]; if (t.seite === key && c && c.pct != null) ps.push(c.pct); });
+    return ps.length ? ps.reduce(function (x, y) { return x + y; }, 0) / ps.length : null; }
+  function lzKachel(wert, label, sub) { return h("div", { class: "tile glass" }, h("b", { text: String(wert) }), h("span", { text: label }), sub ? h("small", { class: "lzk-sub", text: sub }) : null); }
+  function lzKlassenBox(d, v) {
+    var L = window.KFLernzeit, n = v.sch.length, ids = v.sch.map(function (s) { return s.id; });
+    var akt = v.sch.filter(function (s) { return aktiv7(d, s); }).length, mitF = v.sch.filter(function (s) { return s._any; }).length;
+    var tage = L.tageFuer(d.lernzeit, ids, true), w7 = L.summe(tage.slice(-7));
+    var lp = d.lernzeit, titelKl = S.dashKlasse ? "Klasse " + S.dashKlasse : "Auswahl";
+    /* Fortschritt je Lernseite (ohne Tests): Ø der ausgewählten Schüler, wie die Lernbereiche im Elternbereich */
+    var seiten = v.pages.filter(function (p) { return p.art !== "test"; }).map(function (p) {
+      var sum = 0, fertig = 0, beg = 0; v.sch.forEach(function (s) { var w = seitenWert(d, d.zellen[s.id] || {}, p.key); if (w != null) { sum += w; beg++; if (w >= 100) fertig++; } });
+      return { p: p, avg: n ? sum / n : 0, fertig: fertig, beg: beg }; }).filter(function (x) { return x.beg > 0; });
+    var mehr = Math.max(0, seiten.length - 8), avgF = seiten.length ? seiten.reduce(function (a, x) { return a + x.avg; }, 0) / seiten.length : 0;   // wie Klassenkarte: Ø über die genutzten Lernseiten (ohne Tests)
+    return h("div", { class: "lzk glass" },
+      h("div", { class: "lzk-h" }, h("h3", { text: "Überblick " + titelKl }), h("span", { class: "muted", text: n + " Schüler · Lernzeit = aktive Minuten auf den Lernseiten" })),
+      h("div", { class: "tiles lzk-t" },
+        lzKachel(akt + " / " + n, "aktiv (7 Tage)"),
+        lzKachel(L.dauer(w7.a), "Ø Lernzeit je Schüler (7 Tage)", "🏫 " + L.dauer(w7.s) + " · 🏠 " + L.dauer(w7.z)),
+        lzKachel(mitF + " / " + n, "mit Fortschritt"),
+        lzKachel(seiten.length ? Math.round(avgF) + " %" : "–", "Ø Fortschritt", "genutzte Lernseiten, ohne Tests")),
+      h("div", { class: "lzk-g" },
+        h("div", { class: "lzk-c" }, h("h4", { text: "Lernzeit: Ø Minuten je Schüler und Tag (14 Tage)" }),
+          L.balken(tage, { min: 5, aria: "Durchschnittliche Lernzeit je Schüler und Tag, in der Schule und zu Hause" }), L.legende({ o: tage.some(function (x) { return x.o > 0.5; }) }),
+          h("h4", { style: "margin-top:12px", text: "Letzte 7 Tage: in der Schule und zu Hause" }), L.anteil(w7.s, w7.z, w7.o)),
+        h("div", { class: "lzk-c" }, h("h4", { text: "Fortschritt je Lernseite (Ø " + titelKl + ")" }),
+          seiten.length ? seiten.slice(0, 8).map(function (x) { return h("div", { class: "lzk-p", title: x.p.titel + ": Ø " + Math.round(x.avg) + " % · " + x.fertig + " von " + n + " fertig · " + x.beg + " begonnen" },
+            h("span", { class: "t", text: x.p.titel }), h("span", { class: "v", text: Math.round(x.avg) + " %" }),
+            h("span", { class: "bar" }, h("i", { class: cls({ pct: x.avg, skala: "pct" }), style: "width:" + Math.max(2, Math.min(100, x.avg)) + "%" })),
+            h("span", { class: "s muted", text: x.fertig + " von " + n + " fertig · " + x.beg + " begonnen" })); }) : h("p", { class: "muted", text: "Auf den gezeigten Lernseiten noch kein Fortschritt." }),
+          mehr ? h("p", { class: "muted small", text: "+ " + mehr + " weitere Seiten in der Tabelle unten." }) : null)),
+      h("p", { class: "lz-rule", text: L.regel(lp.grenze, lp.seit) + " In der Tabelle: Ø min/Tag der letzten 7 Tage (Ziel " + AK_ZIEL + "), Pfeil = Trend zur Woche davor, x/7 = aktive Tage." }),
+      h("details", { class: "lzk-d" }, h("summary", { text: "Lernzeit je Mission / Selbstlernseite (Tabelle)" }), szClassBox(d, v, true)));
+  }
+  function lzSchuelerBox(d, st) {
+    var L = window.KFLernzeit, tage = lzTage(d, st.id), w7 = L.summe(tage.slice(-7));
+    return h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: "Lernzeit (14 Tage)" }), h("span", { class: "tag", text: "🏫 Schule · 🏠 Zuhause" })),
+      L.balken(tage, { aria: "Lernzeit der letzten 14 Tage, in der Schule und zu Hause" }), L.legende({ o: tage.some(function (x) { return x.o > 0; }) }),
+      h("p", { class: "muted small", style: "margin-top:8px", text: "Letzte 7 Tage:" }), L.anteil(w7.s, w7.z, w7.o),
+      h("p", { class: "lz-rule", text: L.regel(d.lernzeit.grenze, d.lernzeit.seit) }),
+      h("details", { class: "lzk-d" }, h("summary", { text: "Lernzeit je Seite (Tabelle)" }), szStudentBox(d, st.id, true)));
   }
   function dashView() {
     var d = S.dash, sites = d.seiten || [], byKey = {}; sites.forEach(function (s) { byKey[s.key] = s; });
@@ -1206,7 +1259,7 @@
     var used = {}; v.sch.forEach(function (s) { var z = d.zellen[s.id] || {}; Object.keys(z).forEach(function (k) { used[s.klasse + "|" + k.split("|")[0]] = 1; }); });
     v.sch.forEach(function (s) { var k = g[s.klasse] = g[s.klasse] || { n: 0, sum: 0, act: 0, any: 0, m: 0, low: 0 }, z = d.zellen[s.id] || {}, ps = d.seiten.filter(function (p) { return used[s.klasse + "|" + p.key] && p.art !== "test"; }), sm = 0;
       ps.forEach(function (p) { sm += pv(z, p.key) || 0; });
-      k.n++; k.sum += ps.length ? sm / ps.length : 0; if (s._last && now - s._last < 7 * 86400e3) k.act++; if (s._any) k.any++; else k.low++; var m = meldOf(s.id); if (m) k.m += m.offen; });
+      k.n++; k.sum += ps.length ? sm / ps.length : 0; if (aktiv7(d, s)) k.act++; if (s._any) k.any++; else k.low++; var m = meldOf(s.id); if (m) k.m += m.offen; });
     var FACH = { "5": "Mathe", "6a": "Informatik", "6b": "Informatik", "7a": "Mathe", "8b": "Mathe", "10a": "Mathe", "9g": "Mathe (Gym)", "8g": "Mathe (Gym)" };
     return h("div", { class: "klcards" }, v.klassen.map(function (kl) { var k = g[kl]; if (!k) return null; var avg = k.n ? k.sum / k.n : 0;
       return h("button", { class: "klc glass", type: "button", onclick: function () { S.dashKlasse = kl; render(); } },
@@ -1236,10 +1289,11 @@
   }
   function detailSheet(v) {
     var d = S.dash, st = null; d.schueler.forEach(function (s) { if (s.id === S.dashDetail) st = s; }); if (!st) return null;
-    var z = d.zellen[st.id] || {}, inf = d.info[st.id] || {}, body = [];
+    var z = d.zellen[st.id] || {}, inf = d.info[st.id] || {}, body = [], ohneDaten = [];
     d.seiten.forEach(function (p) {
       var rows = d.themen.filter(function (t) { return t.seite === p.key; }), has = rows.some(function (t) { return z[p.key + "|" + t.thema]; }) || inf[p.key];
       if (!has && (p.klassen || []).indexOf(st.klasse) < 0) return;
+      if (!has && !(window.KFHilfe && S.hilfe && S.hilfe[p.key])) { ohneDaten.push(p.titel); return; }   // 24.11.2026: Seiten ohne Daten als eine Zeile statt je ein leerer Kasten
       var box = h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: p.titel }), !has && h("span", { class: "tag", text: "keine Daten" })));
       rows.forEach(function (t) {
         var c = z[p.key + "|" + t.thema]; if (!c && !has) return;
@@ -1277,6 +1331,7 @@
       if (window.KFHilfe && S.hilfe) { var hd = KFHilfe.detail(h, S.hilfe, p.key, st.id); if (hd) box.appendChild(hd); }
       body.push(box);
     });
+    if (ohneDaten.length) body.push(h("div", { class: "dsec" }, h("div", { class: "dh" }, h("b", { text: "Noch ohne Daten (" + ohneDaten.length + ")" })), h("p", { class: "muted small", text: ohneDaten.join(" · ") })));
     if (!body.length) body.push(h("p", { class: "muted", text: "Keine Daten vorhanden." }));
     if (window.KFDruck && window.THEMEN && KFDruck.hasExamView(d, st)) {
       if (!document.getElementById("thStyle")) {
@@ -1286,14 +1341,15 @@
     }
     var dd = (S.dd || {})[st.id], mo = meldOf(st.id), ak = d.aktivitaet ? d.aktivitaet[st.id] : null;
     var sc = 0, n = 0; v.sch.forEach(function (x) { if (x.id === st.id) { sc = x._score; n = 1; } });
-    var top = h("div", { class: "tiles dt" }, [[n ? Math.round(sc) + " %" : "–", "Ø Fortschritt"], [ak ? String(ak.tage7 || 0) : "–", "aktive Tage (7)"], [ak ? String(ak.n7 || 0) : "–", "Aktionen (7 Tage)"], mo ? [String(mo.offen) + (mo.gesamt > mo.offen ? " / " + mo.gesamt : ""), "⚑ Meldungen offen"] : null].filter(Boolean).map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: t[0] }), h("span", { text: t[1] })); }));
+    var lzD = lzOk(d) ? KFLernzeit.summe(lzTage(d, st.id).slice(-7)) : null;
+    var top = h("div", { class: "tiles dt" }, (lzD ? [[n ? Math.round(sc) + " %" : "–", "Ø Fortschritt"], [KFLernzeit.dauer(lzD.a), "Lernzeit (7 Tage)"], [lzD.tage + " / 7", "aktive Tage"]] : [[n ? Math.round(sc) + " %" : "–", "Ø Fortschritt"], [ak ? String(ak.tage7 || 0) : "–", "aktive Tage (7)"], [ak ? String(ak.n7 || 0) : "–", "Aktionen (7 Tage)"]]).concat([ mo ? [String(mo.offen) + (mo.gesamt > mo.offen ? " / " + mo.gesamt : ""), "⚑ Meldungen offen"] : null]).filter(Boolean).map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: t[0] }), h("span", { text: t[1] })); }));
     body.unshift(top);
     if (window.KFStand && d.stand && d.stand[st.id]) {
       var stBox = h("div", { class: "dsec", id: "kfStandDash" });
       try { KFStand.mountTeacher(stBox, d.stand[st.id], { zellen: z, seiten: d.seiten, themen: d.themen }); } catch (e) {}
       body.splice(1, 0, stBox);
     }
-    body.splice((window.KFStand && d.stand && d.stand[st.id]) ? 2 : 1, 0, szStudentBox(d, st.id));
+    body.splice((window.KFStand && d.stand && d.stand[st.id]) ? 2 : 1, 0, lzOk(d) ? lzSchuelerBox(d, st) : szStudentBox(d, st.id));
     if (window.KFHefterFotos && S.sess) body.push(KFHefterFotos.box(st.id, S.sess.token));   /* 21.11.2026 Hefter-Fotos (hefter-fotos.js) */
     if (dd && dd.loading) body.push(h("p", { class: "muted", text: "Verlauf wird geladen …" }));
     else if (dd && dd.verlauf) {
@@ -1329,7 +1385,7 @@
     }
     if (!S.dash.seiten) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Das Backend liefert noch keine Altdaten (neue Code.gs-Version fehlt, siehe DEPLOY-dashboard.md)." }));
     var d = S.dash, v = dashView(), now = Date.now(), week = 0, started = 0;
-    v.sch.forEach(function (s) { if (s._last && now - s._last < 7 * 86400e3) week++; if (s._any) started++; });
+    v.sch.forEach(function (s) { if (aktiv7(d, s)) week++; if (s._any) started++; });
     var bad = (d.quellen || []).filter(function (q) { return !q.ok; });
     var srcLine = h("div", { class: "src" }, "Stand " + new Date(d.erzeugt || now).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " · ",
       (d.quellen || []).map(function (q) { return h("span", { class: q.ok ? "ok" : "bad", title: q.ok ? (q.n + " Zeilen gelesen" + (q.zugeordnet != null ? ", " + q.zugeordnet + " zugeordnet" : "") + (q.nichtZugeordnet ? ", " + q.nichtZugeordnet + " nicht zuordenbar" : "")) : (q.fehler || "nicht lesbar"), text: (q.ok ? "✓ " : "⚠ ") + q.titel.replace(/ \(.*\)/, "") + " "}); }),
@@ -1354,18 +1410,18 @@
       bad.length > 0 && h("div", { class: "banner", text: "Nicht lesbar: " + bad.map(function (q) { return q.titel; }).join(", ") + ". Die übrigen Daten sind trotzdem aktuell. (Zugriff/Freigabe prüfen, dann „Aktualisieren“.)" }),
       srcLine,
       window.KFDruck ? h("div", { class: "dprintbar" },
-        h("button", { class: "btn small", type: "button", id: "kfdPrintAll", text: "Alle Bewertungen ausdrucken",
-          onclick: function () { KFDruck.printAll(d, v, { cls: cls, ctext: ctext, cdesc: cdesc, r1: r1, fdt: fdt }); } }),
-        h("span", { class: "muted", text: "Eine Datei: Klassenübersicht und ein Blatt je sichtbarem Schüler (A4, Drucken / Als PDF speichern)." })) : null,
+        h("button", { class: "btn small", type: "button", id: "kfdPrintAll", text: "Alle Bewertungen ausdrucken", title: "Eine Datei: Klassenübersicht und ein Blatt je sichtbarem Schüler (A4, Drucken / Als PDF speichern).",
+          onclick: function () { KFDruck.printAll(d, v, { cls: cls, ctext: ctext, cdesc: cdesc, r1: r1, fdt: fdt }); } })) : null,
       !S.dashKlasse && !S.dashSeite && !S.dashTyp && !S.dashThema ? classCards(d, v) : null,
-      h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),
-      h("div", { class: "aklg", title: "Gezählt werden nur Minuten mit geöffneter Lernseite und Bedienung (Tippen/Scrollen) in der letzten Minute, nur bei Anmeldung im Portal." },
+      lzOk(d) && v.sch.length ? lzKlassenBox(d, v) : null,
+      lzOk(d) && v.sch.length ? null : h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),
+      lzOk(d) && v.sch.length ? null : h("div", { class: "aklg", title: "Gezählt werden nur Minuten mit geöffneter Lernseite und Bedienung (Tippen/Scrollen) in der letzten Minute, nur bei Anmeldung im Portal." },
         h("span", { class: "akbar" }), h("span", { text: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · ↑↓ Trend zu den 7 Tagen davor · x/7 aktive Tage" + (d.aktivMin && d.aktivMin.seit ? " · Messung seit " + akFmtDay(d.aktivMin.seit) : " · noch keine Daten") })),
       v.sch.length && v.th.length ? h("div", { class: "heat glass" }, tbl) : h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für diese Auswahl gibt es keine Schüler oder Spalten." })),
-      szClassBox(d, v),
+      lzOk(d) && v.sch.length ? null : szClassBox(d, v),
       hilfeBoxes(d, v),
       h("div", { class: "legend" }, [["c0", "nicht begonnen"], ["c1", "< 33 %"], ["c2", "33–66 %"], ["c3", "> 66 %"], ["c4", "fertig / Test ≥ 85 %"], ["cz", "Test nur begonnen"], ["cn", "Anzahl (ohne Prozent)"]].map(function (l) { return h("span", {}, h("i", { class: l[0] }), l[1]); })),
-      h("p", { class: "note", text: "Zahl = Prozent bzw. Aufgaben; ✓ = fertig. Test-Spalten zeigen das Ergebnis in Prozent (Tooltip: Punkte, Note). Altdaten stammen aus den bisherigen Seiten (Missionen, Selbstlernen/Wiederholung 10a, Tests) und werden nur gelesen. Klick auf einen Namen öffnet die Details." }),
+      h("p", { class: "note", text: "Zahl = Prozent bzw. Aufgaben, ✓ = fertig, Tests in Prozent (Tooltip: Punkte, Note). Klick auf einen Namen öffnet die Details mit Lernzeit und Verlauf." }),
       S.dashDetail ? detailSheet(v) : null);
   }
 

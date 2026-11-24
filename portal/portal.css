@@ -385,6 +385,15 @@ select option,select optgroup{color:#0b1220;background:#fff;font-weight:500}
 
 /* Seitenzeit (19.11.2026): Lernzeit je Mission/Selbstlernseite im Lehrer-Dashboard */
 .szbox{margin:14px 0;padding:14px 16px}
+/* 24.11.2026 Klassenüberblick + Lernzeit Schule/Zuhause */
+.lzk{padding:14px 16px;margin:10px 0}.lzk-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}.lzk-h h3{margin:0;font-size:17px}.lzk-h .muted{font-size:12px}
+.lzk .tiles{margin:10px 0 6px}.lzk .tile{box-shadow:none}.lzk .tile b{font-size:20px}.lzk-sub{display:block;font-size:11px;color:var(--ink2);margin-top:2px}
+.lzk-g{display:grid;grid-template-columns:1fr;gap:14px;margin-top:6px}@media (min-width:860px){.lzk-g{grid-template-columns:1fr 1fr}}
+.lzk-c h4{margin:6px 0 2px;font-size:13px;font-weight:700}
+.lzk-p{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;font-size:13px;margin-top:8px}.lzk-p .t{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lzk-p .v{font-weight:800}
+.lzk-p .bar{grid-column:1 / -1;height:8px;border-radius:99px;background:var(--line);overflow:hidden;display:block}.lzk-p .bar i{display:block;height:100%;border-radius:99px}.lzk-p .s{grid-column:1 / -1;font-size:11px}
+.lzk-d{margin-top:10px}.lzk-d summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--acc);padding:6px 0}.szbox.lzk-in{margin:4px 0;padding:0}
+
 .szbox h3{font-size:15px;margin:0 0 6px;font-weight:650}
 .szhint{font-size:12px;line-height:1.4;color:#64748b;margin:0 0 10px}
 .szbox,.szscroll{max-width:100%;box-sizing:border-box}
