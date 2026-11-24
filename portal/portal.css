@@ -418,3 +418,41 @@ select option,select optgroup{color:#0b1220;background:#fff;font-weight:500}
   .kf-grund-pop{align-items:flex-end;padding:10px}
   .kf-grund-pop-card{padding:18px 16px 16px;max-width:none}
 }
+/* 24.11.2026 (t390u): Tabellen-Leiste direkt an der Dashboard-Tabelle, Ansicht kurz/alle, Suche; Tabelle scrollt im Kasten (Kopf + Namen bleiben stehen) */
+.tabbox{padding:10px 10px 6px;margin-top:12px}
+.tabbox .tb-leiste{margin:0 2px 6px;gap:8px 10px}
+.tabbox .tb-leiste .wahl-f{flex:1 1 140px;max-width:220px}
+.tabbox .tb-leiste .f-dsuch{flex:1.2 1 170px;max-width:240px}
+.tabbox .tb-leiste .f-dans{flex:0 0 auto;max-width:none}
+.tb-such{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--glass-b);color:var(--ink);min-height:36px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--glass-b)}
+.seg-b{font:inherit;font-size:13px;font-weight:700;padding:7px 12px;min-height:36px;border:0;background:none;color:var(--ink2);cursor:pointer}
+.seg-b+.seg-b{border-left:1px solid var(--line)}
+.seg-b.on{background:var(--acc);color:#fff}
+.tb-zur{min-height:36px;white-space:nowrap}
+.tb-info{font-size:12px;margin:0 4px 6px}
+.tb-leer{margin:10px 6px}
+.tabbox .heat{padding:0 2px 4px;max-height:min(72vh,calc(100vh - 150px));background:none;border:0;box-shadow:none}
+.tabbox .empty{padding:18px}
+.heat th.pg .pgb{font:inherit;font-weight:700;color:var(--ink);background:none;border:0;padding:2px 4px;cursor:pointer;text-decoration:underline dotted var(--ink2);text-underline-offset:3px;line-height:1.25}
+.heat th.pg .pgb:hover,.heat th.pg .pgb:focus-visible{color:var(--acc);outline:none}
+.heat table.kurz th.pg.kz{min-width:64px;max-width:120px;vertical-align:bottom;font-size:11px}
+.heat table.kurz td{min-width:52px;height:30px;font-size:12px}
+.heat tbody tr[hidden]{display:none}
+@media (max-width:520px){.tabbox{padding:8px 6px 4px}.tabbox .tb-leiste .wahl-f,.tabbox .tb-leiste .f-dsuch{flex:1 1 calc(50% - 10px);max-width:none}.tabbox .tb-leiste .f-dans{flex:1 1 100%}.tabbox .heat{max-height:70vh}.heat table.kurz th.pg.kz{min-width:56px;max-width:84px;font-size:10px}.heat table.kurz td{min-width:44px}}
+.tabbox .heat thead th,.tabbox .heat th.l{background:rgba(248,250,252,.96)}
+@media (prefers-color-scheme:dark){.tabbox .heat thead th,.tabbox .heat th.l{background:rgba(30,41,59,.97)}}
+.heat table.kurz th.pg.kz{min-width:46px;max-width:88px;padding:2px 1px}
+.heat table.kurz th.pg.kz .pgb{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font-size:10.5px;hyphens:manual;-webkit-hyphens:manual;overflow-wrap:break-word;padding:2px}
+.heat table.kurz td{min-width:44px}
+.heat table.kurz td.lt{min-width:64px}
+.heat table.kurz th.pg.kz .pgb{overflow-wrap:break-word}
+@media (max-width:520px){
+  .tb-mehr{display:block;flex:1 1 100%}
+  .tb-mehr>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--acc);padding:4px 4px;min-height:28px}
+  .tb-mehr-in{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:6px}
+  .seg{display:flex;width:100%}.seg-b{flex:1}
+}
+.tb-hleg{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:12px;color:var(--ink2);margin:6px 4px 2px}
+.tb-hleg b{font-weight:700}.tb-hleg i{display:inline-block;width:14px;height:6px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.tabbox .heat td .kfh-bar{height:5px;background:#fff;box-shadow:0 0 0 1.5px rgba(255,255,255,.95)}

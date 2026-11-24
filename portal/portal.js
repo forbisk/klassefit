@@ -1017,7 +1017,7 @@
     if (!window.KFHilfe || !S.hilfe) return null;
     var pg = v.pages.filter(function (p) { return S.hilfe[p.key]; });
     if (!pg.length) return null;
-    if (pg.length > 3) return h("div", { class: "glass kfh-box" }, h("p", { class: "muted", text: "„Wie gelöst?“ (sofort / nach Versuchen / mit Tipp / Lösung) gibt es für " + pg.length + " der sichtbaren Seiten – oben eine Seite oder einen Typ wählen." }));
+    if (pg.length > 3) return h("div", { class: "glass kfh-box" }, h("p", { class: "muted", text: "„Wie gelöst?“ (sofort / nach Versuchen / mit Tipp / Lösung) gibt es für " + pg.length + " der sichtbaren Seiten – in der Tabelle einen Seitentitel antippen, dann erscheint sie hier je Schüler." }));
     return pg.map(function (p) { return KFHilfe.klassenBox(h, S.hilfe, p.key, p.titel, v.sch, { rerender: render, open: function (id, seite) { openDetail(id, seite); } }); });
   }
   /* portal-7: Detail je Schüler (Verlauf, Meldungen) – lädt nach; ältere Backends antworten ohne Daten -> Abschnitt bleibt still weg */
@@ -1207,18 +1207,19 @@
       h("p", { class: "lz-rule", text: L.regel(d.lernzeit.grenze, d.lernzeit.seit) }),
       h("details", { class: "lzk-d" }, h("summary", { text: "Lernzeit je Seite (Tabelle)" }), szStudentBox(d, st.id, true)));
   }
-  function dashView() {
+  function dashView(ohneTab) {   // 24.11.2026: ohneTab = ohne Tabellenfilter (Typ/Thema/Seite) – für den Klassenüberblick über der Tabelle
     var d = S.dash, sites = d.seiten || [], byKey = {}; sites.forEach(function (s) { byKey[s.key] = s; });
+    var fSeite = ohneTab ? "" : S.dashSeite, fTyp = function (s) { return ohneTab || dashTypOk(s); }, fThema = function (s) { return ohneTab || dashThemaOk(s); };
     var klassen = []; d.schueler.forEach(function (s) { if (s.klasse && klassen.indexOf(s.klasse) < 0 && (!S.schulform || (isGymKl(s.klasse) ? "gym" : "sek") === S.schulform)) klassen.push(s.klasse); });
     sites = sites.filter(inForm);
     klassen.sort(function (a, b) { return parseInt(a) - parseInt(b) || (a < b ? -1 : 1); });
-    var pages = sites.filter(function (s) { return S.dashSeite ? s.key === S.dashSeite : ((!S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0) && dashTypOk(s) && dashThemaOk(s)); });
+    var pages = sites.filter(function (s) { return fSeite ? s.key === fSeite : ((!S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0) && fTyp(s) && fThema(s)); });
     var keep = {}; pages.forEach(function (s) { keep[s.key] = 1; });
     var th = d.themen.filter(function (t) { return keep[t.seite]; });
     var sch = d.schueler.filter(function (s) {
       if (S.schulform && (isGymKl(s.klasse) ? "gym" : "sek") !== S.schulform) return false;
       if (S.dashKlasse) return s.klasse === S.dashKlasse;
-      if (S.dashSeite && byKey[S.dashSeite]) return (byKey[S.dashSeite].klassen || []).indexOf(s.klasse) >= 0;
+      if (fSeite && byKey[fSeite]) return (byKey[fSeite].klassen || []).indexOf(s.klasse) >= 0;
       return true;
     });
     sch.forEach(function (s) { var z = d.zellen[s.id] || {}, sum = 0, any = false, last = s.zuletzt || 0;
@@ -1245,10 +1246,10 @@
   function dashFilterLeiste(d) {
     var basis = d.seiten.filter(inForm).filter(function (s) { return !S.dashKlasse || (s.klassen || []).indexOf(S.dashKlasse) >= 0; });
     var cnt = { "": basis.length, themen: 0, tests: 0, ha: 0 }; basis.forEach(function (s) { cnt[dashTypOf(s)]++; });
-    var typ = chipRow([["", "Alles (" + cnt[""] + ")"], ["themen", "📚 Themen (" + cnt.themen + ")"], ["tests", "📝 Tests (" + cnt.tests + ")"], ["ha", "🏠 Hausaufgaben (" + cnt.ha + ")"]], S.dashTyp, function (k) { S.dashTyp = k; S.dashSeite = ""; S.dashThema = ""; render(); }, "Typ", "dtyp");
+    var typ = chipRow([["", "Alles (" + cnt[""] + ")"], ["themen", "📚 Themen (" + cnt.themen + ")"], ["tests", "📝 Tests (" + cnt.tests + ")"], ["ha", "🏠 Hausaufgaben (" + cnt.ha + ")"]], S.dashTyp, function (k) { S.dashTyp = k; S.dashSeite = ""; S.dashThema = ""; tabSave(); render(); }, "Spalten", "dtyp");
     var th = {}, tho = []; basis.filter(dashTypOk).forEach(function (s) { var t = dashThemaOf(s); if (!th[t[0]]) { th[t[0]] = t; tho.push(t); } });
     if (S.dashThema && !th[S.dashThema]) S.dashThema = "";
-    var them = tho.length > 1 ? chipRow([["", "Alle Themen"]].concat(tho.map(function (t) { return [t[0], t[2] + " " + t[1]]; })), S.dashThema, function (k) { S.dashThema = k; S.dashSeite = ""; render(); }, "Thema", "dthema") : null;
+    var them = tho.length > 1 ? chipRow([["", "Alle Themen"]].concat(tho.map(function (t) { return [t[0], t[2] + " " + t[1]]; })), S.dashThema, function (k) { S.dashThema = k; S.dashSeite = ""; tabSave(); render(); }, "Thema", "dthema") : null;
     return [typ, them];
   }
   /* portal-7: Übersicht je Klasse (Karten) – klick = Klasse filtern */
@@ -1378,46 +1379,136 @@
             h("button", { class: "btn ghost small", text: "Schließen", onclick: close }))), body));
   }
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.dashDetail) { S.dashDetail = ""; render(); } });
+  /* 24.11.2026 (t390u): Tabellen-Leiste direkt an der Tabelle – Spalten (Typ/Thema/Seite), Ansicht kurz (1 Spalte je Seite) oder alle Teilspalten,
+     Schülersuche, Schnellfilter, Sortierung. Merkt sich Spalten-Auswahl + Ansicht je Klasse (localStorage LS_TAB, neuer Schlüssel; nur Anzeige-Einstellungen,
+     keine Schülerdaten). Kopfzeile und Namensspalte bleiben beim Scrollen stehen; die Tabelle scrollt in ihrem Kasten. */
+  var LS_TAB = "kf_dash_tabelle_v1";
+  function tabAll() { var o = lsGet(LS_TAB); return o && typeof o === "object" && o.k && typeof o.k === "object" ? o : { v: 1, k: {} }; }
+  function tabKey() { return (S.schulform || "-") + "|" + (S.dashKlasse || "*"); }
+  function tabSave() { var o = tabAll(); o.k[tabKey()] = { typ: S.dashTyp || "", thema: S.dashThema || "", seite: S.dashSeite || "", ansicht: S.dashAnsicht || "kurz" }; lsSet(LS_TAB, o); }
+  function tabRestore() {
+    var key = tabKey() + "|" + (S.sess && S.sess.token || ""); if (S._tabKey === key) return; S._tabKey = key;
+    var x = tabAll().k[tabKey()] || {}, d = S.dash;
+    S.dashTyp = { themen: 1, tests: 1, ha: 1 }[x.typ] ? x.typ : ""; S.dashThema = x.thema || ""; S.dashAnsicht = x.ansicht === "alle" ? "alle" : "kurz";
+    var ok = (d.seiten || []).some(function (p) { return p.key === x.seite && inForm(p) && (!S.dashKlasse || (p.klassen || []).indexOf(S.dashKlasse) >= 0); });
+    S.dashSeite = ok ? x.seite : ""; S.dashSuche = ""; S.dashZeige = "";
+  }
+  function tabSchmal() { try { return window.matchMedia("(max-width:520px)").matches; } catch (e) { return false; } }
+  function tabNorm(t) { return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+  function tabSeiteZelle(d, z, p, th) {   // eine Spalte je Seite: Gesamt/Ergebnis-Zelle, sonst Ø der Teilspalten
+    var g = z[p.key + "|gesamt"] || z[p.key + "|ergebnis"]; if (g) return g;
+    var ps = [], beg = 0, n = 0; th.forEach(function (t) { if (t.seite !== p.key) return; n++; var c = z[p.key + "|" + t.thema]; if (!c) return; beg++; if (c.pct != null) ps.push(c.pct); else if (c.status === "fertig") ps.push(100); });
+    if (!beg) return null;
+    var avg = ps.length ? ps.reduce(function (a, b) { return a + b; }, 0) / ps.length : null;
+    return avg == null ? { status: "begonnen" } : { pct: avg, skala: "pct", _txt: beg + " von " + n + " Teilen bearbeitet" };
+  }
+  function tabZeigeOk(d, s) {
+    if (S.dashZeige === "u50") return !s._any || s._score < 50;
+    if (S.dashZeige === "ohne") return !s._any;
+    if (S.dashZeige === "meld") { var m = meldOf(s.id); return !!(m && m.offen); }
+    if (S.dashZeige === "inaktiv") return !aktiv7(d, s);
+    return true;
+  }
+  function tabSucheAnwenden(box) {
+    var q = tabNorm(S.dashSuche).trim(), rows = box.querySelectorAll("tbody tr.rw"), n = 0;
+    Array.prototype.forEach.call(rows, function (r) { var hit = !q || r.getAttribute("data-nm").indexOf(q) >= 0; r.hidden = !hit; if (hit) n++; });
+    var c = box.querySelector(".tb-n"); if (c) c.textContent = n + " von " + box.getAttribute("data-gesamt") + " Schülern";
+    var e = box.querySelector(".tb-leer"); if (e) e.hidden = n > 0;
+  }
+  /* Spaltenköpfe der Kurz-Ansicht: weiche Trennstellen (Silben V-K-V + häufige Wortanfänge), damit lange Titel schmal umbrechen */
+  var TAB_PRE = /^(Selbst|Wieder|Diagnose|Realschul|Prüfungs|Nach|Haus|Test|Mini)(?=[a-zäöüß]{3,})/i;
+  function tabKurzTitel(t) { return String(t || "").replace(/[A-Za-zÄÖÜäöüß]{8,}/g, function (w) {
+    var m = TAB_PRE.exec(w), pre = m ? m[1] : "", rest = w.slice(pre.length);
+    rest = rest.replace(/([a-zäöüß]{3,})(keit|heit|schaft|karten|abschluss|aufgaben)$/i, "$1\u00ad$2").replace(/([aeiouäöüy])([bdfgklmnprstvwzß])(?=[aeiouäöüy][a-zäöüß])/gi, "$1\u00ad$2");
+    return pre ? pre + "\u00ad" + rest : rest; }); }
+  function dashTabelle(d, v) {
+    var fokus = !!S.dashSeite, kurz = !fokus && S.dashAnsicht !== "alle";
+    var seitenListe = (S.dashKlasse ? d.seiten.filter(function (s) { return inForm(s) && (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).filter(function (s) { return dashTypOk(s) && dashThemaOk(s); });
+    var fl = dashFilterLeiste(d);
+    var seiteSel = chipRow([["", "Alle Seiten"]].concat(seitenListe.map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; tabSave(); render(); }, "Seite / Test", "dseite");
+    var meld = !!d.meldungen;
+    var zeigeSel = wahlSel("Schüler zeigen", "dzeige", [["", "Alle"], ["u50", "Ø unter 50 %"], ["ohne", "noch ohne Fortschritt"], ["inaktiv", "7 Tage nicht aktiv"]].concat(meld ? [["meld", "mit offener Meldung"]] : []), S.dashZeige || "", function (k) { S.dashZeige = k; render(); });
+    var sortSel = chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"], ["aktiv", "Aktivität"]], S.dashSort, function (k) { S.dashSort = k; render(); }, "Sortieren", "dsort");
+    var such = h("input", { type: "search", class: "tb-such", placeholder: "Name suchen …", "aria-label": "Schüler suchen", value: S.dashSuche || "", autocomplete: "off" });
+    var ansicht = fokus ? h("div", { class: "wahl-f f-dans" }, h("span", { class: "wahl-l", text: "Ansicht" }),
+        h("button", { class: "btn small tb-zur", type: "button", text: "← Alle Seiten", title: "Zurück zur Übersicht aller Seiten", onclick: function () { S.dashSeite = ""; tabSave(); render(); } }))
+      : h("div", { class: "wahl-f f-dans" }, h("span", { class: "wahl-l", text: "Ansicht" }), h("div", { class: "seg", role: "group", "aria-label": "Ansicht" },
+        [["kurz", "Kurz", "Eine Spalte je Seite (Klick auf eine Seite zeigt ihre Teilspalten)"], ["alle", "Alle Spalten", "Alle Teilspalten nebeneinander"]].map(function (o) {
+          return h("button", { type: "button", class: "seg-b" + ((kurz ? "kurz" : "alle") === o[0] ? " on" : ""), "aria-pressed": (kurz ? "kurz" : "alle") === o[0] ? "true" : "false", title: o[2], text: o[1], onclick: function () { S.dashAnsicht = o[0]; tabSave(); render(); } }); })));
+    var rows = v.sch.filter(function (s) { return tabZeigeOk(d, s); });
+    var hasM = meld, firstTh = {}; v.th.forEach(function (t) { if (!firstTh[t.seite]) firstTh[t.seite] = t; });
+    var pagesMit = v.pages.filter(function (p) { return v.th.some(function (t) { return t.seite === p.key; }); });
+    var head1 = [h("th", { class: "l", rowspan: kurz ? null : "2", title: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · Pfeil = Trend gegen die 7 Tage davor · x/7 = aktive Tage" }, "Schüler ", h("span", { class: "akh", text: "· Ø min/Tag" }))], head2 = [];
+    var fokusBtn = function (p, txt, extra) { return h("button", { type: "button", class: "pgb", title: (fokus ? "" : "Nur diese Seite mit allen Teilspalten zeigen · ") + p.titel, text: txt, onclick: function (e) { e.stopPropagation(); S.dashSeite = fokus ? "" : p.key; tabSave(); render(); } }, extra); };
+    if (kurz) pagesMit.forEach(function (p) { head1.push(h("th", { class: "pg kz" }, fokusBtn(p, tabKurzTitel(p.titel)))); });
+    else {
+      pagesMit.forEach(function (p) { var n = v.th.filter(function (t) { return t.seite === p.key; }).length; head1.push(h("th", { class: "pg", colspan: String(n) }, fokus ? h("span", { text: p.titel, title: p.key }) : fokusBtn(p, p.titel))); });
+      v.th.forEach(function (t) { head2.push(h("th", { text: t.label, title: (v.byKey[t.seite] ? v.byKey[t.seite].titel + " · " : "") + t.label })); });
+    }
+    var rs = kurz ? null : "2";
+    head1.push(h("th", { rowspan: rs, text: "Ø", title: "Durchschnitt der sichtbaren Seiten" })); if (hasM) head1.push(h("th", { rowspan: rs, text: "⚑", title: "Fehler-Meldungen offen" }));
+    head1.push(h("th", { rowspan: rs, text: "Zuletzt" }));
+    var q = tabNorm(S.dashSuche).trim();
+    var tbl = h("table", { class: kurz ? "kurz" : "" }, h("thead", {}, h("tr", {}, head1), kurz ? null : h("tr", {}, head2)),
+      h("tbody", {}, rows.map(function (s) {
+        var z = d.zellen[s.id] || {}, nm = tabNorm(s.anzeige);
+        var cells = kurz ? pagesMit.map(function (p) { var c = tabSeiteZelle(d, z, p, v.th), hb = window.KFHilfe && S.hilfe ? KFHilfe.zelle(h, S.hilfe, p.key, s.id) : null;
+              return h("td", { class: cls(c), title: p.titel + ": " + (c && c._txt ? "Ø " + r1(c.pct) + " % · " + c._txt : cdesc(c)) + (c && c.zuletzt ? " · " + fdt(c.zuletzt) : "") + (hb ? " · " + hb.title : "") }, ctext(c), hb); })
+          : v.th.map(function (t) { var c = z[t.seite + "|" + t.thema], hb = firstTh[t.seite] === t && window.KFHilfe && S.hilfe ? KFHilfe.zelle(h, S.hilfe, t.seite, s.id) : null;
+              return h("td", { class: cls(c), title: t.label + ": " + cdesc(c) + (c && c.zuletzt ? " · " + fdt(c.zuletzt) : "") + (hb ? " · " + hb.title : "") }, ctext(c), hb); });
+        return h("tr", { class: "rw", "data-nm": nm, hidden: q && nm.indexOf(q) < 0 ? true : null, onclick: function () { openDetail(s.id); } }, h("th", { class: "l" }, h("div", { class: "nmrow" }, h("button", { class: "nm", type: "button", text: s.anzeige, title: "Klasse " + s.klasse + " – Details" }), !S.dashKlasse && h("small", { text: " " + s.klasse }), akChip(d, s.id))),
+          cells,
+          h("td", { class: "avg " + (s._any ? cls({ pct: s._score, skala: "pct" }) : "c0"), text: s._any ? String(Math.round(s._score)) : "–", title: "Ø " + r1(s._score) + " %" }),
+          hasM ? (function () { var m = meldOf(s.id); return h("td", { class: m.offen ? "mh" : "c0", text: m.gesamt ? String(m.offen) : "", title: m.gesamt ? m.offen + " offen von " + m.gesamt : "keine Meldungen" }); })() : null,
+          h("td", { class: "lt", text: ago(s._last), title: s._last ? fdt(s._last) : "keine Aktivität" }));
+      })));
+    var leer = !v.sch.length || !v.th.length;
+    var box = h("div", { class: "tabbox glass" },
+      h("div", { class: "wahl tb-leiste", role: "group", "aria-label": "Tabelle filtern" },
+        fl[0], h("label", { class: "wahl-f f-dsuch" }, h("span", { class: "wahl-l", text: "Schüler" }), such), ansicht,
+        tabSchmal() ? h("details", { class: "tb-mehr", open: S.dashMehr ? true : null, ontoggle: function (e) { S.dashMehr = e.currentTarget.open; } },   // Handy: weitere Filter eingeklappt
+          h("summary", { text: "Weitere Filter" + (S.dashThema || S.dashSeite || S.dashZeige || (S.dashSort && S.dashSort !== "name") ? " (aktiv)" : "") }),
+          h("div", { class: "tb-mehr-in" }, fl[1], seiteSel, zeigeSel, sortSel)) : [fl[1], seiteSel, zeigeSel, sortSel]),
+      h("div", { class: "tb-info muted" }, h("span", { class: "tb-n", text: rows.length + " von " + v.sch.length + " Schülern" }),
+        h("span", { text: " · " + (kurz ? pagesMit.length + (pagesMit.length === 1 ? " Seite" : " Seiten") + " (je 1 Spalte – Seitentitel antippen für die Teilspalten)" : fokus ? v.th.length + " Spalten dieser Seite" : v.th.length + " Spalten") })),
+      leer ? h("div", { class: "empty" }, h("p", { class: "muted", text: "Für diese Auswahl gibt es keine Schüler oder Spalten." })) : h("div", { class: "heat" }, tbl),
+      h("p", { class: "tb-leer muted", hidden: rows.length ? true : null, text: "Kein Schüler passt zu dieser Auswahl." }));
+    var hilfeSeiten = window.KFHilfe && S.hilfe ? pagesMit.filter(function (p) { return S.hilfe[p.key]; }).length : 0;   // 24.11.2026 (t393u): Legende zum „Wie gelöst?“-Balken in den Kästchen
+    if (hilfeSeiten && !leer) box.appendChild(h("div", { class: "tb-hleg", title: "Der kleine Balken im Kästchen zeigt je Schüler und Seite, wie die Aufgaben gelöst wurden (Tooltip: Anzahl, Tipps, Lösungen)." },
+      h("b", { text: "Balken im Kästchen = wie gelöst:" }), ["sofort", "versuche", "tipp", "loesung"].map(function (k) { var x = KFHilfe.ST[k]; return h("span", {}, h("i", { style: "background:" + x.c }), x.l); })));
+    box.setAttribute("data-gesamt", String(v.sch.length));
+    such.addEventListener("input", function () { S.dashSuche = such.value; tabSucheAnwenden(box); });
+    if (q) tabSucheAnwenden(box);
+    return box;
+  }
+
   function teacherDash() {
     if (!S.dash) {
       if (S.dashLoading) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Fortschritt wird geladen … (beim ersten Mal ca. 5–10 Sekunden)" }));
       return h("div", { class: "glass empty" }, h("p", { class: "muted", text: S.dashErr || "Noch keine Daten." }), h("div", { style: "margin-top:12px" }, h("button", { class: "btn small", text: "Erneut versuchen", onclick: function () { loadDash(true); } })));
     }
     if (!S.dash.seiten) return h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Das Backend liefert noch keine Altdaten (neue Code.gs-Version fehlt, siehe DEPLOY-dashboard.md)." }));
-    var d = S.dash, v = dashView(), now = Date.now(), week = 0, started = 0;
+    var d = S.dash; tabRestore(); var now = Date.now(), week = 0, started = 0;
+    var vU = dashView(true), lzBox = lzOk(d) && vU.sch.length ? lzKlassenBox(d, vU) : null;   // 24.11.2026: Überblick unabhängig von den Tabellenfiltern
+    var v = dashView();
     v.sch.forEach(function (s) { if (aktiv7(d, s)) week++; if (s._any) started++; });
     var bad = (d.quellen || []).filter(function (q) { return !q.ok; });
     var srcLine = h("div", { class: "src" }, "Stand " + new Date(d.erzeugt || now).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " · ",
       (d.quellen || []).map(function (q) { return h("span", { class: q.ok ? "ok" : "bad", title: q.ok ? (q.n + " Zeilen gelesen" + (q.zugeordnet != null ? ", " + q.zugeordnet + " zugeordnet" : "") + (q.nichtZugeordnet ? ", " + q.nichtZugeordnet + " nicht zuordenbar" : "")) : (q.fehler || "nicht lesbar"), text: (q.ok ? "✓ " : "⚠ ") + q.titel.replace(/ \(.*\)/, "") + " "}); }),
       h("button", { class: "btn ghost small", disabled: S.dashLoading ? true : null, text: S.dashLoading ? "Lädt …" : "↻ Aktualisieren", onclick: function () { loadDash(true); } }));
-    var head1 = [h("th", { class: "l", rowspan: "2", title: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · Pfeil = Trend gegen die 7 Tage davor · x/7 = aktive Tage" }, "Schüler ", h("span", { class: "akh", text: "· Ø min/Tag" }))], head2 = [];
-    v.pages.forEach(function (p) { var n = v.th.filter(function (t) { return t.seite === p.key; }).length; if (n) head1.push(h("th", { class: "pg", colspan: String(n), text: p.titel, title: p.key })); });
-    v.th.forEach(function (t) { head2.push(h("th", { text: t.label, title: (v.byKey[t.seite] ? v.byKey[t.seite].titel + " · " : "") + t.label })); });
-    var firstTh = {}; v.th.forEach(function (t) { if (!firstTh[t.seite]) firstTh[t.seite] = t; });
-    var hasM = !!d.meldungen; head1.push(h("th", { rowspan: "2", text: "Ø", title: "Durchschnitt der sichtbaren Seiten" })); if (hasM) head1.push(h("th", { rowspan: "2", text: "⚑", title: "Fehler-Meldungen offen" }));
-    head1.push(h("th", { rowspan: "2", text: "Zuletzt" }));
-    var tbl = h("table", {}, h("thead", {}, h("tr", {}, head1), h("tr", {}, head2)),
-      h("tbody", {}, v.sch.map(function (s) {
-        var z = d.zellen[s.id] || {};
-        return h("tr", { class: "rw", onclick: function () { openDetail(s.id); } }, h("th", { class: "l" }, h("div", { class: "nmrow" }, h("button", { class: "nm", type: "button", text: s.anzeige, title: "Klasse " + s.klasse + " – Details" }), !S.dashKlasse && h("small", { text: " " + s.klasse }), akChip(d, s.id))),
-          v.th.map(function (t) { var c = z[t.seite + "|" + t.thema], hb = firstTh[t.seite] === t && window.KFHilfe && S.hilfe ? KFHilfe.zelle(h, S.hilfe, t.seite, s.id) : null;
-            return h("td", { class: cls(c), title: t.label + ": " + cdesc(c) + (c && c.zuletzt ? " · " + fdt(c.zuletzt) : "") + (hb ? " · " + hb.title : "") }, ctext(c), hb); }),
-          h("td", { class: "avg " + (s._any ? cls({ pct: s._score, skala: "pct" }) : "c0"), text: s._any ? String(Math.round(s._score)) : "–", title: "Ø " + r1(s._score) + " %" }),
-          hasM ? (function () { var m = meldOf(s.id); return h("td", { class: m.offen ? "mh" : "c0", text: m.gesamt ? String(m.offen) : "", title: m.gesamt ? m.offen + " offen von " + m.gesamt : "keine Meldungen" }); })() : null,
-          h("td", { class: "lt", text: ago(s._last), title: s._last ? fdt(s._last) : "keine Aktivität" }));
-      })));
-    return h("div", {}, wahlLeiste.apply(null, [bereichSel(), klasseSel(v.klassen, S.dashKlasse, function (k) { S.dashKlasse = k; if (S.dashSeite && v.byKey[S.dashSeite] && k && (v.byKey[S.dashSeite].klassen || []).indexOf(k) < 0) S.dashSeite = ""; render(); })].concat(dashFilterLeiste(d), [chipRow([["", "Alle Seiten"]].concat((S.dashKlasse ? d.seiten.filter(function (s) { return inForm(s) && (s.klassen || []).indexOf(S.dashKlasse) >= 0; }) : d.seiten.filter(inForm)).filter(function (s) { return dashTypOk(s) && dashThemaOk(s); }).map(function (s) { return [s.key, s.titel]; })), S.dashSeite, function (k) { S.dashSeite = k; render(); }, "Seite / Test", "dseite"), chipRow([["name", "Name"], ["zuletzt", "Zuletzt aktiv"], ["fortschritt", "Fortschritt"], ["aktiv", "Aktivität"]], S.dashSort, function (k) { S.dashSort = k; render(); }, "Sortieren", "dsort")])),
+    var tb = dashTabelle(d, v);
+    return h("div", {}, wahlLeiste(bereichSel(), klasseSel(v.klassen, S.dashKlasse, function (k) { S.dashKlasse = k; render(); })),
       bad.length > 0 && h("div", { class: "banner", text: "Nicht lesbar: " + bad.map(function (q) { return q.titel; }).join(", ") + ". Die übrigen Daten sind trotzdem aktuell. (Zugriff/Freigabe prüfen, dann „Aktualisieren“.)" }),
       srcLine,
       window.KFDruck ? h("div", { class: "dprintbar" },
         h("button", { class: "btn small", type: "button", id: "kfdPrintAll", text: "Alle Bewertungen ausdrucken", title: "Eine Datei: Klassenübersicht und ein Blatt je sichtbarem Schüler (A4, Drucken / Als PDF speichern).",
           onclick: function () { KFDruck.printAll(d, v, { cls: cls, ctext: ctext, cdesc: cdesc, r1: r1, fdt: fdt }); } })) : null,
-      !S.dashKlasse && !S.dashSeite && !S.dashTyp && !S.dashThema ? classCards(d, v) : null,
-      lzOk(d) && v.sch.length ? lzKlassenBox(d, v) : null,
+      !S.dashKlasse ? classCards(d, vU) : null,
+      lzBox,
       lzOk(d) && v.sch.length ? null : h("div", { class: "tiles" }, [[v.sch.length, "Schüler"], [week, "aktiv (7 Tage)"], [started, "mit Fortschritt"], [v.sch.length - started, "ohne Fortschritt"]].map(function (t) { return h("div", { class: "tile glass" }, h("b", { text: String(t[0]) }), h("span", { text: t[1] })); })),
       lzOk(d) && v.sch.length ? null : h("div", { class: "aklg", title: "Gezählt werden nur Minuten mit geöffneter Lernseite und Bedienung (Tippen/Scrollen) in der letzten Minute, nur bei Anmeldung im Portal." },
         h("span", { class: "akbar" }), h("span", { text: "Aktivität: Ø Minuten pro Tag, letzte 7 Tage, Ziel " + AK_ZIEL + " · ↑↓ Trend zu den 7 Tagen davor · x/7 aktive Tage" + (d.aktivMin && d.aktivMin.seit ? " · Messung seit " + akFmtDay(d.aktivMin.seit) : " · noch keine Daten") })),
-      v.sch.length && v.th.length ? h("div", { class: "heat glass" }, tbl) : h("div", { class: "glass empty" }, h("p", { class: "muted", text: "Für diese Auswahl gibt es keine Schüler oder Spalten." })),
+      tb,
       lzOk(d) && v.sch.length ? null : szClassBox(d, v),
       hilfeBoxes(d, v),
       h("div", { class: "legend" }, [["c0", "nicht begonnen"], ["c1", "< 33 %"], ["c2", "33–66 %"], ["c3", "> 66 %"], ["c4", "fertig / Test ≥ 85 %"], ["cz", "Test nur begonnen"], ["cn", "Anzahl (ohne Prozent)"]].map(function (l) { return h("span", {}, h("i", { class: l[0] }), l[1]); })),
