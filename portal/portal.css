@@ -456,3 +456,4 @@ select option,select optgroup{color:#0b1220;background:#fff;font-weight:500}
 .tb-hleg{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:12px;color:var(--ink2);margin:6px 4px 2px}
 .tb-hleg b{font-weight:700}.tb-hleg i{display:inline-block;width:14px;height:6px;border-radius:3px;margin-right:4px;vertical-align:middle}
 .tabbox .heat td .kfh-bar{height:5px;background:#fff;box-shadow:0 0 0 1.5px rgba(255,255,255,.95)}
+.heat table.kurz tbody th.l{min-width:0}.heat table.kurz th.l .nm{max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
