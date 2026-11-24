@@ -71,3 +71,25 @@ html.kf-mobil .selblink{bottom:auto;top:14px;right:84px}
 .slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a .q{font-size:31px;line-height:1.2}.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a .a{font-size:28px;line-height:1.25}.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a{padding-bottom:6px}
 .slide.chapter .goals .fr::before,.slide.chapter .goals .fr span::before{content:none}.slide.chapter .goals .fr{font-size:.85em}
 html.kf-mobil .cl{font-size:.76em}
+
+/* 24.11.2026 – Beamer: große Skizzen, eine Lösungsfolie je Aufgabe (Paulius) */
+.task-i .tfig svg{width:480px;max-width:none;height:auto;max-height:250px}
+.task-i .tq{gap:28px}
+.figbox svg.sk{max-height:640px}
+.loes1{display:flex;gap:36px;flex:1;min-height:0;align-items:stretch}
+.loes1 .lfig{width:700px;flex:none}
+.loes1 .lfig svg{width:100%;height:auto;max-height:780px}
+.loes1 .lcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
+.loes1 .lq{font-size:32px;line-height:1.35;font-weight:600;background:#fff;border-radius:20px;padding:16px 22px;box-shadow:var(--shadow)}
+.loes1 .lq .k{font:900 30px var(--font);color:var(--muted);margin-right:.4em}
+.loes1 .lcalc{font-size:40px;gap:12px}
+.loes1 .lcalc .cl{line-height:1.3}
+.loes1.nofig .lcalc{font-size:44px}
+html.kf-mobil .loes1{flex-direction:column}html.kf-mobil .loes1 .lfig{width:100%}html.kf-mobil .loes1 .lcalc,html.kf-mobil .loes1 .lcalc .cl{font-size:38px}html.kf-mobil .loes1 .lq{font-size:32px}
+.loes1.lang .lcalc{font-size:34px}.loes1.lang .lq{font-size:28px}
+.loes1.sehrlang .lcalc{font-size:30px;gap:8px}.loes1.sehrlang .lq{font-size:26px}.loes1.sehrlang .lfig{width:560px}
+.tasks.c2 .task-i .tq{flex-direction:column;align-items:flex-start;gap:10px}.tasks.c2 .task-i .tfig svg{width:440px;max-width:none;max-height:340px}
+.tasks.figcols .tcol{display:grid;grid-template-columns:1fr 1fr;column-gap:40px;align-content:start}
+.tasks.figcols .tcol>h3{grid-column:1/-1}
+.tasks.figcols .task-i .tq{flex-direction:column;align-items:stretch;gap:14px}
+.tasks.figcols .task-i .tfig svg{width:100%;max-width:none;max-height:420px}
