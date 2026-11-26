@@ -319,7 +319,6 @@
   var THEMEN = [
     ["aehnlichkeit", "Ähnlichkeit", "📐", /ähnlichkeit/i],
     ["pythagoras", "Satz des Pythagoras", "📏", /pythagoras/i],
-    ["trigonometrie2", "Trigonometrie Teil 2", "📐", /trigonometrie\s+teil\s*2/i],   // 26.11.2026: eigene Kachel für Teil 2 (Sinussatz, Kosinussatz, Flächen), vor Teil 1 prüfen
     ["trigonometrie", "Trigonometrie", "🔺", /trigonometrie|sinus|kosinus|tangens/i],
     ["pruefungswissen", "Prüfungswissen", "🗂️", /merkkarten|realschulabschluss|diagnosetest/i],
     ["terme", "Terme & binomische Formeln", "🧩", /terme|binomisch/i],
