@@ -15,6 +15,7 @@ var ANDERE = {   /* Präfix der Aufgaben-ID bzw. Seite -> [Ordner, Anzeigename] 
   pf:["pruefungsfit-mathe","Prüfungsfit Mathe"], pruefungsfit:["pruefungsfit-mathe","Prüfungsfit Mathe"],
   pyth:["mathe10-pythagoras-selbst","Pythagoras – Selbstlernen"], "pythagoras-selbst":["mathe10-pythagoras-selbst","Pythagoras – Selbstlernen"],
   trig:["mathe10-trigonometrie-selbst","Trigonometrie – Selbstlernen"], "trigonometrie-selbst":["mathe10-trigonometrie-selbst","Trigonometrie – Selbstlernen"],
+  trig2:["mathe10-trigonometrie-teil2-selbst","Trigonometrie Teil 2 – Selbstlernen"], "trigonometrie-teil2-selbst":["mathe10-trigonometrie-teil2-selbst","Trigonometrie Teil 2 – Selbstlernen"],
   aehn:["mathe10-aehnlichkeit-abschluss","Ähnlichkeit – Abschluss"], "aehnlichkeit-abschluss":["mathe10-aehnlichkeit-abschluss","Ähnlichkeit – Abschluss"],
   tbk:["mathe10-testberichtigung-aehnlichkeit","Testberichtigung Ähnlichkeit"], "mathe10a-testberichtigung-aehnlichkeit":["mathe10-testberichtigung-aehnlichkeit","Testberichtigung Ähnlichkeit"],
   kk:["mathe10-karteikarten","Karteikarten"],

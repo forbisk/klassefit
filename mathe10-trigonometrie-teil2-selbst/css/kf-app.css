@@ -1,0 +1,65 @@
+/* KlasseFit-App-Look für Selbstarbeit-/Selbstlern-Seiten – gemeinsame Quelle: _lib/kf-app.css (Kopien per sync.py, shared.json).
+   Vorbild: mathe8-gleichungen-selbst (Kopf mit Verlauf + Chips, Startkarte mit Ring + „Weiter“, Themen-Karten mit Ring und Niveaus, untere App-Leiste).
+   Alle Klassen mit Präfix kfa- – kollidiert nicht mit den eigenen Stilen einer Seite. Schriften (Nunito/Fredoka) bringt die Seite mit. */
+:root{--kfa-bg:#fff8f0;--kfa-bg2:#ece6ff;--kfa-tx:#1d1a3a;--kfa-mut:#5a5680;--kfa-pri:#6d4aff;--kfa-pk:#e8459f;--kfa-ok:#15803d;--kfa-card:#fff;--kfa-cb:#6d4aff26;--kfa-sh:0 6px 24px #3b2a9914}
+body.kfa-body{background:radial-gradient(900px 520px at 0% -10%,var(--kfa-bg2),var(--kfa-bg)) fixed;color:var(--kfa-tx)}
+body.kfa-hasnav{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.kfa-headwrap{display:contents}
+.kfa-top,.kfa-top *{box-sizing:border-box}
+.kfa-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:.6rem;background:linear-gradient(135deg,var(--kfa-pri),var(--kfa-pk));color:#fff;border-radius:0 0 22px 22px;padding:.6rem 1rem;box-shadow:0 6px 20px #6d4aff40;margin:0 0 .2rem;font-family:"Nunito",system-ui,sans-serif;font-weight:600;line-height:1.15}
+.kfa-brand{color:#fff!important;text-decoration:none;display:flex;flex-direction:column;min-width:0}
+.kfa-brand b{font-family:"Fredoka","Nunito",sans-serif;font-weight:600;font-size:1.12rem}.kfa-brand small{opacity:.9;font-size:.8rem;font-weight:600}
+.kfa-tstat{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end}
+.kfa-tstat span{background:#ffffff33;border-radius:99px;padding:.2rem .55rem;font-size:.88rem;white-space:nowrap;color:#fff}
+.kfa-tstat .kfa-pct{background:#ffffff;color:var(--kfa-pri);font-weight:800}
+.kfa-wrap{max-width:820px;margin:0 auto;padding:.8rem 1rem 1rem;font-family:"Nunito",system-ui,sans-serif;font-weight:600;color:var(--kfa-tx)}
+.kfa-wrap h1,.kfa-wrap h2,.kfa-h2,.kfa-btn,.kfa-nav a{font-family:"Fredoka","Nunito",sans-serif;font-weight:600}
+.kfa-h2{font-size:1.25rem;margin:1.2rem 0 .6rem;color:var(--kfa-tx)}
+.kfa-card{background:var(--kfa-card);border-radius:22px;border:1px solid var(--kfa-cb);box-shadow:var(--kfa-sh);padding:1rem 1.1rem;margin:.8rem 0;color:var(--kfa-tx)}
+.kfa-hero{display:flex;gap:1rem;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#6d4aff14,#e8459f10),#fff;border:2px solid #6d4aff40}
+.kfa-hero h1{font-size:1.6rem;margin:.2rem 0 .4rem;color:var(--kfa-tx)}
+.kfa-hero p{margin:.3rem 0 .7rem;line-height:1.45}
+.kfa-kick{color:var(--kfa-pk);font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.03em}
+.kfa-btn{display:inline-block;background:linear-gradient(135deg,var(--kfa-pri),var(--kfa-pk));color:#fff!important;text-decoration:none;border-radius:14px;padding:.6rem 1.1rem;box-shadow:0 4px 14px #6d4aff40;border:0;font-size:1rem;cursor:pointer;margin:.15rem .3rem .15rem 0}
+.kfa-btn.ghost{background:#fff;color:var(--kfa-pri)!important;border:2px solid #6d4aff55;box-shadow:none}
+.kfa-done{color:var(--kfa-ok);font-weight:800}
+.kfa-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.6rem}
+.kfa-chip{background:var(--kfa-card);border:1px solid var(--kfa-cb);border-radius:18px;box-shadow:var(--kfa-sh);padding:.7rem .8rem;display:flex;flex-direction:column;gap:.25rem}
+.kfa-chip span{color:var(--kfa-mut);font-size:.9rem}
+.kfa-pbar{background:#6d4aff1f;border-radius:99px;height:10px;overflow:hidden;display:block}
+.kfa-pbar i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:99px;transition:width .4s}
+.kfa-ring .rbg{fill:none;stroke:#6d4aff1f;stroke-width:10}.kfa-ring .rfg{fill:none;stroke-width:10;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.kfa-ring .rt{font:700 22px "Fredoka",sans-serif;fill:var(--kfa-tx)}.kfa-ring .rl{font:600 11px "Nunito",sans-serif;fill:var(--kfa-mut)}
+.kfa-themen{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem}
+a.kfa-thema{display:flex;gap:.7rem;align-items:center;text-decoration:none;color:var(--kfa-tx);margin:0;padding:.7rem .8rem;transition:transform .15s}
+a.kfa-thema:hover{transform:translateY(-2px)}a.kfa-thema b{font-family:"Fredoka",sans-serif;font-weight:600;font-size:1.05rem}
+a.kfa-thema small{display:block;color:var(--kfa-mut);font-size:.85rem}a.kfa-thema.done{background:linear-gradient(180deg,#f0fdf4,#fff)}
+a.kfa-thema svg{flex:none}
+.kfa-lvx{margin-top:.2rem}
+.kfa-lv{display:inline-block;font-style:normal;font-size:.75rem;border-radius:99px;padding:.05rem .45rem;margin:.1rem .25rem 0 0;color:#fff;background:#64748b}
+.kfa-lv.l1{background:#16a34a}.kfa-lv.l2{background:#2563eb}.kfa-lv.l3{background:#a21caf}.kfa-lv.l4{background:#d97706}
+.kfa-list{display:grid;gap:.5rem}
+a.kfa-row{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:var(--kfa-tx);background:var(--kfa-card);border:1px solid var(--kfa-cb);border-radius:16px;box-shadow:var(--kfa-sh);padding:.7rem .9rem}
+a.kfa-row span.i{font-size:1.4rem;flex:none}a.kfa-row b{display:block;font-family:"Fredoka",sans-serif;font-weight:600}a.kfa-row small{color:var(--kfa-mut)}
+a.kfa-row .dot{margin-left:auto;background:var(--kfa-pk);color:#fff;border-radius:99px;padding:0 .45rem;font-size:.8rem}
+.kfa-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:space-around;background:#ffffffee;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--kfa-cb);padding:.35rem .3rem calc(.35rem + env(safe-area-inset-bottom));font-family:"Fredoka","Nunito",sans-serif}
+.kfa-nav a{flex:1;max-width:140px;display:flex;flex-direction:column;align-items:center;text-decoration:none;color:var(--kfa-mut);font-size:.8rem;border-radius:14px;padding:.25rem;line-height:1.2;position:relative}
+.kfa-nav a span{font-size:1.25rem}.kfa-nav a.on{color:var(--kfa-pri);background:#6d4aff14}
+.kfa-nav a b.dot{position:absolute;top:0;right:22%;background:var(--kfa-pk);color:#fff;border-radius:99px;font-size:.7rem;padding:0 .35rem}
+@media(max-width:700px){.kfa-chips{grid-template-columns:1fr}.kfa-themen{grid-template-columns:1fr}.kfa-hero{flex-direction:column-reverse;align-items:flex-start}.kfa-hero .kfa-hero-r{align-self:center}.kfa-hero h1{font-size:1.4rem}}
+@media print{.kfa-nav{display:none}.kfa-top{position:static}}
+/* Blatt (z. B. „☰ Mehr“) */
+.kfa-sheet{position:fixed;inset:0;z-index:99970;background:#1d1a3a88;display:none;align-items:flex-end;justify-content:center}.kfa-sheet.on{display:flex}
+.kfa-sheet-box{width:min(640px,100%);max-height:86vh;overflow:auto;background:var(--kfa-bg);border-radius:26px 26px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom));font-family:"Nunito",system-ui,sans-serif;font-weight:600;color:var(--kfa-tx)}
+.kfa-x{float:right;background:#fff;color:var(--kfa-tx);border:1px solid var(--kfa-cb);border-radius:12px;padding:.35rem .7rem;font-size:1rem;cursor:pointer}
+/* schwebende Knöpfe/Hinweise der Seiten über der App-Leiste */
+body.kfa-hasnav #thBtn{display:none!important}
+body.kfa-hasnav #slBadge{bottom:calc(78px + env(safe-area-inset-bottom,0px))!important}
+body.kfa-hasnav #kfAntwPanel{bottom:calc(120px + env(safe-area-inset-bottom,0px))!important}
+body.kfa-hasnav .pg-reminder{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+body.kf-sl-app .site-footer{margin-bottom:0}
+body.kf-sl-app .kfa-top .skip-link{position:absolute;left:-999px}
+.kfa-thb{background:#ffffff2e;color:#fff;border:1px solid #ffffff55;border-radius:999px;padding:.2rem .55rem;font:inherit;font-size:.78rem;cursor:pointer}
+html[data-th="dark"] .kfa-card,html[data-th="dark"] .kfa-chip{background:#1b1f3b;color:#eef;border-color:#2c3260}
+html[data-th="dark"] .kfa-card small,html[data-th="dark"] .kfa-chip span{color:#b9bfe6}
+@media (prefers-color-scheme:dark){html:not([data-th="light"]) body.kfa-dark-ok .kfa-card{background:#1b1f3b;color:#eef}}
