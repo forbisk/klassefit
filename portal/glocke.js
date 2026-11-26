@@ -9,11 +9,12 @@
    14.11.2026 (Backend sl-webhook): Fragen mit Status „missbrauch“ erscheinen als „🚫 Frage · Missbrauch“ (nicht offen). Oben im Panel: gesperrte
    Frage-Funktion (ab 2 Missbrauch-Markierungen) als Drop-down + „Entsperren“ (listLocked/unlock per Portal-Token). Altes Backend: Bereich fehlt einfach.
    19.11.2026: Badge, Toast und Liste nur noch echt offene Fragen (status „offen“). Schon beantwortete, erledigte oder Missbrauch-Fragen zählen nicht mehr
-   (vorher zählte jede ungelesene Frage, der Gelesen-Stand lag nur in localStorage – nach Gerätewechsel/Domainwechsel klingelte die Glocke erneut). */
+   (vorher zählte jede ungelesene Frage, der Gelesen-Stand lag nur in localStorage – nach Gerätewechsel/Domainwechsel klingelte die Glocke erneut).
+   24.11.2026: Auch Einträge aus dem Tab „Wünsche“ (Fehler und Wünsche, Status „neu“) – Laden über admin_wuensche, „Im Tab Wünsche ansehen“, Gelesen wie bei Fragen. */
 (function () {
   "use strict";
   var SL = window.PORTAL_SL_API || "", LS = "kf_lehrer_glocke_v1", LS2 = "kf_lehrer_glocke_v2", EVERY = 120000, D3 = 3 * 86400e3;
-  var G = { ctx: null, q: null, r: null, p: null, zu: null, err: "", busy: false, last: 0, toast: false, timer: null, panel: null, tok: "", shown: {}, known: null, openOld: false };
+  var G = { ctx: null, q: null, r: null, p: null, w: null, zu: null, err: "", busy: false, last: 0, toast: false, timer: null, panel: null, tok: "", shown: {}, known: null, openOld: false };
   function jget(k) { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } }
   function jset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   /* ---- Gelesen-Status ---- */
@@ -46,23 +47,28 @@
     (G.q || []).forEach(function (q) { out.push({ art: "frage", id: "frage:" + q.id, z: ms(q.zeit), offen: q.status ? q.status === "offen" : (!q.antwort && q.status !== "missbrauch"), q: q }); });
     (G.r || []).forEach(function (r) { out.push({ art: "meldung", id: "meldung:" + r.report_id, z: ms(r.created_at), offen: r.status === "new", r: r }); });
     (G.p || []).forEach(function (m) { out.push({ art: "pmeldung", id: "pmeldung:" + (m.rid || (m.seite + "|" + m.item + "|" + m.z)), z: ms(m.z), offen: false, m: m }); });
+    (G.w || []).forEach(function (w) { out.push({ art: "wunsch", id: "wunsch:" + w.id, z: ms(w.zeit), offen: (w.status || "neu") === "neu", w: w }); });
     out.forEach(function (x) { x.gel = istGelesen(x); });
     return out;
   }
-  function sortiert(l) { return l.sort(function (a, b) { return (b.offen && b.art === "frage") - (a.offen && a.art === "frage") || (b.z - a.z); }); }
+  function sortiert(l) { return l.sort(function (a, b) { return (b.offen && (b.art === "frage" || b.art === "wunsch")) - (a.offen && (a.art === "frage" || a.art === "wunsch")) || (b.z - a.z); }); }
   function listen() {
     var l = alle(), neu = [], alt = [];
-    l.forEach(function (x) { if (x.art === "frage" && !x.offen) return; if (!x.gel || G.shown[x.id]) neu.push(x); else if (x.art === "frage" && x.offen) alt.push(x); });
+    l.forEach(function (x) { if ((x.art === "frage" || x.art === "wunsch") && !x.offen) return; if (!x.gel || G.shown[x.id]) neu.push(x); else if ((x.art === "frage" || x.art === "wunsch") && x.offen) alt.push(x); });
     return { neu: sortiert(neu), alt: sortiert(alt) };
   }
-  function counts() { var c = { n: 0, fragen: 0, meld: 0 }; alle().forEach(function (x) { if (x.gel) return; if (x.art === "frage" && !x.offen) return; c.n++; if (x.art === "frage") c.fragen++; else c.meld++; }); return c; }
+  function counts() { var c = { n: 0, fragen: 0, meld: 0, wu: 0 }; alle().forEach(function (x) { if (x.gel) return; if ((x.art === "frage" || x.art === "wunsch") && !x.offen) return; c.n++; if (x.art === "frage") c.fragen++; else if (x.art === "wunsch") c.wu++; else c.meld++; }); return c; }
   function paintBadge() {
     var c = counts(), btns = document.querySelectorAll(".kfg-btn");
     for (var i = 0; i < btns.length; i++) {
       var b = btns[i], badge = b.querySelector(".kfg-n");
       b.classList.toggle("on", c.n > 0);
       badge.textContent = c.n > 99 ? "99+" : String(c.n); badge.hidden = !c.n;
-      var t = c.n ? (c.fragen ? c.fragen + (c.fragen === 1 ? " neue Frage" : " neue Fragen") : "") + (c.fragen && c.meld ? " und " : "") + (c.meld ? c.meld + (c.meld === 1 ? " neue Meldung" : " neue Meldungen") : "") + " – ansehen" : (G.err ? "Hinweise: " + G.err : "Keine neuen Fragen oder Meldungen");
+      var teile = [];
+      if (c.fragen) teile.push(c.fragen + (c.fragen === 1 ? " neue Frage" : " neue Fragen"));
+      if (c.wu) teile.push(c.wu + (c.wu === 1 ? " neuer Wunsch/Fehler" : " neue Wünsche/Fehler"));
+      if (c.meld) teile.push(c.meld + (c.meld === 1 ? " neue Meldung" : " neue Meldungen"));
+      var t = c.n ? teile.join(" und ") + " – ansehen" : (G.err ? "Hinweise: " + G.err : "Keine neuen Fragen, Meldungen oder Wünsche");
       b.title = t; b.setAttribute("aria-label", "🔔 " + t);
     }
   }
@@ -80,17 +86,20 @@
     var b = SL ? post(SL, { action: "listReports", ptoken: tok }) : Promise.resolve({ ok: false });
     var c = G.ctx.api({ action: "admin_hinweise", token: tok });
     var d = SL ? post(SL, { action: "listLocked", ptoken: tok }) : Promise.resolve({ ok: false });
-    return Promise.all([a, b, c, d]).then(function (r) {
+    var e = G.ctx.api({ action: "admin_wuensche", token: tok });
+    return Promise.all([a, b, c, d, e]).then(function (r) {
       G.zu = r[3] && r[3].ok ? (r[3].gesperrt || []) : null;   // altes Backend (bis sl-7a): „unbekannte Aktion“ → kein Sperr-Bereich
       G.busy = false; G.last = Date.now(); G.err = "";
       if (r[0] && r[0].ok) G.q = r[0].questions || []; else if (!G.q) G.err = "Fragen nicht ladbar";
       if (r[1] && r[1].ok) G.r = r[1].reports || [];
       if (r[2] && r[2].ok) G.p = r[2].meldungen || [];   // altes Backend (bis portal-7m): „unbekannte Aktion“ → ohne Portal-Meldungen
       if (r[2] && r[2].relogin && G.ctx.relogin) G.ctx.relogin();
+      if (r[4] && r[4].ok) G.w = r[4].items || [];   // altes Backend: „unbekannte Aktion“ → ohne Wünsche in der Glocke
+      if (r[4] && r[4].relogin && G.ctx.relogin) G.ctx.relogin();
       /* Toast nur für NEUE ungelesene (nicht bei jedem Abruf dieselben) */
       var un = alle().filter(function (x) { return !x.gel && (x.art !== "frage" || x.offen); }), frisch = un.filter(function (x) { return !G.known || !G.known[x.id]; });
       G.known = G.known || {}; un.forEach(function (x) { G.known[x.id] = 1; });
-      if (frisch.length && !G.panel) toast("🔔 " + frisch.length + (frisch.length === 1 ? " neue Frage/Meldung" : " neue Fragen/Meldungen") + " – tippen zum Ansehen");
+      if (frisch.length && !G.panel) toast("🔔 " + frisch.length + (frisch.length === 1 ? " neuer Hinweis" : " neue Hinweise") + " – tippen zum Ansehen");
       paint();
     });
   }
@@ -279,7 +288,18 @@
     acts.appendChild(sel); acts.appendChild(b); acts.appendChild(msg); box.appendChild(acts);
     return box;
   }
-  function row(x) { return x.art === "frage" ? frageRow(x) : x.art === "meldung" ? meldRow(x) : pmeldRow(x); }
+  function wunschRow(x) {
+    var w = x.w, row = el("div", "kfg-it" + (x.offen ? " offen" : ""));
+    var typ = w.typ === "Fehler" ? "🐞 Fehler" : "✨ Wunsch";
+    row.appendChild(kopf(x, typ + (x.offen ? " · neu" : " · " + String(w.status || "")), (w.name ? w.name + " · " : "") + (w.klasse ? w.klasse + " · " : "") + fdt(x.z)));
+    row.appendChild(el("div", "kfg-auf", "Seite: " + String(w.seite || "–")));
+    row.appendChild(el("div", "kfg-txt", "„" + kurz(w.text, 400) + "“"));
+    var acts = el("div", "kfg-acts");
+    var b = el("button", "btn small", "Im Tab „Wünsche“ ansehen"); b.type = "button";
+    b.onclick = function () { markiere([x.id]); closePanel(); G.ctx.openTab("wuensche"); };
+    acts.appendChild(b); row.appendChild(acts); return row;
+  }
+  function row(x) { return x.art === "frage" ? frageRow(x) : x.art === "meldung" ? meldRow(x) : x.art === "wunsch" ? wunschRow(x) : pmeldRow(x); }
   function fillPanel() {
     var body = G.panel.querySelector(".kfg-body"); if (!body) return;
     var keep = document.activeElement && body.contains(document.activeElement) && document.activeElement.tagName === "TEXTAREA";
@@ -287,7 +307,7 @@
     body.textContent = "";
     var sp = sperrBox(); if (sp) body.appendChild(sp);
     var L = listen(), neu = L.neu.slice(0, 60);
-    if (!neu.length) body.appendChild(el("p", "muted kfg-leer", G.busy && !G.q ? "Lädt …" : (G.err || "Keine neuen Fragen oder Meldungen. 👍")));
+    if (!neu.length) body.appendChild(el("p", "muted kfg-leer", G.busy && !G.q ? "Lädt …" : (G.err || "Keine neuen Fragen, Meldungen oder Wünsche. 👍")));
     neu.forEach(function (x) { body.appendChild(row(x)); });
     if (L.alt.length) {
       var det = el("details", "kfg-alt"); if (G.openOld) det.open = true;
@@ -304,12 +324,12 @@
   function openPanel() {
     if (G.panel) return;
     G.shown = {};
-    var bg = el("div", "sheet-bg kfg-bg"), sh = el("div", "sheet glass kfg-sheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-modal", "true"); sh.setAttribute("aria-label", "Neue Fragen und Meldungen");
-    var top = el("div", "kfg-top"); top.appendChild(el("h3", "", "🔔 Fragen & Meldungen"));
+    var bg = el("div", "sheet-bg kfg-bg"), sh = el("div", "sheet glass kfg-sheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-modal", "true"); sh.setAttribute("aria-label", "Neue Fragen, Meldungen und Wünsche");
+    var top = el("div", "kfg-top"); top.appendChild(el("h3", "", "🔔 Fragen, Meldungen & Wünsche"));
     var r = el("div", "kfg-topr"); r.appendChild(el("span", "muted kfg-stand", ""));
     var re = el("button", "btn ghost small", "↻"); re.type = "button"; re.title = "Aktualisieren"; re.onclick = function () { load(true); };
     var x = el("button", "btn ghost small", "Schließen"); x.type = "button"; x.onclick = function () { closePanel(); }; r.appendChild(re); r.appendChild(x); top.appendChild(r);
-    sh.appendChild(top); sh.appendChild(el("p", "muted kfg-hint", "Hier steht nur Neues. Was du hier gesehen hast, gilt als gelesen und kommt nicht wieder. Unbeantwortete Fragen bleiben unten unter „Gelesen, noch offen“."));
+    sh.appendChild(top); sh.appendChild(el("p", "muted kfg-hint", "Hier steht nur Neues. Was du hier gesehen hast, gilt als gelesen und kommt nicht wieder. Offene Fragen und neue Wünsche/Fehler bleiben unten unter „Gelesen, noch offen“."));
     sh.appendChild(el("div", "kfg-body")); bg.appendChild(sh);
     bg.addEventListener("click", function (e) { if (e.target === bg) closePanel(); });
     document.body.appendChild(bg); G.panel = bg; fillPanel();
@@ -326,12 +346,12 @@
     /* ctx: {api, token(), sess(), openTab(name), relogin()} */
     button: function (h, ctx) {
       G.ctx = ctx; if (!lehrer()) return null;
-      if (G.tok !== ctx.token()) { G.tok = ctx.token(); G.q = G.r = G.p = null; G.last = 0; G.toast = false; G.known = null; }
+      if (G.tok !== ctx.token()) { G.tok = ctx.token(); G.q = G.r = G.p = G.w = null; G.last = 0; G.toast = false; G.known = null; }
       var b = h("button", { type: "button", class: "btn ghost kfg-btn", onclick: openPanel }, h("span", { "aria-hidden": "true", text: "🔔" }), h("span", { class: "kfg-n", hidden: true }));
       setTimeout(function () { paint(); load(false); startPoll(); }, 0);
       return b;
     },
-    reset: function () { G.q = G.r = G.p = G.zu = null; G.last = 0; G.toast = false; G.tok = ""; G.draft = null; G.known = null; G.st = null; if (G.panel) { try { G.panel.remove(); } catch (e) {} G.panel = null; } },
+    reset: function () { G.q = G.r = G.p = G.w = G.zu = null; G.last = 0; G.toast = false; G.tok = ""; G.draft = null; G.known = null; G.st = null; if (G.panel) { try { G.panel.remove(); } catch (e) {} G.panel = null; } },
     _state: G, _items: function () { return listen(); }, _aufloesen: aufloesen, _daten: seitenDaten, _literal: literal, load: load, open: openPanel
   };
 })();
