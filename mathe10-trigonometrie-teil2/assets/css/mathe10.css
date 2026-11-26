@@ -1,0 +1,95 @@
+/* Ergänzungen Mathe 10a */
+.rsa-tag{display:inline-block;background:#1d4ed8;color:#fff;border-radius:10px;padding:4px 16px;font:800 26px var(--font);letter-spacing:.02em;margin-left:14px;vertical-align:middle}
+.figbox{flex:none;width:560px;background:#fff;border-radius:26px;box-shadow:var(--shadow);padding:18px;display:flex;align-items:center;justify-content:center}
+.figbox svg{width:100%;height:auto}
+.tasks.c1{grid-template-columns:1fr}
+.tasks .task-i.txt, .task-i.txt{font-size:34px}
+.qtext{font-size:38px;line-height:1.35;font-weight:600}
+.kt{border-collapse:collapse;font-size:44px;margin:10px auto}
+.kt th,.kt td{border:3px solid #cbd5e1;padding:10px 30px;text-align:center}
+.kt th{background:var(--accent-soft)}
+.kt td.k2{color:#c2185b;font-weight:900}.kt td.k3{color:#7c3aed;font-weight:900}
+.pool{columns:2;gap:40px;font-size:34px;line-height:1.35}
+.pool li{margin:0 0 14px;break-inside:avoid}
+.zeit{width:100%;border-collapse:collapse;font-size:38px}
+.zeit td{padding:12px 20px;border-bottom:2px dashed #cbd5e1}.zeit td:first-child{font:900 36px var(--font);color:var(--accent);white-space:nowrap;width:210px}
+.calc{display:flex;flex-direction:column;gap:12px;font-size:44px;font-weight:700}
+.cl{padding:10px 20px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 2px #e2e8f0}
+.cl.fin{background:color-mix(in srgb,var(--accent) 13%,white);box-shadow:inset 0 0 0 4px var(--accent)}
+.two .card svg.fig{width:100%;height:auto}
+.two .card svg.fig{max-height:600px}
+.figbox{width:600px}
+.tasks.c1 .task-a .q{font-size:38px;font-weight:800}.tasks.c1 .task-a .a{font-size:38px;padding-left:20px}.tasks.c1 .task-a{padding:12px 0}
+.tasks.c1 .qtext{font-size:36px}
+.pa-side .twidget{min-width:0}
+
+/* Schreibweise-Folie */
+.schreib{font-size:34px;line-height:1.5;padding:26px 30px}
+.schreib .sz{display:flex;gap:18px;align-items:baseline;margin:.12em 0}.schreib .sl{flex:none;width:210px;font-weight:800;color:#1971c2;font-size:.8em;text-align:right}.schreib .st{flex:1}
+.schreib .st.res,.schreib .antw{background:#fff3bf;border-radius:8px;padding:2px 10px}
+.col .hint{font-size:30px}
+
+.task-i .k,.task-a .k{flex:none;min-width:4.2em;margin-right:.5em}
+.lead{font-size:26px}
+.tasks.c1 .task-a .q{font-size:30px}.tasks.c1 .task-a .a{font-size:34px}
+.tasks.c1 .qtext.long{font-size:27px;line-height:1.35}
+
+/* Trigonometrie-Folien: Figuren in Aufgaben + Beispiele aus der gemeinsamen Quelle */
+.task-i .tq{display:flex;gap:20px;align-items:center}.task-i .tq>div:first-child{flex:1}.task-i .tfig{flex:none}.task-i .tfig svg{height:150px;width:auto;max-width:230px;display:block}
+.bspcard{font-size:34px;line-height:1.4}
+.bspcard .fgrid{display:flex;gap:36px;align-items:center}
+.bspcard .fgrid svg.fig{flex:none;width:430px;height:auto}
+.bspcard ul,.bspcard ol{padding-left:1.1em;margin:.3em 0}.bspcard li{margin:.35em 0}
+.bspcard p{margin:.5em 0}
+.bspcard table.tab{border-collapse:collapse;width:100%;font-size:32px}.bspcard table.tab th,.bspcard table.tab td{border:2px solid #cbd5e1;padding:8px 14px;text-align:left}.bspcard table.tab th{background:#eef2ff}
+.bspcard .fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 .2em}
+.bspcard .fr>span:first-child{border-bottom:3px solid currentColor;padding:0 .2em}
+
+.kernmark,.auswahl{display:none}html.lehrer .kernmark{display:inline}html.lehrer .auswahl{display:inline-block}
+.auswahl{font:700 .42em/1 var(--font);background:#e9ecef;color:#6c757d;border-radius:99px;padding:.25em .7em;vertical-align:middle;margin-left:.4em}
+.kernbadge{font:700 .5em/1 var(--font);background:#fff3bf;color:#7a5b00;border-radius:99px;padding:.25em .7em;vertical-align:middle}
+.zeit .kern td{background:#fff9db}
+
+html.lehrer::after{content:'Lehrermodus (L)';position:fixed;left:10px;top:8px;z-index:9999;font:700 13px system-ui;background:#fff3bf;color:#7a5b00;border-radius:99px;padding:2px 10px;opacity:.85;pointer-events:none}
+.teachernote h3{color:#7a5b00}
+.zt td{padding:6px 16px!important}.zt td:first-child{font-size:30px!important;width:150px!important}.zt .small{font-size:22px;color:#6c757d}
+.teachernote .takeaway{font-size:28px}
+/* Knopf „Selbstarbeit“: am Beamer/Desktop unten rechts in der Fußzeile (zwischen Schulzeile und Folien-Navi), damit er das Etikett
+   (ÜBEN/LÖSUNG …) oben rechts nicht verdeckt. Position folgt der 1920×1080-Bühne (Skalierung wie deck.js: min(vw/1920, vh/1080)). Handy: wie bisher oben. */
+.selblink{--kfW:min(100vw,177.78vh);--kfH:min(100vh,56.25vw);position:fixed;bottom:calc((100vh - var(--kfH))/2 + var(--kfH)*.052 - 16px);right:calc((100vw - var(--kfW))/2 + var(--kfW)*.198);z-index:50;font:600 14px/1 system-ui,sans-serif;background:#fff;border:1px solid #cfd8dc;border-radius:999px;padding:8px 12px;color:#0b6e63;text-decoration:none;opacity:.85}.selblink:hover{opacity:1}@media print{.selblink{display:none}}
+html.kf-mobil .selblink{bottom:auto;top:14px;right:84px}
+/* Sek-Check: Ankreuz-Optionen zweispaltig, Brüche in Lösungszeilen kompakter, RSA-Etikett in schmalen Spalten über dem Text */
+.slx-opts{column-count:2;column-gap:32px}
+.slx-opts li{break-inside:avoid}
+.task-a .fr{font-size:.76em}
+.pa-row .tasks:not(.c1) .task-i:has(.rsa-tag){flex-wrap:wrap;row-gap:6px}
+.pa-row .tasks:not(.c1) .task-i:has(.rsa-tag)>span:last-child{flex:1 1 100%;min-width:0}
+.pa-row .tasks:not(.c1) .task-i:has(.rsa-tag) .rsa-tag{margin-left:0}
+.task-a .q .fr{font-size:.72em}
+.pa-row .tasks.txt:not(.c1):not(.c2) .task-i{flex-wrap:wrap;row-gap:4px}
+.pa-row .tasks.txt:not(.c1):not(.c2) .task-i>span:last-child{flex:1 1 100%;min-width:0}
+.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a .q{font-size:31px;line-height:1.2}.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a .a{font-size:28px;line-height:1.25}.slide[data-title^="Lösungen: Formeln umstellen (2/2)"] .task-a{padding-bottom:6px}
+.slide.chapter .goals .fr::before,.slide.chapter .goals .fr span::before{content:none}.slide.chapter .goals .fr{font-size:.85em}
+html.kf-mobil .cl{font-size:.76em}
+
+/* 24.11.2026 – Beamer: große Skizzen, eine Lösungsfolie je Aufgabe (Paulius) */
+.task-i .tfig svg{width:480px;max-width:none;height:auto;max-height:250px}
+.task-i .tq{gap:28px}
+.figbox svg.sk{max-height:640px}
+.loes1{display:flex;gap:36px;flex:1;min-height:0;align-items:stretch}
+.loes1 .lfig{width:700px;flex:none}
+.loes1 .lfig svg{width:100%;height:auto;max-height:780px}
+.loes1 .lcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
+.loes1 .lq{font-size:32px;line-height:1.35;font-weight:600;background:#fff;border-radius:20px;padding:16px 22px;box-shadow:var(--shadow)}
+.loes1 .lq .k{font:900 30px var(--font);color:var(--muted);margin-right:.4em}
+.loes1 .lcalc{font-size:40px;gap:12px}
+.loes1 .lcalc .cl{line-height:1.3}
+.loes1.nofig .lcalc{font-size:44px}
+html.kf-mobil .loes1{flex-direction:column}html.kf-mobil .loes1 .lfig{width:100%}html.kf-mobil .loes1 .lcalc,html.kf-mobil .loes1 .lcalc .cl{font-size:38px}html.kf-mobil .loes1 .lq{font-size:32px}
+.loes1.lang .lcalc{font-size:34px}.loes1.lang .lq{font-size:28px}
+.loes1.sehrlang .lcalc{font-size:30px;gap:8px}.loes1.sehrlang .lq{font-size:26px}.loes1.sehrlang .lfig{width:560px}
+.tasks.c2 .task-i .tq{flex-direction:column;align-items:flex-start;gap:10px}.tasks.c2 .task-i .tfig svg{width:440px;max-width:none;max-height:340px}
+.tasks.figcols .tcol{display:grid;grid-template-columns:1fr 1fr;column-gap:40px;align-content:start}
+.tasks.figcols .tcol>h3{grid-column:1/-1}
+.tasks.figcols .task-i .tq{flex-direction:column;align-items:stretch;gap:14px}
+.tasks.figcols .task-i .tfig svg{width:100%;max-width:none;max-height:420px}

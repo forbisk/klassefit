@@ -1,0 +1,85 @@
+/* =========================================================
+   KlasseFit Folien – Handy-Ansicht (Schüler). Gemeinsame Datei: _lib/folien/mobil.css
+   (sync.py kopiert sie nach <deck>/assets/css/folien-mobil.css und bindet sie ein).
+   Wirkt NUR mit <html class="kf-mobil">; die Präsentationsansicht (16:9) bleibt unverändert.
+   Folien werden auf eine virtuelle Breite von 820 px umgebrochen und per zoom aufs Handy gebracht.
+   ========================================================= */
+.kf-mnum,#kf-mbar,#kf-minhalt{display:none}
+#kf-mtoggle{display:none}
+html.kf-narrow:not(.kf-mobil) #kf-mtoggle{display:flex;position:fixed;left:10px;bottom:10px;z-index:9000;align-items:center;gap:6px;
+  border:0;border-radius:999px;padding:9px 14px;font:800 14px/1 "Nunito",system-ui,sans-serif;background:rgba(15,21,34,.82);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+
+html.kf-mobil,html.kf-mobil body{height:auto;min-height:100%;overflow:auto;background:#e3eeeb}
+html.kf-mobil body{-webkit-text-size-adjust:100%}
+html.kf-mobil #viewport{position:static;overflow:visible;touch-action:auto}
+html.kf-mobil #stage{position:static;left:auto;top:auto;width:auto;height:auto;transform:none;background:transparent;overflow:visible;
+  box-shadow:none;padding:58px 6px 28px}
+html.kf-mobil #progress,html.kf-mobil #hud,html.kf-mobil #chapterlabel,html.kf-mobil #schoolfoot,html.kf-mobil #steps-left,
+html.kf-mobil #minitimer,html.kf-mobil #stage>.overlay,html.kf-mobil #kf-mtoggle{display:none!important}
+
+/* jede Folie = Karte, untereinander */
+html.kf-mobil #stage .slide{position:relative;inset:auto;left:auto;top:auto;width:820px;max-width:none;height:auto;min-height:0;margin:0 auto 18px;
+  opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:none;animation:none;
+  padding:30px 34px 34px;border-radius:26px;overflow:hidden;isolation:isolate;background-color:var(--paper);
+  box-shadow:0 4px 18px rgba(27,37,54,.14);zoom:var(--kfz,.46);scroll-margin-top:64px}
+html.kf-mobil #stage .slide.heft{background-color:#fefefb;padding-left:56px}
+html.kf-mobil #stage .slide.chapter{background-color:var(--accent);min-height:0;padding-top:40px;padding-bottom:44px}
+html.kf-mobil #stage .slide[data-teacher]{display:none}
+html.kf-mobil.lehrer #stage .slide[data-teacher]{display:flex}
+html.kf-mobil #stage .slide.past{transform:none}
+
+/* Hochformat-Fix: in der Handy-Ansicht nichts unter die Inhaltshöhe schrumpfen lassen (16:9 nutzt min-height:0 zum Einpassen) */
+html.kf-mobil #stage .slide *{min-height:auto}
+
+/* Schritte: alles sichtbar, nur Abdeck-Karten (cover/flip) bleiben zum Antippen */
+html.kf-mobil #stage .step:not(.visible):not(.cover):not(.flip){opacity:1;transform:none;pointer-events:auto;filter:none}
+html.kf-mobil #stage .step.marker{display:none}
+
+/* Kopfzeilen / Deko in den Fluss holen oder ausblenden */
+html.kf-mobil .kf-mnum{display:flex;align-items:center;gap:10px;margin:0 0 14px;font:800 24px/1.1 var(--font);color:var(--muted);text-decoration:none}
+html.kf-mobil .kf-mnum b{display:inline-grid;place-items:center;min-width:46px;height:40px;padding:0 10px;border-radius:999px;background:var(--accent);color:#fff;font-size:22px}
+html.kf-mobil .slide.chapter .kf-mnum{color:rgba(255,255,255,.85)}
+html.kf-mobil .slide.chapter .kf-mnum b{background:rgba(255,255,255,.25)}
+html.kf-mobil #stage .slide .chip{position:static;margin:0 0 10px}
+html.kf-mobil #stage .slide>.tagbar{position:relative;inset:auto;align-self:flex-start;flex-wrap:wrap;max-width:100%;margin:0 0 12px;transform:none}
+html.kf-mobil #stage .slide>.badge{position:static;align-self:flex-start;margin:0 0 16px;transform:none}
+html.kf-mobil #stage .slide .title-foot,html.kf-mobil #stage .slide .heft-hint,html.kf-mobil #stage .slide .holes,
+html.kf-mobil #stage .slide .pencil,html.kf-mobil #stage .slide.chapter .bigicon,html.kf-mobil #stage .slide.chapter .bigsym,html.kf-mobil #stage .twidget{display:none!important}
+html.kf-mobil #stage .slide.title{padding-left:34px}
+html.kf-mobil #stage .slide.title h1{font-size:92px}
+html.kf-mobil #stage .slide.title .art{position:relative;right:auto;top:auto;left:auto;width:100%;height:auto;max-height:520px;margin-top:20px}
+html.kf-mobil #stage .slide h2{font-size:62px;margin-bottom:24px}
+html.kf-mobil #stage .slide.chapter h2{font-size:84px;max-width:none}
+html.kf-mobil #stage .slide.heft h2{font-size:58px}
+html.kf-mobil #stage .lead,html.kf-mobil #stage .slide.chapter p,html.kf-mobil #stage .slide.title .sub{max-width:none}
+html.kf-mobil #stage .slide.heft::before{background:linear-gradient(90deg,transparent 30px,#f28b8b 30px,#f28b8b 33px,transparent 33px),
+  linear-gradient(90deg,#cfdff0 2px,transparent 2px) 0 0/45px 45px,linear-gradient(0deg,#cfdff0 2px,transparent 2px) 0 0/45px 45px}
+
+/* mehrspaltige Raster umbrechen */
+html.kf-mobil #stage .g2,html.kf-mobil #stage .two,html.kf-mobil #stage .two.w6040,html.kf-mobil #stage .two.w4060,html.kf-mobil #stage .rgrid,
+html.kf-mobil #stage .an-body,html.kf-mobil #stage .hb.two2,html.kf-mobil #stage .waage,html.kf-mobil #stage .pa-row{grid-template-columns:minmax(0,1fr)}
+html.kf-mobil #stage .pa-row{flex-direction:column}
+/* Quiz-Antworten (A–D) einspaltig, sonst rechts abgeschnitten */
+html.kf-mobil #stage .opts{grid-template-columns:minmax(0,1fr)}
+html.kf-mobil #stage .pa-row>*{width:auto!important;max-width:none!important}
+html.kf-mobil #stage .g3,html.kf-mobil #stage .g4,html.kf-mobil #stage .tasks,html.kf-mobil #stage .flips,html.kf-mobil #stage .flips.c3,
+html.kf-mobil #stage .roadmap,html.kf-mobil #stage .rcards{grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+html.kf-mobil #stage .flips,html.kf-mobil #stage .flips.c3,html.kf-mobil #stage .roadmap{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+html.kf-mobil #stage .row{flex-wrap:wrap}
+html.kf-mobil #stage .grow,html.kf-mobil #stage .two,html.kf-mobil #stage .tasks,html.kf-mobil #stage .flips{flex:none;min-height:0}
+html.kf-mobil #stage .flips{grid-auto-rows:minmax(150px,auto)}
+html.kf-mobil #stage .flip{min-height:150px}
+html.kf-mobil #stage img,html.kf-mobil #stage svg:not(symbol){max-width:100%}
+
+/* Leiste oben + Inhaltsverzeichnis */
+html.kf-mobil #kf-mbar{display:flex;position:fixed;left:0;right:0;top:0;z-index:9000;height:48px;align-items:center;gap:8px;padding:0 8px 0 12px;
+  background:rgba(15,21,34,.94);color:#fff;font:700 15px/1.2 "Nunito",system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+#kf-mbar .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#kf-mbar .n{opacity:.75;font-variant-numeric:tabular-nums;white-space:nowrap}
+#kf-mbar button{border:0;border-radius:999px;padding:8px 12px;background:rgba(255,255,255,.14);color:#fff;font:800 14px/1 "Nunito",system-ui,sans-serif;white-space:nowrap}
+html.kf-mobil #kf-minhalt.show{display:block;position:fixed;inset:48px 0 0 0;z-index:8999;overflow:auto;background:#fff;padding:8px 0 40px;
+  font:600 16px/1.3 "Nunito",system-ui,sans-serif;color:#1b2536}
+#kf-minhalt h3{margin:14px 14px 4px;font:800 13px/1.2 "Nunito",system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#0f766e}
+#kf-minhalt a{display:flex;gap:10px;padding:9px 14px;color:inherit;text-decoration:none;border-bottom:1px solid #edf2f1}
+#kf-minhalt a b{min-width:28px;color:#6b7688;font-variant-numeric:tabular-nums}
+#kf-minhalt a.cur{background:#e6f2ef}

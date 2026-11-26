@@ -123,6 +123,44 @@
 .why .fr{font-size:1.15em;margin:0 .1em}
 .slide .m .fr{font-size:1em;margin:0 .1em}
 .slide .fr{font-size:.95em}.slide .m .fr{font-size:1em}
+.slide.sol .nivgrid .tl li .a .why{display:inline-block;margin:0 0 0 .7em;vertical-align:middle}
+
+/* Heft-Eintrag: Winkel in Vierecken (kompakte Abschreibvorlage) */
+.hwk-tab{width:100%;border-collapse:collapse;font:700 32px/1.3 var(--font);background:rgba(255,255,255,.9);border-radius:12px;overflow:hidden;box-shadow:0 2px 0 #e8eef6}
+.hwk-tab th{text-align:left;padding:7px 16px;width:40%;color:#1c3f8a;font-weight:800;border-bottom:2px solid #e8eef6;vertical-align:top;white-space:nowrap}
+.hwk-tab td{padding:7px 16px;border-bottom:2px solid #e8eef6;font-weight:700}
+.hwk-tab tr:last-child th,.hwk-tab tr:last-child td{border-bottom:0}
+.slide.heft:has(.hwk-tab) .hmerk{font-size:36px;padding:16px 22px 12px;margin-top:6px}
+.slide.heft:has(.hwk-tab) .hb-main{gap:14px}
+.slide.heft:has(.hwk-tab) .hrule-l{font-size:inherit;padding-left:0}
+.slide.heft:has(.hwk-tab) .hrule-l::before{display:none}
+.slide.heft:has(.hwk-tab) .hex{font-size:34px;line-height:1.4;padding:16px 22px 10px;margin-top:6px}
+.slide.heft:has(.hwk-tab) .hb-wrap.has-svg{grid-template-columns:1fr 380px;gap:22px;align-items:center}
+html.kf-mobil #stage .slide.heft:has(.hwk-tab) .hb-wrap.has-svg{grid-template-columns:1fr}
+html.kf-mobil #stage .hwk-tab{font-size:34px}
+html.kf-mobil #stage .hwk-tab th{white-space:normal}
+
+/* Heft-Eintrag: Teile eines Vierecks */
+.teile-figs{display:flex;gap:16px;align-items:stretch;width:100%;justify-content:space-between}
+.teile-figs figure{flex:1;margin:0;background:#fff;border-radius:16px;box-shadow:0 2px 0 #e8eef6;padding:8px 10px 8px;display:flex;flex-direction:column;align-items:center;min-width:0}
+.teile-figs svg{width:100%;height:auto;max-height:270px}
+.teile-figs figcaption{font:700 26px/1.2 var(--font);color:#1c3f8a;text-align:center;margin-top:2px}
+.slide.heft:has(.teile-figs) .hb-wrap.has-svg{grid-template-columns:1fr;gap:12px;align-items:start}
+.slide.heft:has(.teile-figs) .hmerk{font-size:32px;padding:12px 20px 8px;margin-top:2px;line-height:1.3}
+.slide.heft:has(.teile-figs) .hb-main{gap:10px}
+.slide.heft:has(.teile-figs) .hrule-l{font-size:inherit;padding-left:0}
+.slide.heft:has(.teile-figs) .hrule-l::before{display:none}
+.slide.heft:has(.teile-figs) .hwk-tab{font-size:30px}
+.slide.heft:has(.teile-figs) .hwk-tab th{width:28%}
+html.kf-mobil #stage .slide.heft:has(.teile-figs) .teile-figs{flex-direction:column;gap:12px}
+html.kf-mobil #stage .slide.heft:has(.teile-figs) .teile-figs svg{max-height:240px}
+html.kf-mobil #stage .slide.heft:has(.teile-figs) .hmerk{font-size:34px}
+html.kf-mobil #stage .slide.heft:has(.teile-figs) .hwk-tab{font-size:32px}
+
+/* Selbstkontrolle sitzt mit margin-top:auto am Flex-Ende: extra Fußabstand, damit sie nicht in die Fußzeile rutscht. */
+.slide.sol:has(.selfrate){padding-bottom:155px}
+.slide.sol .flatgrid.long .tl li{font-size:36px;line-height:1.22;padding:4px 0}
+.slide.sol .flatgrid.long .tl li .a{font-size:34px}
 
 /* ---- Schritt-für-Schritt-Konstruktionen mit Geodreieck (geodreieck.py) ---- */
 .kon{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);gap:30px;flex:1;min-height:0;align-items:stretch}
