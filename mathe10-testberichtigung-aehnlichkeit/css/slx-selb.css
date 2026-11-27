@@ -78,4 +78,5 @@ table.plan{border-collapse:collapse;margin:.6rem 0 0;font-size:.92rem}table.plan
 /* Video-Hilfe je Aufgabe (optional, Feld video in aufgaben.js) */
 .vidbox{margin:.5rem 0;background:#e7f5ff;border-radius:10px;padding:.5rem}
 .vidbox video{display:block;width:100%;max-width:960px;aspect-ratio:16/9;height:auto;background:#000;border-radius:8px}
+.vidbox .vidcap{min-height:2.8em;margin-top:.35rem;padding:.3rem .6rem;border-radius:8px;background:#dee2e6;color:#fff;font-size:1rem;line-height:1.35;white-space:pre-line;text-align:center;font-weight:600}.vidbox .vidcap.on{background:#212529}
 .vidbox .vidnote{font-size:.85rem;color:#495057;margin-top:.35rem}

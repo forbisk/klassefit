@@ -1,0 +1,83 @@
+WEBVTT
+
+NOTE Video-Hilfe T8f (Trigonometrie Teil 2), Sprecherin: Microsoft Katja (de-DE), synthetisch
+
+1
+00:00:00.800 --> 00:00:08.341
+Hallo! In Aufgabe T8f misst du die Breite
+eines Flusses, ohne ihn zu überqueren.
+
+2
+00:00:08.541 --> 00:00:17.077
+A und B stehen am Ufer, 80 Meter voneinander
+entfernt. Auf der anderen Seite steht der Baum C.
+
+3
+00:00:17.277 --> 00:00:23.777
+Gemessen sind die Winkel 62
+Grad bei A und 48 Grad bei B.
+
+4
+00:00:23.977 --> 00:00:29.900
+Teil a: Gesucht ist die Entfernung
+von A zum Baum, also die Strecke AC.
+
+5
+00:00:30.650 --> 00:00:42.675
+Schritt 1: Den Winkel bei C bekommst du mit der Winkelsumme:
+180 Grad minus 62 Grad minus 48 Grad gleich 70 Grad.
+
+6
+00:00:42.875 --> 00:00:51.253
+Jetzt hast du ein bekanntes Paar: Die 80 Meter liegen
+gegenüber vom Winkel bei C, also gegenüber von 70 Grad.
+
+7
+00:00:51.453 --> 00:00:58.691
+Die gesuchte Strecke AC liegt gegenüber vom
+Winkel bei B, also gegenüber von 48 Grad.
+
+8
+00:00:59.441 --> 00:01:08.548
+Schritt 2: Sinussatz: AC durch Sinus 48
+Grad gleich 80 Meter durch Sinus 70 Grad.
+
+9
+00:01:08.748 --> 00:01:16.719
+Umstellen und einsetzen: AC gleich 80
+mal Sinus 48 Grad durch Sinus 70 Grad.
+
+10
+00:01:16.919 --> 00:01:22.992
+Das sind ungefähr 63,3
+Meter, gerundet 63 Meter.
+
+11
+00:01:23.942 --> 00:01:33.748
+Teil b: Die Breite des Flusses ist der kürzeste Abstand
+vom Baum zum Ufer. Das ist die Höhe h, senkrecht auf AB.
+
+12
+00:01:33.948 --> 00:01:45.202
+Die Höhe teilt das Dreieck. Links entsteht ein rechtwinkliges
+Dreieck mit der Hypotenuse AC und dem Winkel 62 Grad.
+
+13
+00:01:45.402 --> 00:01:54.951
+h ist die Gegenkathete zu 62 Grad. Also
+gilt: Sinus 62 Grad gleich h durch AC.
+
+14
+00:01:55.151 --> 00:02:06.925
+Umgestellt: h gleich AC mal Sinus 62
+Grad, also ungefähr 63,3 mal 0,883.
+
+15
+00:02:07.125 --> 00:02:16.479
+Das sind ungefähr 55,9 Meter. Der
+Fluss ist also etwa 56 Meter breit.
+
+16
+00:02:17.129 --> 00:02:24.191
+Den Rechenweg schreibst du ins Heft. Hier auf
+der Seite trägst du nur die zwei Ergebnisse ein.
