@@ -55,3 +55,10 @@ h1,h2,h3,.btn,.top b{font-family:"Fredoka","Nunito",sans-serif;font-weight:600}
 .lk-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1a3a;color:#fff;padding:12px 18px;border-radius:14px;box-shadow:0 8px 30px #0005;z-index:50;max-width:90vw;text-align:center}
 @media (max-width:480px){.hero h1{font-size:1.6rem}.feld span{min-width:0;width:100%}.feld input{width:100%;max-width:220px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* 24.11.2026: Zusatzstatus + Skizzen (Trigonometrie) */
+.zus{margin:8px 0 4px;font-size:.9rem;padding:6px 10px;border-radius:10px}
+.zus.hilfe{background:#fff4e6;color:#9a3412;border:1px solid #fed7aa}
+.zus.neu{background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe}
+.skizze{display:block;width:100%;max-width:420px;margin:12px auto;background:#fff;border-radius:12px;border:1px solid var(--cb)}
+.skizze .sk-e{font:700 15px Nunito,sans-serif;fill:#212529}
+.skizze .sk-s,.skizze .sk-w{font:800 16px Nunito,sans-serif}

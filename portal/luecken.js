@@ -3,6 +3,12 @@
 (function () {
   var M = { d: null, err: "", busy: false, sel: "", zeigTest: false };
   var ST = { offen: "offen", naechstes: "als Nächstes", stark: "stark", geschafft: "geschafft ✅", zuWenig: "zu wenig Daten", aus: "aus" };
+  /* 24.11.2026 (portal-8f): Hilfe/Abbrüche/Arbeitszeit der letzten 7 Tage je Schüler × Thema (hilfe7) und „übt mit Hilfe“ (zus). Ohne neues Backend fehlt beides einfach. */
+  function h7(u, t) { var x = M.d && M.d.hilfe7 && M.d.hilfe7[u] && M.d.hilfe7[u][t]; return x && (x.n || x.abbr) ? x : null; }
+  function mmss(sek) { sek = Math.round(+sek || 0); return Math.floor(sek / 60) + ":" + ("0" + (sek % 60)).slice(-2) + " min"; }
+  function h7txt(x) { if (!x) return "Letzte 7 Tage: nichts geübt"; return "Letzte 7 Tage: " + x.n + " Aufgabe" + (x.n === 1 ? "" : "n") + " (" + x.sauber + " sauber, " + x.mitTipp + " mit Tipp/Fehlversuch, " + x.loes + "× Lösung angesehen)" +
+    (x.abbr ? " · " + x.abbr + "× abgebrochen" : "") + (x.tipps ? " · " + x.tipps + " Tipps" : "") + (x.sek ? " · typische Arbeitszeit " + mmss(x.sek) + " je Aufgabe (nur Info)" : ""); }
+  function zusTxt(c) { return c && c.zus === "mitHilfe" ? " · übt mit Hilfe 🤝" : c && c.zus === "neu" && (c.status === "offen") ? " · noch nicht angefangen" : ""; }
   function farbe(c) { if (!c) return "#eee"; if (c.status === "geschafft") return "#bdeccb"; if (c.status === "aus") return "#ddd"; if (c.s === null || c.s === "" || c.s === undefined) return "#f3f0ff";
     var s = Math.max(0, Math.min(1, +c.s)); return "hsl(" + Math.round(120 - 120 * s) + ",75%," + Math.round(88 - 18 * s) + "%)"; }
   function load(ctx, rr, aktion) { M.busy = true; M.err = ""; rr();
@@ -59,9 +65,10 @@
         return h("span", {}, h("i", { class: x[2] ? "d" : "", style: "border-color:" + x[0] + ";background:" + (x[2] ? "transparent" : x[0]) }), x[1]); })),
       h("div", { class: "lk-list" }, l.map(function (x) {
         return h("div", { class: "lk-row " + x.k, title: x.t.titel + (x.c && x.c.grund ? " · " + x.c.grund : "") },
-          h("div", { class: "lk-rt" }, h("b", { text: x.t.titel }), h("span", { class: "lk-st", text: (x.c && x.c.rang ? "#" + x.c.rang + " " : "") + (x.c ? (ST[x.c.status] || x.c.status) : "noch nicht berechnet") + (x.c && x.c.ov ? " ✋" : "") })),
+          h("div", { class: "lk-rt" }, h("b", { text: x.t.titel }), h("span", { class: "lk-st", text: (x.c && x.c.rang ? "#" + x.c.rang + " " : "") + (x.c ? (ST[x.c.status] || x.c.status) : "noch nicht berechnet") + (x.c && x.c.ov ? " ✋" : "") + (x.c && x.c.zus === "mitHilfe" ? " 🤝" : "") })),
           h("div", { class: "lk-bar" }, h("i", { style: "width:" + (x.v === null ? 0 : x.v) + "%;background:" + FARBE[x.k] })),
-          h("span", { class: "lk-pc", text: x.v === null ? "–" : x.v + " %" }));
+          h("span", { class: "lk-pc", text: x.v === null ? "–" : x.v + " %" }),
+          h7(s.benutzer, x.t.id) ? h("div", { class: "muted small", style: "grid-column:1/-1;font-size:12px", text: h7txt(h7(s.benutzer, x.t.id)) }) : null);
       })),
       h("p", { class: "muted small", text: "Erreicht = 100 % − Schwierigkeit aus „Meine Lücken“ (ab 40 % Schwierigkeit gilt ein Thema als Lücke). Gestrichelt = Klassen-Schnitt bzw. zu wenig Daten." }));
     bg.appendChild(sh); document.body.appendChild(bg); SH = bg;
@@ -82,16 +89,17 @@
     var avg = h("tr", {}, [h("td", { text: "Klassen-Schnitt", style: "font-weight:700" })].concat(T.map(function (t) { var s = M.d.klasse[t.id]; return h("td", { text: s === undefined ? "–" : Math.round(s * 100) + " %", style: "text-align:center;background:" + farbe({ s: s }) }); })));
     var rows = L.map(function (s) {
       return h("tr", {}, [h("td", {}, h("button", { class: "lk-name", type: "button", title: "Spinnennetz und Lücken von " + s.name + " anzeigen", text: s.name + (s.test ? " (Test)" : ""), onclick: function () { detail(h, s.benutzer); } }))].concat(T.map(function (t) {
-        var c = s.zellen[t.id], key = s.benutzer + "|" + t.id, txt = !c ? "–" : (c.rang ? "#" + c.rang + " " : "") + (c.s === null || c.s === "" ? "" : Math.round(c.s * 100) + "%") + (c.ov ? " ✋" : "") + (c.status === "geschafft" ? " ✅" : "");
-        var td = h("td", { text: txt, title: c ? (ST[c.status] || c.status) + " · " + (c.grund || "") : "noch nicht berechnet", style: "text-align:center;cursor:pointer;white-space:nowrap;background:" + farbe(c) + (M.sel === key ? ";outline:2px solid #6d4aff" : ""), onclick: function () { M.sel = M.sel === key ? "" : key; rr(); } });
+        var c = s.zellen[t.id], key = s.benutzer + "|" + t.id, txt = !c ? "–" : (c.rang ? "#" + c.rang + " " : "") + (c.s === null || c.s === "" ? "" : Math.round(c.s * 100) + "%") + (c.ov ? " ✋" : "") + (c.status === "geschafft" ? " ✅" : "") + (c.zus === "mitHilfe" ? " 🤝" : "") + (h7(s.benutzer, t.id) && (h7(s.benutzer, t.id).loes || h7(s.benutzer, t.id).abbr) ? " ⚠" : "");
+        var td = h("td", { text: txt, title: c ? (ST[c.status] || c.status) + zusTxt(c) + " · " + (c.grund || "") + (M.d.hilfe7 ? "\n" + h7txt(h7(s.benutzer, t.id)) : "") : "noch nicht berechnet", style: "text-align:center;cursor:pointer;white-space:nowrap;background:" + farbe(c) + (M.sel === key ? ";outline:2px solid #6d4aff" : ""), onclick: function () { M.sel = M.sel === key ? "" : key; rr(); } });
         return td; })));
     });
     var tab = h("div", { class: "glass", style: "padding:10px;overflow-x:auto" }, h("table", { style: "border-collapse:collapse;width:100%;font-size:13px" }, h("thead", {}, head), h("tbody", {}, [avg].concat(rows))),
-      h("p", { class: "muted small", text: "Farbe = Schwierigkeit (grün leicht … rot schwer) · #1–3 = aktive Lücke · ✅ geschafft · ✋ von dir gesetzt. Zelle anklicken zum Ändern · Namen anklicken für das Spinnennetz." }));
+      h("p", { class: "muted small", text: "Farbe = Schwierigkeit (grün leicht … rot schwer) · #1–3 = aktive Lücke · ✅ geschafft · ✋ von dir gesetzt · 🤝 übt mit Hilfe (Tipps/Fehlversuche/Lösung bei mehr als der Hälfte der letzten Aufgaben) · ⚠ in den letzten 7 Tagen Lösung angesehen oder abgebrochen. Zelle anklicken zum Ändern · Namen anklicken für das Spinnennetz." }));
     var edit = null;
     if (M.sel) { var p = M.sel.split("|"), s0 = M.d.schueler.filter(function (x) { return x.benutzer === p[0]; })[0], c0 = s0 && s0.zellen[p[1]], t0 = T.filter(function (x) { return x.id === p[1]; })[0];
       if (s0 && t0) edit = h("div", { class: "glass", style: "padding:12px 14px" }, h("b", { text: s0.name + " · " + t0.titel }),
-        h("p", { class: "muted", text: c0 ? (ST[c0.status] || c0.status) + " · " + (c0.grund || "") + (c0.ges ? " · geschafft am " + dt(c0.ges) : "") : "noch kein Profil" }),
+        h("p", { class: "muted", text: c0 ? (ST[c0.status] || c0.status) + " · " + (c0.grund || "") + (c0.ges ? " · geschafft am " + dt(c0.ges) : "") + zusTxt(c0) : "noch kein Profil" }),
+        M.d.hilfe7 ? h("p", { class: "muted small", text: h7txt(h7(p[0], p[1])) }) : null,
         h("div", { class: "mbtns", style: "display:flex;gap:8px;flex-wrap:wrap" }, [["", "Automatisch"], ["offen", "Als Lücke setzen"], ["geschafft", "Als geschafft markieren"], ["aus", "Ausblenden"]].map(function (o) {
           return h("button", { class: "btn small" + ((c0 && c0.ov || "") === o[0] ? "" : " ghost"), text: o[1], onclick: function () { ov(ctx, rr, p[0], p[1], o[0]); } }); }))); }
     var ml = (M.d.meldungen || []).filter(function (m) { return M.zeigTest || m.status !== "test"; });
