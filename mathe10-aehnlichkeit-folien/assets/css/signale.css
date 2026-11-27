@@ -1,0 +1,91 @@
+/* =========================================================
+   Aufmerksamkeits-Signale – Gestaltung. Gehört zu assets/js/signale.js
+   (Maße in Folien-Pixeln 1920 × 1080, skaliert mit der Folie)
+   ========================================================= */
+/* 🔔-Knopf in der Leiste unten rechts */
+#hud .sg-hudbtn{position:relative;opacity:.75;background:rgba(224,166,20,.16)}
+#hud .sg-hudbtn:hover,#hud .sg-hudbtn.sg-open{opacity:1;background:rgba(224,166,20,.32)}
+#stage.on-chapter #hud .sg-hudbtn{background:rgba(255,255,255,.22)}
+.sg-hudbtn.sg-float{position:absolute;right:36px;bottom:110px;z-index:60;width:56px;height:56px;border-radius:50%;border:0;font-size:28px}
+.sg-hudbtn.sg-ring{animation:sgRing .9s ease-out}
+@keyframes sgRing{0%{box-shadow:0 0 0 0 rgba(244,163,0,.8)}100%{box-shadow:0 0 0 38px rgba(244,163,0,0)}}
+
+/* Signal-Feld */
+.sg-panel{position:absolute;right:36px;bottom:100px;z-index:160;width:1010px;padding:26px 28px 22px;border-radius:30px;
+  background:rgba(255,255,255,.97);color:#1b2536;box-shadow:0 24px 70px rgba(15,21,34,.38),0 3px 10px rgba(15,21,34,.18);
+  font-family:var(--font,Nunito,sans-serif);display:none;transform-origin:bottom right}
+.sg-panel.sg-show{display:block;animation:sgPop .18s ease-out}
+@keyframes sgPop{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
+.sg-head{display:flex;align-items:baseline;gap:18px;margin:0 0 18px}
+.sg-head b{font:600 36px/1.1 var(--font-head,var(--font,sans-serif))}
+.sg-head span{font-size:20px;color:#6b7688;flex:1}
+.sg-x{border:0;background:#eef0f4;border-radius:50%;width:48px;height:48px;font-size:22px;color:#3b4658;align-self:center}
+.sg-x:hover{background:#dfe3ea}
+.sg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.sg-tile{--sg-c:#2f7fe0;position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;
+  padding:18px 20px 16px;min-height:170px;border-radius:22px;border:3px solid color-mix(in srgb,var(--sg-c) 40%,white);
+  background:color-mix(in srgb,var(--sg-c) 10%,white);color:#1b2536;transition:transform .12s,box-shadow .12s,background .12s}
+.sg-tile:hover{transform:translateY(-3px);background:color-mix(in srgb,var(--sg-c) 18%,white);box-shadow:0 10px 24px color-mix(in srgb,var(--sg-c) 30%,transparent)}
+.sg-tile:active{transform:scale(.97)}
+.sg-tile:focus-visible{outline:4px solid #ffc83d;outline-offset:3px}
+.sg-ti{font-size:56px;line-height:1}
+.sg-tn{font:800 30px/1.1 var(--font,sans-serif);margin-top:6px}
+.sg-tt{font-size:19px;line-height:1.2;color:#59647a}
+.sg-k{position:absolute;top:14px;right:14px;min-width:46px;height:46px;padding:0 10px;border-radius:12px;background:#1b2536;color:#fff;
+  font:800 26px/46px var(--font,sans-serif);text-align:center;box-shadow:0 3px 0 color-mix(in srgb,var(--sg-c) 70%,black)}
+.sg-tile.sg-active{background:var(--sg-c);color:#fff;border-color:var(--sg-c)}
+.sg-tile.sg-active .sg-tt{color:rgba(255,255,255,.85)}
+.sg-is-muted .sg-tile:not(.sg-toggle) .sg-ti{opacity:.5}
+.sg-opts{display:flex;align-items:center;gap:26px;margin-top:18px;font-size:22px;color:#3b4658}
+.sg-mute{border:0;border-radius:999px;padding:10px 20px;background:#eef0f4;font:800 22px/1 var(--font,sans-serif);color:#1b2536}
+.sg-mute.sg-muted{background:#d9483b;color:#fff}
+.sg-vol{display:flex;align-items:center;gap:12px;flex:1}
+.sg-vol input{flex:1;height:28px;accent-color:#e0a614}
+.sg-chk{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.sg-chk input{width:26px;height:26px;accent-color:#22a45d}
+
+/* großes Bild-Signal */
+.sg-overlay{--sg-c:#0d9aa8;position:absolute;inset:0;z-index:180;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--sg-c) 88%,white) 0%,color-mix(in srgb,var(--sg-c) 92%,black) 75%);
+  color:#fff;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s ease,visibility 0s linear .35s;cursor:pointer;
+  font-family:var(--font,Nunito,sans-serif)}
+.sg-overlay.sg-show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s ease}
+.sg-card{position:relative;z-index:2;text-align:center;max-width:1600px;padding:0 60px}
+.sg-emoji{font-family:var(--emoji,sans-serif);font-size:250px;line-height:1.1;animation:sgBob 2.2s ease-in-out infinite}
+.sg-title{font:600 132px/1.08 var(--font-head,var(--font,sans-serif));margin-top:10px;text-shadow:0 6px 30px rgba(0,0,0,.18)}
+.sg-sub{font-size:52px;line-height:1.25;margin-top:26px;opacity:.92}
+.sg-count{font:700 440px/1 var(--font-head,var(--font,sans-serif));text-shadow:0 10px 50px rgba(0,0,0,.2)}
+.sg-pop{animation:sgCount .55s cubic-bezier(.2,1.4,.4,1)}
+@keyframes sgCount{from{transform:scale(1.5);opacity:.2}to{transform:none;opacity:1}}
+@keyframes sgBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.sg-rings{position:absolute;left:50%;top:46%;width:0;height:0;z-index:1}
+.sg-rings i{position:absolute;left:-200px;top:-200px;width:400px;height:400px;border-radius:50%;border:6px solid rgba(255,255,255,.35);opacity:0}
+.sg-show .sg-rings i{animation:sgWave 2.6s ease-out infinite}
+.sg-show .sg-rings i:nth-child(2){animation-delay:.85s}
+.sg-show .sg-rings i:nth-child(3){animation-delay:1.7s}
+@keyframes sgWave{0%{transform:scale(.4);opacity:.8}100%{transform:scale(3.6);opacity:0}}
+.sg-hint{position:absolute;bottom:42px;left:0;right:0;text-align:center;font-size:24px;opacity:.75;z-index:2}
+.sg-time{position:absolute;left:0;right:0;bottom:0;height:12px;background:rgba(255,255,255,.18);z-index:2}
+.sg-time b{display:block;height:100%;width:100%;background:rgba(255,255,255,.75);transform-origin:left}
+.sg-show .sg-time b{animation:sgShrink linear forwards}
+@keyframes sgShrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+/* Flüster-Banner (bleibt stehen, bis es ausgeschaltet wird) */
+.sg-banner{position:absolute;left:50%;top:18px;z-index:150;transform:translate(-50%,-160%);display:flex;align-items:center;gap:14px;
+  padding:14px 18px 14px 30px;border-radius:999px;background:#5b5bd6;color:#fff;font:700 34px/1 var(--font,sans-serif);
+  box-shadow:0 10px 30px rgba(91,91,214,.4);transition:transform .35s ease;pointer-events:none;white-space:nowrap}
+.sg-banner.sg-show{transform:translate(-50%,0);pointer-events:auto;animation:sgBreath 3.5s ease-in-out infinite .4s}
+.sg-banner button{border:0;background:rgba(255,255,255,.22);color:#fff;border-radius:50%;width:46px;height:46px;font-size:20px;margin-left:8px}
+@keyframes sgBreath{0%,100%{box-shadow:0 10px 30px rgba(91,91,214,.4)}50%{box-shadow:0 10px 50px rgba(91,91,214,.75)}}
+
+/* Hilfe (H): eine Zeile mehr → Tabelle etwas enger, damit alles auf die Folie passt */
+#help{padding-top:56px;padding-bottom:30px}
+#help h2{margin-bottom:22px}
+#help table{font-size:30px}
+#help td{padding:7px 18px}
+/* Titelfolie: der Hinweis unten steht schon dort → doppelte Schul-Zeile der Leiste ausblenden */
+#stage .slide.title.active ~ #hud .credit{visibility:hidden}
+
+body.embed .sg-hudbtn,body.embed .sg-panel,body.embed .sg-overlay,body.embed .sg-banner{display:none!important}
+@media print{.sg-hudbtn,.sg-panel,.sg-overlay,.sg-banner{display:none!important}}
+@media (prefers-reduced-motion:reduce){.sg-emoji,.sg-show .sg-rings i,.sg-banner.sg-show{animation:none}}
