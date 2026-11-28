@@ -168,6 +168,7 @@ label.chk input{width:22px;height:22px;accent-color:var(--pri)}
 .hint b{color:#b35c00}
 .solution{background:#f3f8ff;border:1px dashed var(--i-beispiel);border-radius:12px;padding:.8rem 1rem;margin:.5rem 0;animation:pop .25s ease}
 .solution h5{margin:0 0 .3rem;font-size:.95rem;color:var(--i-beispiel)}
+.solution ol.weg{margin:.2rem 0;padding-left:1.4rem}.solution ol.weg li{margin:.15rem 0}.solution p{margin:.2rem 0}
 .mc{display:grid;gap:.5rem;margin:.6rem 0}
 .mc button{text-align:left;justify-content:flex-start;background:#fff;color:var(--ink);border:2px solid var(--line);font-weight:600}
 .mc button:hover{background:var(--soft)}

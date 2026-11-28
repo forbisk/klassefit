@@ -51,6 +51,8 @@ h1,h2,h3,.btn,.top b{font-family:"Fredoka","Nunito",sans-serif;font-weight:600}
 .fb{min-height:1.4em;margin:8px 0}.ok,.okmsg{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
 .tipps p{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:8px 12px;margin:6px 0}
 .loesung{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:10px 12px;margin:10px 0}
+.loesung ol.weg{margin:.35rem 0 .2rem;padding-left:1.35rem}.loesung ol.weg li{margin:.18rem 0}.loesung p{margin:.3rem 0 0}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.15;margin:0 .15em;font-size:.95em;white-space:nowrap}.fr>span:first-child{border-bottom:1.5px solid currentColor;padding:0 .2em}.fr>span:last-child{padding:0 .2em}.ovl{text-decoration:overline}
 .foot{margin:26px 4px 0;text-align:center}
 .lk-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1a3a;color:#fff;padding:12px 18px;border-radius:14px;box-shadow:0 8px 30px #0005;z-index:50;max-width:90vw;text-align:center}
 @media (max-width:480px){.hero h1{font-size:1.6rem}.feld span{min-width:0;width:100%}.feld input{width:100%;max-width:220px}}
@@ -62,3 +64,7 @@ h1,h2,h3,.btn,.top b{font-family:"Fredoka","Nunito",sans-serif;font-weight:600}
 .skizze{display:block;width:100%;max-width:420px;margin:12px auto;background:#fff;border-radius:12px;border:1px solid var(--cb)}
 .skizze .sk-e{font:700 15px Nunito,sans-serif;fill:#212529}
 .skizze .sk-s,.skizze .sk-w{font:800 16px Nunito,sans-serif}
+
+/* KM-46 (F21): Primärknöpfe mit weißer Schrift mind. 4,5:1 */
+.btn.pri{background:linear-gradient(135deg,#5b3ae0,#c2257f)}
+.fz{margin:6px 0 0;color:var(--mut,#5c5878);line-height:1.4}.fz b{color:var(--tx)}

@@ -22,7 +22,7 @@ a.card.sec{border-radius:22px;transition:transform .15s}a.card.sec:hover{transfo
 .kern{border-radius:99px}.ausw{border-radius:99px}.rsa{border-radius:99px}.tid{font-family:Fredoka,sans-serif;font-size:1.05rem}
 .fld input[type=text],.fld select{border-radius:12px;border-color:#6d4aff40;background:#fbfaff;font-size:1.05rem;padding:.45rem .6rem}
 .fld input[type=text]:focus{outline:3px solid #6d4aff40;border-color:var(--pri)}
-.btns button{border-radius:12px}.btns .b-check{background:linear-gradient(135deg,#22c55e,#15803d);padding:.45rem 1.1rem;font-size:1rem}.btns .b-sol{background:var(--pri)}
+.btns button{border-radius:12px}.btns .b-check{background:linear-gradient(135deg,#15803d,#166534);padding:.45rem 1.1rem;font-size:1rem}.btns .b-sol{background:var(--pri)}
 .heftnote{border-radius:14px;border-left-width:4px}.hint{border-radius:14px;border-left:4px solid var(--acc)}.sol{border-radius:14px;border-left:4px solid var(--pri)}
 .intro{border-radius:16px;background:#6d4aff10;border-left-color:var(--pri)}.merke{border-radius:16px}.bsp{border-radius:18px;border-color:#6d4aff2e}.bsp h4{color:var(--pri)}
 .fb.good{animation:apboom .5s}@keyframes apboom{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}to{transform:none;opacity:1}}
@@ -42,7 +42,7 @@ a.card.sec{border-radius:22px;transition:transform .15s}a.card.sec:hover{transfo
 .ap-badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:.4rem 0 1rem}.ap-bdg{padding:10px;border-radius:16px;background:#fff;border:1px solid var(--cb);opacity:.5;filter:grayscale(1)}.ap-bdg.on{opacity:1;filter:none;background:#fef3c7;border-color:#fcd34d}.ap-bdg span{font-size:1.4rem}.ap-bdg b{display:block;font-size:.88rem}.ap-bdg small{color:var(--mut);font-size:.72rem}
 .ap-mini{margin-left:.4rem;font-size:.8rem;background:#ffffff26;border-radius:99px;padding:2px 9px;white-space:nowrap}
 /* Untere App-Leiste */
-.ap-nav{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:8600;display:flex;gap:4px;width:min(560px,calc(100% - 20px));padding:6px;border-radius:22px;background:#ffffffee;border:1px solid var(--cb);box-shadow:0 10px 30px #3b2a9930;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.ap-nav{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:8600;display:flex;gap:4px;width:min(560px,calc(100% - 20px));padding:6px;border-radius:22px;background:#ffffffee;border:1px solid var(--cb);box-shadow:0 10px 30px #3b2a9930;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .ap-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px;border-radius:16px;color:var(--mut);text-decoration:none;font-size:.72rem;cursor:pointer}.ap-nav a span{font-size:1.25rem;line-height:1.1}.ap-nav a.on{background:linear-gradient(135deg,var(--pri),var(--pk));color:#fff}
 /* Gesamtfortschritt-Blatt */
 #apSheet{position:fixed;inset:0;z-index:99980;background:#1d1a3a88;display:none;align-items:flex-end;justify-content:center}#apSheet.on{display:flex}
@@ -66,3 +66,8 @@ html body #awayBadge{position:static;display:table;margin:.4rem auto 96px;font-f
 body:has(main.slx-home) .nav{display:none}
 main.slx-home{padding-top:.2rem}
 .kfa-tstat .ap-m{background:#ffffff33}
+
+/* KM-46 (F20): Sprungziele/Fokus nicht unter der unteren Leiste */
+html{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));scroll-padding-top:12px}
+/* KM-46 (F21): Speicherstatus in der weißen Konto-Karte lesbar (vorher Hellrosa/Hellgrün für den dunklen Kopf) */
+.slx-konto .sync.s-bad{color:#c92a2a}.slx-konto .sync.s-ok{color:#237032}

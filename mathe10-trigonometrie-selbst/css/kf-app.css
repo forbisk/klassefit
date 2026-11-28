@@ -63,3 +63,6 @@ body.kf-sl-app .kfa-top .skip-link{position:absolute;left:-999px}
 html[data-th="dark"] .kfa-card,html[data-th="dark"] .kfa-chip{background:#1b1f3b;color:#eef;border-color:#2c3260}
 html[data-th="dark"] .kfa-card small,html[data-th="dark"] .kfa-chip span{color:#b9bfe6}
 @media (prefers-color-scheme:dark){html:not([data-th="light"]) body.kfa-dark-ok .kfa-card{background:#1b1f3b;color:#eef}}
+
+/* KM-46 (F20): Sprungziele/Fokus nicht unter der unteren Leiste */
+body.kfa-hasnav{scroll-padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}html:has(body.kfa-hasnav){scroll-padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}

@@ -44,7 +44,7 @@ a.card.sec .dt{margin:0;font-size:.85rem}a.card.sec b{display:block;margin:.2rem
 input.ok,select.ok{border-color:#2b8a3e!important;background:#ebfbee}input.bad,select.bad{border-color:#e03131!important;background:#fff5f5}input.near{border-color:#f59f00!important;background:#fff9db}
 .unit{color:#64748b}
 .btns{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}.btns button{padding:.35rem .7rem;font-size:.9rem}
-.btns .b-check{background:#2b8a3e}.btns .b-h1,.btns .b-h2{background:#f08c00}.btns .b-sol{background:#6741d9}.btns .b-ask{background:#64748b}.btns .b-vid{background:#1971c2}
+.btns .b-check{background:#2b8a3e}.btns .b-h1,.btns .b-h2{background:#b45309}.btns .b-sol{background:#6741d9}.btns .b-ask{background:#64748b}.btns .b-vid{background:#1971c2}
 .fb{margin-top:.5rem;font-weight:700;min-height:1.2em}.fb.good{color:#2b8a3e;font-size:1.1rem}.fb.bad{color:#c92a2a}.fb.warn{color:#e67700}
 .hint{background:#fff4e6;border-radius:8px;padding:.4rem .7rem;margin:.4rem 0}
 .sol{background:#f3f0ff;border-radius:8px;padding:.5rem .8rem;margin:.5rem 0}
@@ -80,3 +80,9 @@ table.plan{border-collapse:collapse;margin:.6rem 0 0;font-size:.92rem}table.plan
 .vidbox video{display:block;width:100%;max-width:960px;aspect-ratio:16/9;height:auto;background:#000;border-radius:8px}
 .vidbox .vidcap{min-height:2.8em;margin-top:.35rem;padding:.3rem .6rem;border-radius:8px;background:#dee2e6;color:#fff;font-size:1rem;line-height:1.35;white-space:pre-line;text-align:center;font-weight:600}.vidbox .vidcap.on{background:#212529}
 .vidbox .vidnote{font-size:.85rem;color:#495057;margin-top:.35rem}
+/* KM-46: Brüche, Strecken, Lösungsweg in Schritten (Inhalte Klasse 10) */
+.task .fr,.sol .fr,.hint .fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.15;margin:0 .15em;font-size:.95em;white-space:nowrap}
+.task .fr>span:first-child{border-bottom:1.5px solid currentColor;padding:0 .2em}.task .fr>span:last-child{padding:0 .2em}
+.ovl{text-decoration:overline;text-decoration-thickness:1.5px}
+.sol ol.weg{margin:.3rem 0 .2rem;padding-left:1.4rem}.sol ol.weg li{margin:.15rem 0}
+.sol .erg{margin-top:.3rem}

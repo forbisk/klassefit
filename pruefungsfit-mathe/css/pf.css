@@ -83,3 +83,6 @@ html{background:var(--bg)}
 .symb{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 4px}.symb button{min-width:38px;height:36px;padding:0 8px;border-radius:10px;border:1px solid var(--cb);background:var(--card);color:var(--tx);font:700 1rem Nunito,sans-serif;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}.symb button:active{background:var(--pri);color:#fff}
 .fmth{margin:6px 0 0;font-size:.85rem;color:var(--mut);font-weight:700}
 .card.kurz ul{margin:6px 0 0;padding-left:1.2em}.card.kurz li{margin:3px 0}
+
+/* KM-46 (F21): Knöpfe mit weißer Schrift mind. 4,5:1 */
+.btn:not(.ghost){background:linear-gradient(135deg,#5b3ae0,#c2257f)}

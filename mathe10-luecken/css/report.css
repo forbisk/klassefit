@@ -12,3 +12,7 @@
 .rp-host{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.rp-host>.rp-flag{flex:none}
 .hd.rp-host{flex-wrap:nowrap}.hd>.rp-flag{margin-left:0;color:#fff;border-color:#ffffffaa}.hd>.rp-flag.on{border-color:#fff}
 @media print{.rp-flag,.rp-panel,.rp-toast{display:none!important}}
+
+/* KM-46 (F13): ⚑ sichtbarer und auf Touch mind. 44 px groß */
+.rp-flag{color:#495057;border-color:#868e96}
+@media (pointer:coarse){.rp-flag{min-width:44px;min-height:44px}}

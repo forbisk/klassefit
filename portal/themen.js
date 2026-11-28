@@ -244,6 +244,16 @@ function loadMeinStand(){
   document.head.appendChild(s);
 }
 loadMeinStand();
-function boot(){ if(document.documentElement.getAttribute("data-kf")==="portal" || /\/portal(\/|$)/.test(location.pathname)) return; home(); var s; try{ s = JSON.parse(localStorage.getItem("sl10a_sess")); }catch(e){} if(s && s.token && !/lehrer/.test(location.pathname) && !document.getElementById("thBtn")) ui(); }
+/* KM-46 (F19/F14, 28.11.2026): 🎯-Knopf und Speicher-Badge überdecken beim Lesen keinen Text: beim Runterscrollen ausblenden,
+   beim Hochscrollen, oben und am Seitenende wieder zeigen. Nur Anzeige, keine Daten. */
+function kfFabRuhe(){ if(window.__kfFabRuhe) return; window.__kfFabRuhe = 1;
+  var st = document.createElement("style"); st.textContent = "#thBtn,#slBadge{transition:transform .25s ease,opacity .25s ease}#thBtn.kf-weg,#slBadge.kf-weg{transform:translateY(160%)!important;opacity:0;pointer-events:none}@media (prefers-reduced-motion:reduce){#thBtn,#slBadge{transition:none}}";
+  document.head.appendChild(st);
+  var y0 = window.scrollY || 0, tk = 0;
+  function upd(){ tk = 0; var y = window.scrollY || 0, d = y - y0, ende = y + innerHeight >= document.documentElement.scrollHeight - 24, weg = y > 80 && d > 6 && !ende;
+    if(Math.abs(d) < 6 && !ende) return; y0 = y;
+    ["thBtn", "slBadge"].forEach(function(id){ var e = document.getElementById(id); if(e) e.classList.toggle("kf-weg", weg); }); }
+  window.addEventListener("scroll", function(){ if(!tk) tk = requestAnimationFrame(upd); }, {passive: true}); }
+function boot(){ kfFabRuhe(); if(document.documentElement.getAttribute("data-kf")==="portal" || /\/portal(\/|$)/.test(location.pathname)) return; home(); var s; try{ s = JSON.parse(localStorage.getItem("sl10a_sess")); }catch(e){} if(s && s.token && !/lehrer/.test(location.pathname) && !document.getElementById("thBtn")) ui(); }
 if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

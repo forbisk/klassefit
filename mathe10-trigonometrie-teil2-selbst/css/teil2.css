@@ -5,3 +5,5 @@
 .rund{display:block;margin-top:.4em;font-size:.9em;color:#2b8a3e;font-weight:700}
 .teil2-band{background:#0e7490;color:#fff;font-weight:800;text-align:center;padding:.35rem .6rem;font-size:.95rem;letter-spacing:.02em}
 svg.fig.sk{max-width:560px;width:100%;height:auto}
+/* KM-46 (F2): ←/⌂-Knöpfe (App/Handy) überdecken den Band-Titel nicht */
+html[style*="--kfnav-w"] .teil2-band{padding-left:calc(var(--kfnav-w,0px) + 14px);padding-right:calc(var(--kfnav-w,0px) + 14px);min-height:calc(var(--kfnav-h,0px) + 16px);display:flex;align-items:center;justify-content:center}
